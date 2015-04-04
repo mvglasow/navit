@@ -101,6 +101,11 @@ enum attr_strings_type {
 	attr_string_district_name,
 	attr_string_street_name,
 	attr_string_street_name_systematic,
+	attr_string_street_name_systematic_nat,
+	attr_string_street_name_systematic_int,
+	attr_string_ref,
+	attr_string_exit_to,
+	attr_string_street_destination,
 	attr_string_house_number,
 	attr_string_label,
 	attr_string_postal,
@@ -1161,7 +1166,28 @@ osm_add_tag(char *k, char *v)
 	if (! strcmp(k,"ref")) {
 		if (in_way)
 			attr_strings_save(attr_string_street_name_systematic, v);
+		/* for exit number of highway_exit poi */
+		else attr_strings_save(attr_string_ref, v);
 		level=5;
+	}
+	if (! strcmp(k,"nat_ref")) {
+			if (in_way)
+				attr_strings_save(attr_string_street_name_systematic_nat, v);
+			level=5;
+	}
+	if (! strcmp(k,"int_ref")) {
+			if (in_way)
+				attr_strings_save(attr_string_street_name_systematic_int, v);
+			level=5;
+	}
+	if (! strcmp(k,"destination")) {
+			if (in_way)
+				attr_strings_save(attr_string_street_destination, v);
+			level=5;
+	}
+	if (! strcmp(k,"exit_to")) {
+			attr_strings_save(attr_string_exit_to, v);
+			level=5;
 	}
 	if (! strcmp(k,"openGeoDB:is_in")) { 
 		if (!is_in_buffer[0]) 
@@ -1750,6 +1776,8 @@ osm_end_way(struct maptool_osm *osm)
 		item_bin_add_attr_string(item_bin, def_flags ? attr_street_name : attr_label, attr_strings[attr_string_label]);
 		item_bin_add_attr_string(item_bin, attr_district_name, attr_strings[attr_string_district_name]);
 		item_bin_add_attr_string(item_bin, attr_street_name_systematic, attr_strings[attr_string_street_name_systematic]);
+		item_bin_add_attr_string(item_bin, attr_street_name_systematic_nat, attr_strings[attr_string_street_name_systematic_nat]);
+		item_bin_add_attr_string(item_bin, attr_street_destination, attr_strings[attr_string_street_destination]);
 		item_bin_add_attr_longlong(item_bin, attr_osm_wayid, osmid_attr_value);
 		if (debug_attr_buffer[0])
 			item_bin_add_attr_string(item_bin, attr_debug, debug_attr_buffer);
@@ -1831,6 +1859,8 @@ osm_end_node(struct maptool_osm *osm)
 		item_bin_add_attr_string(item_bin, attr_county_name, attr_strings[attr_string_county_name]);
 		item_bin_add_attr_string(item_bin, attr_url, attr_strings[attr_string_url]);
 		item_bin_add_attr_longlong(item_bin, attr_osm_nodeid, osmid_attr_value);
+		item_bin_add_attr_string(item_bin, attr_ref, attr_strings[attr_string_ref]);
+		item_bin_add_attr_string(item_bin, attr_exit_to, attr_strings[attr_string_exit_to]);
 		item_bin_add_attr_string(item_bin, attr_debug, debug_attr_buffer);
 		postal=attr_strings[attr_string_postal];
 		if (postal) {
@@ -1870,6 +1900,7 @@ osm_process_town_by_is_in(struct item_bin *ib,char *is_in, struct attr *attrs, G
 {
 	struct country_table *result=NULL, *lookup;
 	char *tok,*dup=g_strdup(is_in),*buf=dup;
+	int conflict=0;
 
 	int find_town_name = 0;
 
@@ -1887,14 +1918,18 @@ osm_process_town_by_is_in(struct item_bin *ib,char *is_in, struct attr *attrs, G
 		lookup=g_hash_table_lookup(country_table_hash,tok);
 		if (lookup) {
 			if (result && result->countryid != lookup->countryid) {
-				char *label=item_bin_get_attr(ib, attr_town_name, NULL);
-				osm_warning("node",item_bin_get_nodeid(ib),0,"conflict for %s is_in=%s country %d vs %d\n", label, is_in, lookup->countryid, result->countryid);
+				conflict=1;
 			}
 			result=lookup;
 		}
 		buf=NULL;
 	}
 	g_free(dup);
+
+	if(conflict) {
+		char *label=item_bin_get_attr(ib, attr_town_name, NULL);
+		osm_warning("node",item_bin_get_nodeid(ib),0,"Country conflict for %s is_in=%s, choosen country %d (%s)\n", label, is_in, result->countryid, result->names);
+	}
 
 	return result;
 }
@@ -1910,9 +1945,9 @@ osm_process_town_by_boundary(GList *bl, struct item_bin *ib, struct coord *c, st
 		struct boundary *b=l->data;
 		if (b->country) {
 			if (match && match->country->countryid!=b->country->countryid) {
-				osm_warning("node",item_bin_get_nodeid(ib),0,"node (0x%x,0x%x) conflict country ", c->x, c->y);
-				osm_warning("relation",boundary_relid(match),1,"country %d vs ",match->country->countryid);
-				osm_warning("relation",boundary_relid(b),1,"country %d\n",b->country->countryid);
+				osm_warning("node",item_bin_get_nodeid(ib),0,"node (0x%x,0x%x) country conflict: ", c->x, c->y);
+				osm_warning("relation",boundary_relid(match),1,"replacing country %d (%s) with ",match->country->countryid, match->country->names);
+				osm_warning("relation",boundary_relid(b),1,"country %d (%s)\n",b->country->countryid, b->country->names);
 			}
 			match=b;
 		}

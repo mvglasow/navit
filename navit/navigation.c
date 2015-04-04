@@ -2242,7 +2242,13 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 		r=g_strdup_printf("%s: d %d left %d right %d dlim=%d cat old:%d new:%d max:%d unambiguous=%d same_street=%d", ret==1?"yes":"no", m.delta, m.left, m.right, dlim, m.old_cat, m.new_cat, m.max_cat, m.is_unambiguous, m.is_same_street);
 #endif
 	}
-
+	*delta=d;
+	if (reason)
+		*reason=r;
+	if (r)
+		dbg(lvl_debug, "%s %s -> %s %s: %s\n", old->way.name2, old->way.name1, new->way.name2, new->way.name1, r);
+	return ret;
+	
 	if (m.merge_or_exit == mex_none) {
 		if (old->way.item.type == type_ramp && is_motorway_like(&(new->way), 0)) {
 			if (motorways_left)

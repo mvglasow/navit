@@ -1,1324 +1,1308 @@
-# Čeština translations for navit
-# Copyright (C) 2006-2014 The Navit Team
+# Mongolian translation for navit
+# Copyright (c) 2015 Rosetta Contributors and Canonical Ltd 2015
 # This file is distributed under the same license as the navit package.
-# Many thanks to the contributors of this translation:
-# 72ka https://launchpad.net/~2hp
-# Aleš Janda https://launchpad.net/~kyblicek
-# Ivan Kološ https://launchpad.net/~ivan-kolos
-# MMlosh https://launchpad.net/~mmlosh
-# Mike Crash https://launchpad.net/~mike-mikecrash
-# T.lama https://launchpad.net/~klacl
-# Tomas Kukol https://launchpad.net/~tomas-kukol
-# Vaclav Cerny https://launchpad.net/~vatoz
-# Vladimír Burian https://launchpad.net/~vburian
-# Vojtěch Látal https://launchpad.net/~vojtik
-# stritek https://launchpad.net/~stritek
-# talmik https://launchpad.net/~mikatom
+# Enkhbold https://launchpad.net/~enkhbold-baatar
 
 msgid ""
 msgstr ""
-"Project-Id-Version: navit 0.5.0\n"
-"Report-Msgid-Bugs-To: \n"
-"PO-Revision-Date: 2015-03-15 14:56+0000\n"
-"Last-Translator: Jakuje <jakuje@gmail.com>\n"
-"Language-Team: Čeština\n"
+"Project-Id-Version: navit\n"
+"Report-Msgid-Bugs-To: FULL NAME <EMAIL@ADDRESS>\n"
+"PO-Revision-Date: 2015-03-11 06:11+0000\n"
+"Last-Translator: Enkhbold <enkhbold_baatar@yahoo.com>\n"
+"Language-Team: Mongolian <mn@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
-"Language: \n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"Language: mn\n"
 "X-Report-Errors: https://translations.launchpad.net/navit/trunk/+pots/navit\n"
 
 msgid "Running from source directory\n"
-msgstr "Běží ze zdrojového adresáře\n"
+msgstr "Эх байгаа сангаас нь ажиллуулах\n"
 
 #, c-format
 msgid "setting '%s' to '%s'\n"
-msgstr "nastavuji '%s' na '%s'\n"
+msgstr "Тохиргоо  '%s' to '%s'\n"
 
 #. TRANSLATORS: the following counts refer to streets
 msgid "zeroth"
-msgstr "nultý"
+msgstr "зеротх"
 
 msgid "first"
-msgstr "první"
+msgstr "эхний"
 
 msgid "second"
-msgstr "druhý"
+msgstr "2 дахь"
 
 msgid "third"
-msgstr "třetí"
+msgstr "3 дахь"
 
 msgid "fourth"
-msgstr "čtvrtý"
+msgstr "4 дэх"
 
 msgid "fifth"
-msgstr "pátý"
+msgstr "5 дэх"
 
 msgid "sixth"
-msgstr "šestý"
+msgstr "6 дэх"
 
 #. TRANSLATORS: the following counts refer to roundabout exits
 msgid "zeroth exit"
-msgstr "nultý výjezd"
+msgstr "зеротх гарах"
 
 msgid "first exit"
-msgstr "první výjezd"
+msgstr ""
 
 msgid "second exit"
-msgstr "druhý výjezd"
+msgstr ""
 
 msgid "third exit"
-msgstr "třetí výjezd"
+msgstr ""
 
 msgid "fourth exit"
-msgstr "čtvrtý výjezd"
+msgstr ""
 
 msgid "fifth exit"
-msgstr "pátý výjezd"
+msgstr ""
 
 msgid "sixth exit"
-msgstr "šestý výjezd"
+msgstr ""
 
 #, c-format
 msgid "%d m"
-msgstr "%d m"
+msgstr ""
 
 #, c-format
 msgid "in %d m"
-msgstr "za %d m"
+msgstr ""
 
 #, c-format
 msgid "%d feet"
-msgstr "%d stop"
+msgstr ""
 
 #, c-format
 msgid "in %d feet"
-msgstr "za %d stop"
+msgstr ""
 
 #, c-format
 msgid "%d meters"
-msgstr "%d metrů"
+msgstr ""
 
 #, c-format
 msgid "in %d meters"
-msgstr "za %d metrů"
+msgstr ""
 
 #, c-format
 msgid "%d.%d miles"
-msgstr "%d.%d mílí"
+msgstr ""
 
 #, c-format
 msgid "in %d.%d miles"
-msgstr "za %d.%d mílí"
+msgstr ""
 
 #, c-format
 msgid "%d.%d kilometers"
-msgstr "%d.%d kilometrů"
+msgstr ""
 
 #, c-format
 msgid "in %d.%d kilometers"
-msgstr "za %d.%d kilometrů"
+msgstr ""
 
 #, c-format
 msgid "one mile"
 msgid_plural "%d miles"
-msgstr[0] "%d míle"
-msgstr[1] "%d míle"
-msgstr[2] "%d mílí"
+msgstr[0] ""
+msgstr[1] ""
 
 #, c-format
 msgid "in one mile"
 msgid_plural "in %d miles"
-msgstr[0] "za %d míli"
-msgstr[1] "za %d míle"
-msgstr[2] "za %d mílí"
+msgstr[0] ""
+msgstr[1] ""
 
 #, c-format
 msgid "one kilometer"
 msgid_plural "%d kilometers"
-msgstr[0] "%d kilometr"
-msgstr[1] "%d kilometry"
-msgstr[2] "%d  kilometrů"
+msgstr[0] ""
+msgstr[1] ""
 
 #, c-format
 msgid "in one kilometer"
 msgid_plural "in %d kilometers"
-msgstr[0] "za %d  kilometr"
-msgstr[1] "za %d  kilometry"
-msgstr[2] "za %d kilometrů"
+msgstr[0] ""
+msgstr[1] ""
 
 msgid "exit"
-msgstr "ukončit"
+msgstr ""
 
 msgid "into the ramp"
-msgstr "na přivadeč"
+msgstr ""
 
 #. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name
 #, c-format
 msgid "%sinto the street %s%s%s"
-msgstr "%sdo ulice %s%s%s"
+msgstr ""
 
 #. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name. Male form. The stuff after | doesn't have to be included
 #, c-format
 msgid "%sinto the %s%s%s|male form"
-msgstr "%s do %s%s%s"
+msgstr ""
 
 #. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name. Female form. The stuff after | doesn't have to be included
 #, c-format
 msgid "%sinto the %s%s%s|female form"
-msgstr "%sdo %s%s%s"
+msgstr ""
 
 #. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name. Neutral form. The stuff after | doesn't have to be included
 #, c-format
 msgid "%sinto the %s%s%s|neutral form"
-msgstr "%sdo %s%s%s"
+msgstr ""
 
 #. TRANSLATORS: gives the name of the next road to turn into (into the E17)
 #, c-format
 msgid "%sinto the %s"
-msgstr "%sna %s"
+msgstr ""
 
 #. TRANSLATORS: right, as in 'Turn right'
 msgid "right"
-msgstr "vpravo"
+msgstr ""
 
 #. TRANSLATORS: left, as in 'Turn left'
 msgid "left"
-msgstr "vlevo"
+msgstr ""
 
 #. TRANSLATORS: Don't forget the ending space
 msgid "easily "
-msgstr "mírně "
+msgstr ""
 
 #. TRANSLATORS: Don't forget the ending space
 msgid "strongly "
-msgstr "silně "
+msgstr ""
 
 #. TRANSLATORS: Don't forget the ending space
 msgid "really strongly "
-msgstr "opravdu silně "
+msgstr ""
 
 #. TRANSLATORS: Don't forget the ending space
 msgid "unknown "
-msgstr "neurčitě "
+msgstr ""
 
 msgid "When possible, please turn around"
-msgstr "Až to bude možné, otočte se"
+msgstr ""
 
 msgid "Enter the roundabout soon"
-msgstr "Brzy najeďte na kruhový objezd"
+msgstr ""
 
 #. TRANSLATORS: %s is the distance to the roundabout
 #, c-format
 msgid "Enter the roundabout %s"
-msgstr "Najeďte na kruhový objezd %s"
+msgstr ""
 
 #, c-format
 msgid "then leave the roundabout at the %s"
-msgstr "pak sjeďte na %s"
+msgstr ""
 
 #, c-format
 msgid "Leave the roundabout at the %s"
-msgstr "Sjeďte na %s"
+msgstr ""
 
 #, c-format
 msgid "Follow the road for the next %s"
-msgstr "Pokračujte po cestě dalších %s"
+msgstr ""
 
 msgid "soon"
-msgstr "brzy"
+msgstr ""
 
 #. TRANSLATORS: First argument is the how manieth street to take, second the direction
 #, c-format
 msgid "Take the %1$s road to the %2$s"
-msgstr "Jeďte na %1$s silnici %2$s"
+msgstr ""
 
 #, c-format
 msgid "after %i roads"
-msgstr "za %i silnice"
+msgstr ""
 
 msgid "now"
-msgstr "nyní"
+msgstr ""
 
 #, c-format
 msgid "then take the %1$s road to the %2$s"
-msgstr "pak jeďte %1$s silnici %2$s"
+msgstr ""
 
 msgid "error"
-msgstr "chyba"
+msgstr ""
 
 #. TRANSLATORS: The first argument is strength, the second direction, the third distance and the fourth destination Example: 'Turn 'slightly' 'left' in '100 m' 'onto baker street'
 #, c-format
 msgid "Turn %1$s%2$s %3$s%4$s"
-msgstr "Zabočte %1$s%2$s %3$s%4$s"
+msgstr ""
 
 #. TRANSLATORS: First argument is strength, second direction, third how many roads to skip, fourth destination
 #, c-format
 msgid "then turn %1$s%2$s %3$s%4$s"
-msgstr "pak odbočte %1$s%2$s %3$s%4$s"
+msgstr ""
 
 #, c-format
 msgid "You have reached your destination %s"
-msgstr "%s dorazíte do cíle"
+msgstr ""
 
 msgid "then you have reached your destination."
-msgstr "pak budete v cíli."
+msgstr ""
 
 #. Android resource: @strings/position_popup_title
 msgid "Position"
-msgstr "Poloha"
+msgstr ""
 
 msgid "Command"
-msgstr "Příkaz"
+msgstr ""
 
 msgid "Length"
-msgstr "Délka"
+msgstr ""
 
 msgid "km"
-msgstr "km"
+msgstr ""
 
 msgid "m"
-msgstr "m"
+msgstr ""
 
 msgid "Time"
-msgstr "Čas"
+msgstr ""
 
 msgid "Destination Length"
-msgstr "Cílová vzdálenost"
+msgstr ""
 
 msgid "Destination Time"
-msgstr "Cílový čas"
+msgstr ""
 
 msgid "Roadbook"
-msgstr "Itinerář"
+msgstr ""
 
 #, c-format
 msgid "Waypoint %d"
-msgstr "Bod trasy %d"
+msgstr ""
 
 msgid "Visit before..."
-msgstr "Navštívit nejdříve..."
+msgstr ""
 
 msgid "Set as position"
-msgstr "Použít jako pozici"
+msgstr ""
 
 msgid "Set as destination"
-msgstr "Nastavit jako cíl"
+msgstr ""
 
 msgid "Add as bookmark"
-msgstr "Použít jako záložku"
+msgstr ""
 
 #, c-format
 msgid "Point 0x%x 0x%x"
-msgstr "Bod 0x%x 0x%x"
+msgstr ""
 
 #, c-format
 msgid "Screen coord : %d %d"
-msgstr "Souřadnice obrazovky: %d %d"
+msgstr ""
 
 #. 020
 msgid "Andorra"
-msgstr "Andorra"
+msgstr ""
 
 #. 784
 msgid "United Arab Emirates"
-msgstr "Spojené arabské emiráty"
+msgstr ""
 
 #. 004
 msgid "Afghanistan"
-msgstr "Afghánistán"
+msgstr ""
 
 #. 028
 msgid "Antigua and Barbuda"
-msgstr "Antigua a Barbuda"
+msgstr ""
 
 #. 660
 msgid "Anguilla"
-msgstr "Anguilla"
+msgstr ""
 
 #. 008
 msgid "Albania"
-msgstr "Albánie"
+msgstr ""
 
 #. 051
 msgid "Armenia"
-msgstr "Arménie"
+msgstr ""
 
 #. 530
 msgid "Netherlands Antilles"
-msgstr "Nizozemské Antily"
+msgstr ""
 
 #. 024
 msgid "Angola"
-msgstr "Angola"
+msgstr ""
 
 #. 010
 msgid "Antarctica"
-msgstr "Antarktida"
+msgstr ""
 
 #. 032
 msgid "Argentina"
-msgstr "Argentina"
+msgstr ""
 
 #. 016
 msgid "American Samoa"
-msgstr "Americká Samoa"
+msgstr ""
 
 #. 040
 msgid "Austria"
-msgstr "Rakousko"
+msgstr ""
 
 #. 036
 msgid "Australia"
-msgstr "Austrálie"
+msgstr ""
 
 #. 533
 msgid "Aruba"
-msgstr "Aruba"
+msgstr ""
 
 #. 248
 msgid "Aland Islands"
-msgstr "Ålandy"
+msgstr ""
 
 #. 031
 msgid "Azerbaijan"
-msgstr "Ázerbájdžán"
+msgstr ""
 
 #. 070
 msgid "Bosnia and Herzegovina"
-msgstr "Bosna a Hercegovina"
+msgstr ""
 
 #. 052
 msgid "Barbados"
-msgstr "Barbados"
+msgstr ""
 
 #. 050
 msgid "Bangladesh"
-msgstr "Bangladéš"
+msgstr ""
 
 #. 056
 msgid "Belgium"
-msgstr "Belgie"
+msgstr ""
 
 #. 854
 msgid "Burkina Faso"
-msgstr "Burkina Faso"
+msgstr ""
 
 #. 100
 msgid "Bulgaria"
-msgstr "Bulharsko"
+msgstr ""
 
 #. 048
 msgid "Bahrain"
-msgstr "Bahrajn"
+msgstr ""
 
 #. 108
 msgid "Burundi"
-msgstr "Burundi"
+msgstr ""
 
 #. 204
 msgid "Benin"
-msgstr "Benin"
+msgstr ""
 
 #. 652
 msgid "Saint Barthelemy"
-msgstr "Svatý Bartoloměj"
+msgstr ""
 
 #. 060
 msgid "Bermuda"
-msgstr "Bermudy"
+msgstr ""
 
 #. 096
 msgid "Brunei Darussalam"
-msgstr "Brunej"
+msgstr ""
 
 #. 068
 msgid "Bolivia"
-msgstr "Bolívie"
+msgstr ""
 
 #. 535
 msgid "Bonaire, Sint Eustatius and Saba"
-msgstr "Bonaire, Svatý Eustach a Saba"
+msgstr ""
 
 #. 076
 msgid "Brazil"
-msgstr "Brazílie"
+msgstr ""
 
 #. 044
 msgid "Bahamas"
-msgstr "Bahamy"
+msgstr ""
 
 #. 064
 msgid "Bhutan"
-msgstr "Bhútán"
+msgstr ""
 
 #. 074
 msgid "Bouvet Island"
-msgstr "Bouvetův ostrov"
+msgstr ""
 
 #. 072
 msgid "Botswana"
-msgstr "Botswana"
+msgstr ""
 
 #. 112
 msgid "Belarus"
-msgstr "Bělorusko"
+msgstr ""
 
 #. 084
 msgid "Belize"
-msgstr "Belize"
+msgstr ""
 
 #. 124
 msgid "Canada"
-msgstr "Kanada"
+msgstr ""
 
 #. 166
 msgid "Cocos (Keeling) Islands"
-msgstr "Kokosové (Keelingovy) ostrovy"
+msgstr ""
 
 #. 180
 msgid "Congo, Democratic Republic of the"
-msgstr "Kongo, demokratická republika"
+msgstr ""
 
 #. 140
 msgid "Central African Republic"
-msgstr "Středoafrická republika"
+msgstr ""
 
 #. 178
 msgid "Congo"
-msgstr "Kongo"
+msgstr ""
 
 #. 756
 msgid "Switzerland"
-msgstr "Švýcarsko"
+msgstr ""
 
 #. 384
 msgid "Cote d'Ivoire"
-msgstr "Pobřeží slonoviny"
+msgstr ""
 
 #. 184
 msgid "Cook Islands"
-msgstr "Cookovy ostrovy"
+msgstr ""
 
 #. 152
 msgid "Chile"
-msgstr "Chile"
+msgstr ""
 
 #. 120
 msgid "Cameroon"
-msgstr "Kamerun"
+msgstr ""
 
 #. 156
 msgid "China"
-msgstr "Čína"
+msgstr ""
 
 #. 170
 msgid "Colombia"
-msgstr "Kolumbie"
+msgstr ""
 
 #. 188
 msgid "Costa Rica"
-msgstr "Kostarika"
+msgstr ""
 
 #. 192
 msgid "Cuba"
-msgstr "Kuba"
+msgstr ""
 
 #. 132
 msgid "Cape Verde"
-msgstr "Kapverdy"
+msgstr ""
 
 #. 531
 msgid "Curacao"
-msgstr "Curacao"
+msgstr ""
 
 #. 162
 msgid "Christmas Island"
-msgstr "Vánoční ostrov"
+msgstr ""
 
 #. 196
 msgid "Cyprus"
-msgstr "Kypr"
+msgstr ""
 
 #. 203
 msgid "Czech Republic"
-msgstr "Česká republika"
+msgstr ""
 
 #. 276
 msgid "Germany"
-msgstr "Německo"
+msgstr ""
 
 #. 262
 msgid "Djibouti"
-msgstr "Džibutsko"
+msgstr ""
 
 #. 208
 msgid "Denmark"
-msgstr "Dánsko"
+msgstr ""
 
 #. 212
 msgid "Dominica"
-msgstr "Dominika"
+msgstr ""
 
 #. 214
 msgid "Dominican Republic"
-msgstr "Dominikánská republika"
+msgstr ""
 
 #. 012
 msgid "Algeria"
-msgstr "Alžírsko"
+msgstr ""
 
 #. 218
 msgid "Ecuador"
-msgstr "Ekvádor"
+msgstr ""
 
 #. 233
 msgid "Estonia"
-msgstr "Estonsko"
+msgstr ""
 
 #. 818
 msgid "Egypt"
-msgstr "Egypt"
+msgstr ""
 
 #. 732
 msgid "Western Sahara"
-msgstr "Západní Sahara"
+msgstr ""
 
 #. 232
 msgid "Eritrea"
-msgstr "Eritrea"
+msgstr ""
 
 #. 724
 msgid "Spain"
-msgstr "Španělsko"
+msgstr ""
 
 #. 231
 msgid "Ethiopia"
-msgstr "Etiopie"
+msgstr ""
 
 #. 246
 msgid "Finland"
-msgstr "Finsko"
+msgstr ""
 
 #. 242
 msgid "Fiji"
-msgstr "Fidži"
+msgstr ""
 
 #. 238
 msgid "Falkland Islands (Malvinas)"
-msgstr "Falklandy (Malvíny)"
+msgstr ""
 
 #. 583
 msgid "Micronesia, Federated States of"
-msgstr "Mikronésie, federativní státy"
+msgstr ""
 
 #. 234
 msgid "Faroe Islands"
-msgstr "Faerské ostrovy"
+msgstr ""
 
 #. 250
 msgid "France"
-msgstr "Francie"
+msgstr ""
 
 #. 266
 msgid "Gabon"
-msgstr "Gabon"
+msgstr ""
 
 #. 826
 msgid "United Kingdom"
-msgstr "Spojené království"
+msgstr ""
 
 #. 308
 msgid "Grenada"
-msgstr "Grenada"
+msgstr ""
 
 #. 268
 msgid "Georgia"
-msgstr "Gruzie"
+msgstr ""
 
 #. 254
 msgid "French Guiana"
-msgstr "Francouzská Guyana"
+msgstr ""
 
 #. 831
 msgid "Guernsey"
-msgstr "Guernsey"
+msgstr ""
 
 #. 288
 msgid "Ghana"
-msgstr "Ghana"
+msgstr ""
 
 #. 292
 msgid "Gibraltar"
-msgstr "Gibraltar"
+msgstr ""
 
 #. 304
 msgid "Greenland"
-msgstr "Grónsko"
+msgstr ""
 
 #. 270
 msgid "Gambia"
-msgstr "Gambie"
+msgstr ""
 
 #. 324
 msgid "Guinea"
-msgstr "Guinea"
+msgstr ""
 
 #. 312
 msgid "Guadeloupe"
-msgstr "Guadeloupe"
+msgstr ""
 
 #. 226
 msgid "Equatorial Guinea"
-msgstr "Rovníková Guinea"
+msgstr ""
 
 #. 300
 msgid "Greece"
-msgstr "Řecko"
+msgstr ""
 
 #. 239
 msgid "South Georgia and the South Sandwich Islands"
-msgstr "Jižní Georgie a Jižní Sandwichovy ostrovy"
+msgstr ""
 
 #. 320
 msgid "Guatemala"
-msgstr "Guatemala"
+msgstr ""
 
 #. 316
 msgid "Guam"
-msgstr "Guam"
+msgstr ""
 
 #. 624
 msgid "Guinea-Bissau"
-msgstr "Guinea-Bissau"
+msgstr ""
 
 #. 328
 msgid "Guyana"
-msgstr "Guyana"
+msgstr ""
 
 #. 344
 msgid "Hong Kong"
-msgstr "Hongkong"
+msgstr ""
 
 #. 334
 msgid "Heard Island and McDonald Islands"
-msgstr "Heardův a McDonaldovy ostrovy"
+msgstr ""
 
 #. 340
 msgid "Honduras"
-msgstr "Honduras"
+msgstr ""
 
 #. 191
 msgid "Croatia"
-msgstr "Chorvatsko"
+msgstr ""
 
 #. 332
 msgid "Haiti"
-msgstr "Haiti"
+msgstr ""
 
 #. 348
 msgid "Hungary"
-msgstr "Maďarsko"
+msgstr ""
 
 #. 360
 msgid "Indonesia"
-msgstr "Indonésie"
+msgstr ""
 
 #. 372
 msgid "Ireland"
-msgstr "Irsko"
+msgstr ""
 
 #. 376
 msgid "Israel"
-msgstr "Izrael"
+msgstr ""
 
 #. 833
 msgid "Isle of Man"
-msgstr "Ostrov Man"
+msgstr ""
 
 #. 356
 msgid "India"
-msgstr "Indie"
+msgstr ""
 
 #. 086
 msgid "British Indian Ocean Territory"
-msgstr "Britské indickooceánské území"
+msgstr ""
 
 #. 368
 msgid "Iraq"
-msgstr "Irák"
+msgstr ""
 
 #. 364
 msgid "Iran, Islamic Republic of"
-msgstr "Írán, islámská republika"
+msgstr ""
 
 #. 352
 msgid "Iceland"
-msgstr "Island"
+msgstr ""
 
 #. 380
 msgid "Italy"
-msgstr "Itálie"
+msgstr ""
 
 #. 832
 msgid "Jersey"
-msgstr "Jersey"
+msgstr ""
 
 #. 388
 msgid "Jamaica"
-msgstr "Jamajka"
+msgstr ""
 
 #. 400
 msgid "Jordan"
-msgstr "Jordánsko"
+msgstr ""
 
 #. 392
 msgid "Japan"
-msgstr "Japonsko"
+msgstr ""
 
 #. 404
 msgid "Kenya"
-msgstr "Keňa"
+msgstr ""
 
 #. 417
 msgid "Kyrgyzstan"
-msgstr "Kyrgyzstán"
+msgstr ""
 
 #. 116
 msgid "Cambodia"
-msgstr "Kambodža"
+msgstr ""
 
 #. 296
 msgid "Kiribati"
-msgstr "Kiribati"
+msgstr ""
 
 #. 174
 msgid "Comoros"
-msgstr "Komory"
+msgstr ""
 
 #. 659
 msgid "Saint Kitts and Nevis"
-msgstr "Svatý Kryštof a Nevis"
+msgstr ""
 
 #. 408
 msgid "Korea, Democratic People's Republic of"
-msgstr "Korejská lidově demokratická republika"
+msgstr ""
 
 #. 410
 msgid "Korea, Republic of"
-msgstr "Korejská republika"
+msgstr ""
 
 #. 414
 msgid "Kuwait"
-msgstr "Kuvajt"
+msgstr ""
 
 #. 136
 msgid "Cayman Islands"
-msgstr "Kajmanské ostrovy"
+msgstr ""
 
 #. 398
 msgid "Kazakhstan"
-msgstr "Kazachstán"
+msgstr ""
 
 #. 418
 msgid "Lao People's Democratic Republic"
-msgstr "Laoská lidově demokratická republika"
+msgstr ""
 
 #. 422
 msgid "Lebanon"
-msgstr "Libanon"
+msgstr ""
 
 #. 662
 msgid "Saint Lucia"
-msgstr "Svatá Lucie"
+msgstr ""
 
 #. 438
 msgid "Liechtenstein"
-msgstr "Lichtenštejnsko"
+msgstr ""
 
 #. 144
 msgid "Sri Lanka"
-msgstr "Srí Lanka"
+msgstr ""
 
 #. 430
 msgid "Liberia"
-msgstr "Libérie"
+msgstr ""
 
 #. 426
 msgid "Lesotho"
-msgstr "Lesotho"
+msgstr ""
 
 #. 440
 msgid "Lithuania"
-msgstr "Litva"
+msgstr ""
 
 #. 442
 msgid "Luxembourg"
-msgstr "Lucembursko"
+msgstr ""
 
 #. 428
 msgid "Latvia"
-msgstr "Lotyšsko"
+msgstr ""
 
 #. 434
 msgid "Libya"
-msgstr "Libye"
+msgstr ""
 
 #. 504
 msgid "Morocco"
-msgstr "Maroko"
+msgstr ""
 
 #. 492
 msgid "Monaco"
-msgstr "Monako"
+msgstr ""
 
 #. 498
 msgid "Moldova, Republic of"
-msgstr "Moldavská republika"
+msgstr ""
 
 #. 499
 msgid "Montenegro"
-msgstr "Černá Hora"
+msgstr ""
 
 #. 663
 msgid "Saint Martin (French part)"
-msgstr "Svatý Martin (francouzská část)"
+msgstr ""
 
 #. 450
 msgid "Madagascar"
-msgstr "Madagaskar"
+msgstr ""
 
 #. 584
 msgid "Marshall Islands"
-msgstr "Marshallovy ostrovy"
+msgstr ""
 
 #. 807
 msgid "Macedonia, the former Yugoslav Republic of"
-msgstr "Makedonie, bývalá jugoslávská republika"
+msgstr ""
 
 #. 466
 msgid "Mali"
-msgstr "Mali"
+msgstr ""
 
 #. 104
 msgid "Myanmar"
-msgstr "Myanmar"
+msgstr ""
 
 #. 496
 msgid "Mongolia"
-msgstr "Mongolsko"
+msgstr ""
 
 #. 446
 msgid "Macao"
-msgstr "Macao"
+msgstr ""
 
 #. 580
 msgid "Northern Mariana Islands"
-msgstr "Severní Mariany"
+msgstr ""
 
 #. 474
 msgid "Martinique"
-msgstr "Martinik"
+msgstr ""
 
 #. 478
 msgid "Mauritania"
-msgstr "Mauritánie"
+msgstr ""
 
 #. 500
 msgid "Montserrat"
-msgstr "Montserrat"
+msgstr ""
 
 #. 470
 msgid "Malta"
-msgstr "Malta"
+msgstr ""
 
 #. 480
 msgid "Mauritius"
-msgstr "Mauricius"
+msgstr ""
 
 #. 462
 msgid "Maldives"
-msgstr "Maledivy"
+msgstr ""
 
 #. 454
 msgid "Malawi"
-msgstr "Malawi"
+msgstr ""
 
 #. 484
 msgid "Mexico"
-msgstr "Mexiko"
+msgstr ""
 
 #. 458
 msgid "Malaysia"
-msgstr "Malajsie"
+msgstr ""
 
 #. 508
 msgid "Mozambique"
-msgstr "Mosambik"
+msgstr ""
 
 #. 516
 msgid "Namibia"
-msgstr "Namibie"
+msgstr ""
 
 #. 540
 msgid "New Caledonia"
-msgstr "Nová Kaledonie"
+msgstr ""
 
 #. 562
 msgid "Niger"
-msgstr "Niger"
+msgstr ""
 
 #. 574
 msgid "Norfolk Island"
-msgstr "Norfolkský ostrov"
+msgstr ""
 
 #. 566
 msgid "Nigeria"
-msgstr "Nigérie"
+msgstr ""
 
 #. 558
 msgid "Nicaragua"
-msgstr "Nikaragua"
+msgstr ""
 
 #. 528
 msgid "Netherlands"
-msgstr "Nizozemsko"
+msgstr ""
 
 #. 578
 msgid "Norway"
-msgstr "Norsko"
+msgstr ""
 
 #. 524
 msgid "Nepal"
-msgstr "Nepál"
+msgstr ""
 
 #. 520
 msgid "Nauru"
-msgstr "Nauru"
+msgstr ""
 
 #. 570
 msgid "Niue"
-msgstr "Niue"
+msgstr ""
 
 #. 554
 msgid "New Zealand"
-msgstr "Nový Zéland"
+msgstr ""
 
 #. 512
 msgid "Oman"
-msgstr "Omán"
+msgstr ""
 
 #. 591
 msgid "Panama"
-msgstr "Panama"
+msgstr ""
 
 #. 604
 msgid "Peru"
-msgstr "Peru"
+msgstr ""
 
 #. 258
 msgid "French Polynesia"
-msgstr "Francouzská Polynésie"
+msgstr ""
 
 #. 598
 msgid "Papua New Guinea"
-msgstr "Papua Nová Guinea"
+msgstr ""
 
 #. 608
 msgid "Philippines"
-msgstr "Filipíny"
+msgstr ""
 
 #. 586
 msgid "Pakistan"
-msgstr "Pákistán"
+msgstr ""
 
 #. 616
 msgid "Poland"
-msgstr "Polsko"
+msgstr ""
 
 #. 666
 msgid "Saint Pierre and Miquelon"
-msgstr "Svatý Pierre a Miquelon"
+msgstr ""
 
 #. 612
 msgid "Pitcairn"
-msgstr "Pitcairnovy ostrovy"
+msgstr ""
 
 #. 630
 msgid "Puerto Rico"
-msgstr "Portoriko"
+msgstr ""
 
 #. 275
 msgid "Palestinian Territory, Occupied"
-msgstr "Palestinské území, okupované"
+msgstr ""
 
 #. 620
 msgid "Portugal"
-msgstr "Portugalsko"
+msgstr ""
 
 #. 585
 msgid "Palau"
-msgstr "Palau"
+msgstr ""
 
 #. 600
 msgid "Paraguay"
-msgstr "Paraguay"
+msgstr ""
 
 #. 634
 msgid "Qatar"
-msgstr "Katar"
+msgstr ""
 
 #. 638
 msgid "Reunion"
-msgstr "Réunion"
+msgstr ""
 
 #. 642
 msgid "Romania"
-msgstr "Rumunsko"
+msgstr ""
 
 #. 688
 msgid "Serbia"
-msgstr "Srbsko"
+msgstr ""
 
 #. 643
 msgid "Russian Federation"
-msgstr "Ruská federace"
+msgstr ""
 
 #. 646
 msgid "Rwanda"
-msgstr "Rwanda"
+msgstr ""
 
 #. 682
 msgid "Saudi Arabia"
-msgstr "Saúdská Arábie"
+msgstr ""
 
 #. 090
 msgid "Solomon Islands"
-msgstr "Šalamounovy ostrovy"
+msgstr ""
 
 #. 690
 msgid "Seychelles"
-msgstr "Seychely"
+msgstr ""
 
 #. 736
 msgid "Sudan"
-msgstr "Súdán"
+msgstr ""
 
 #. 752
 msgid "Sweden"
-msgstr "Švédsko"
+msgstr ""
 
 #. 702
 msgid "Singapore"
-msgstr "Singapur"
+msgstr ""
 
 #. 654
 msgid "Saint Helena"
-msgstr "Svatá Helena"
+msgstr ""
 
 #. 705
 msgid "Slovenia"
-msgstr "Slovinsko"
+msgstr ""
 
 #. 744
 msgid "Svalbard and Jan Mayen"
-msgstr "Špicberky a Jan Mayen"
+msgstr ""
 
 #. 703
 msgid "Slovakia"
-msgstr "Slovensko"
+msgstr ""
 
 #. 694
 msgid "Sierra Leone"
-msgstr "Sierra Leone"
+msgstr ""
 
 #. 674
 msgid "San Marino"
-msgstr "San Marino"
+msgstr ""
 
 #. 686
 msgid "Senegal"
-msgstr "Senegal"
+msgstr ""
 
 #. 706
 msgid "Somalia"
-msgstr "Somálsko"
+msgstr ""
 
 #. 740
 msgid "Suriname"
-msgstr "Surinam"
+msgstr ""
 
 #. 728
 msgid "South Sudan"
-msgstr "Jižní Súdán"
+msgstr ""
 
 #. 678
 msgid "Sao Tome and Principe"
-msgstr "Svatý Tomáš a Princův ostrov"
+msgstr ""
 
 #. 222
 msgid "El Salvador"
-msgstr "Salvádor"
+msgstr ""
 
 #. 534
 msgid "Sint Maarten (Dutch part)"
-msgstr "Svatý Martin (nizozemská část)"
+msgstr ""
 
 #. 760
 msgid "Syrian Arab Republic"
-msgstr "Syrská arabská republika"
+msgstr ""
 
 #. 748
 msgid "Swaziland"
-msgstr "Svazijsko"
+msgstr ""
 
 #. 796
 msgid "Turks and Caicos Islands"
-msgstr "Ostrovy Turks a Caicos"
+msgstr ""
 
 #. 148
 msgid "Chad"
-msgstr "Čad"
+msgstr ""
 
 #. 260
 msgid "French Southern Territories"
-msgstr "Francouzská jižní a antarktická území"
+msgstr ""
 
 #. 768
 msgid "Togo"
-msgstr "Togo"
+msgstr ""
 
 #. 764
 msgid "Thailand"
-msgstr "Thajsko"
+msgstr ""
 
 #. 762
 msgid "Tajikistan"
-msgstr "Tádžikistán"
+msgstr ""
 
 #. 772
 msgid "Tokelau"
-msgstr "Tokelau"
+msgstr ""
 
 #. 626
 msgid "Timor-Leste"
-msgstr "Východní Timor"
+msgstr ""
 
 #. 795
 msgid "Turkmenistan"
-msgstr "Turkmenistán"
+msgstr ""
 
 #. 788
 msgid "Tunisia"
-msgstr "Tunisko"
+msgstr ""
 
 #. 776
 msgid "Tonga"
-msgstr "Tonga"
+msgstr ""
 
 #. 792
 msgid "Turkey"
-msgstr "Turecko"
+msgstr ""
 
 #. 780
 msgid "Trinidad and Tobago"
-msgstr "Trinidad a Tobago"
+msgstr ""
 
 #. 798
 msgid "Tuvalu"
-msgstr "Tuvalu"
+msgstr ""
 
 #. 158
 msgid "Taiwan, Province of China"
-msgstr "Tchaj-wan, provincie Číny"
+msgstr ""
 
 #. 834
 msgid "Tanzania, United Republic of"
-msgstr "Tanzanie, sjednocená republika"
+msgstr ""
 
 #. 804
 msgid "Ukraine"
-msgstr "Ukrajina"
+msgstr ""
 
 #. 800
 msgid "Uganda"
-msgstr "Uganda"
+msgstr ""
 
 #. 581
 msgid "United States Minor Outlying Islands"
-msgstr "Drobné odlehlé ostrovy Spojených států"
+msgstr ""
 
 #. 840
 msgid "United States"
-msgstr "Spojené státy"
+msgstr ""
 
 #. 858
 msgid "Uruguay"
-msgstr "Uruguay"
+msgstr ""
 
 #. 860
 msgid "Uzbekistan"
-msgstr "Uzbekistán"
+msgstr ""
 
 #. 336
 msgid "Holy See (Vatican City State)"
-msgstr "Svatý stolec (Vatikánský městský stát)"
+msgstr ""
 
 #. 670
 msgid "Saint Vincent and the Grenadines"
-msgstr "Svatý Vincenc a Grenadiny"
+msgstr ""
 
 #. 862
 msgid "Venezuela"
-msgstr "Venezuela"
+msgstr ""
 
 #. 092
 msgid "Virgin Islands, British"
-msgstr "Britské Panenské ostrovy"
+msgstr ""
 
 #. 850
 msgid "Virgin Islands, U.S."
-msgstr "Americké Panenské ostrovy"
+msgstr ""
 
 #. 704
 msgid "Viet Nam"
-msgstr "Vietnam"
+msgstr ""
 
 #. 548
 msgid "Vanuatu"
-msgstr "Vanuatu (Nové Hebridy)"
+msgstr ""
 
 #. 876
 msgid "Wallis and Futuna"
-msgstr "Wallis a Futuna"
+msgstr ""
 
 #. 882
 msgid "Samoa"
-msgstr "Samoa"
+msgstr ""
 
 #. 887
 msgid "Yemen"
-msgstr "Jemen"
+msgstr ""
 
 #. 175
 msgid "Mayotte"
-msgstr "Mayotte"
+msgstr ""
 
 #. 710
 msgid "South Africa"
-msgstr "Jihoafrická republika"
+msgstr ""
 
 #. 894
 msgid "Zambia"
-msgstr "Zambie"
+msgstr ""
 
 #. 716
 msgid "Zimbabwe"
-msgstr "Zimbabwe"
+msgstr ""
 
 msgid "* Unknown, add is_in tags to those cities"
-msgstr "* Není známo, přidejte is_in atributy do těchto měst"
+msgstr ""
 
 msgid ""
 "navit usage:\n"
@@ -1329,242 +1313,233 @@ msgid ""
 "\t-h: print this usage info and exit.\n"
 "\t-v: Print the version and exit.\n"
 msgstr ""
-"Použití navit:\n"
-"navit [volby] [konfigurační soubor]\n"
-"\t-c <soubor>: Použijte <soubor> jako konfigurační soubor\n"
-"\t-d <n>: Nastavení souhrnné výstupní ladící úrovně v <n> (0-3). Přepíše "
-"nastavení z konfiguračního souboru.\n"
-"\t-h: Zobrazí tuto nápovědu a skončí.\n"
-"\t-v: Zobrazí verzy a skončí.\n"
 
 #. We have not found an existing config file from all possibilities
 msgid "No config file navit.xml, navit.xml.local found\n"
-msgstr "Nenalezen konfigurační soubor navit.xml a navit.xml.local\n"
+msgstr ""
 
 #, c-format
 msgid "Error parsing config file '%s': %s\n"
-msgstr "Chyba při zpracování konfiguračního souboru '%s': %s\n"
+msgstr ""
 
 #, c-format
 msgid "Using config file '%s'\n"
-msgstr "Používáte konfigurační soubor '% s'\n"
+msgstr ""
 
 #, c-format
 msgid "Error: No configuration found in config file '%s'\n"
-msgstr "Chyba: Nenalezena žádná konfigurace v konfiguračním souboru '%s'\n"
+msgstr ""
 
 msgid ""
 "Internal initialization failed, exiting. Check previous error messages.\n"
 msgstr ""
-"Interní selhání inicializace, končím. Zkontrolujte předchozí chybové "
-"zprávy.\n"
 
 msgid "unknown street"
-msgstr "neznámá ulice"
+msgstr ""
 
 #. Safe cast: attr_generic_set_attr does not modify its parameter.
 msgid "Unnamed vehicle"
-msgstr "Nepojmenované vozidlo"
+msgstr ""
 
 msgid "Failed to write bookmarks file"
-msgstr "Nepodařilo se zapsat do souboru s záložkama"
+msgstr ""
 
 #. Strings from navit_shipped.xml
 msgid "Map Point"
-msgstr "Bod na mapě"
+msgstr ""
 
 msgid "Car"
-msgstr "Automobil"
+msgstr ""
 
 msgid "Iso2"
-msgstr "Iso2"
+msgstr ""
 
 msgid "Iso3"
-msgstr "Iso3"
+msgstr ""
 
 msgid "Country"
-msgstr "Země"
+msgstr ""
 
 msgid "Postal"
-msgstr "Poštovní"
+msgstr ""
 
 msgid "Town"
-msgstr "Město"
+msgstr ""
 
 msgid "District"
-msgstr "Kraj/Okres"
+msgstr ""
 
 msgid "Street"
-msgstr "Ulice"
+msgstr ""
 
 msgid "Number"
-msgstr "Číslo"
+msgstr ""
 
 msgid "Enter Destination"
-msgstr "Zadejte cíl"
+msgstr ""
 
 msgid "Zip Code"
-msgstr "PSČ"
+msgstr ""
 
 msgid "City"
-msgstr "Město"
+msgstr ""
 
 msgid "District/Township"
-msgstr "Kraj/Okres"
+msgstr ""
 
 msgid "Map"
-msgstr "Mapa"
+msgstr ""
 
 msgid "Bookmark"
-msgstr "Záložka"
+msgstr ""
 
 msgid "Destination"
-msgstr "Cíl"
+msgstr ""
 
 #. TRANSLATORS: These texts are for menu items in GTK GUI. The _ indicates the mnemonic key (=underlined character) for this menu item. Please place the _ before a suitable character in the translation (or omit it if no mnemonic key is desired).
 msgid "_Display"
-msgstr "Zobrazit"
+msgstr ""
 
 msgid "_Route"
-msgstr "Trasa"
+msgstr ""
 
 msgid "_Former Destinations"
-msgstr "Minulé cíle"
+msgstr ""
 
 msgid "_Bookmarks"
-msgstr "Záložky"
+msgstr ""
 
 msgid "_Map"
-msgstr "Mapa"
+msgstr ""
 
 msgid "_Layout"
-msgstr "Rozvržení"
+msgstr ""
 
 msgid "_Projection"
-msgstr "Projekce"
+msgstr ""
 
 msgid "_Vehicle"
-msgstr "Vozidlo"
+msgstr ""
 
 msgid "Zoom_Out"
-msgstr "Zmenšit"
+msgstr ""
 
 msgid "Decrease zoom level"
-msgstr "Zmenší zvětšení"
+msgstr ""
 
 msgid "Zoom_In"
-msgstr "Zvětšit"
+msgstr ""
 
 msgid "Increase zoom level"
-msgstr "Zvýší zvětšení"
+msgstr ""
 
 msgid "_Recalculate"
-msgstr "Přepočítat"
+msgstr ""
 
 msgid "Redraw map"
-msgstr "Překreslí mapu"
+msgstr ""
 
 msgid "_Info"
-msgstr "Informace"
+msgstr ""
 
 msgid "Set _destination"
-msgstr "Nastavit _cíl"
+msgstr ""
 
 msgid "Opens address search dialog"
-msgstr "Otevře vyhledávání adres"
+msgstr ""
 
 msgid "_POI search"
 msgstr ""
 
 msgid "Opens POI search dialog"
-msgstr "Otevře dialog vyhledávání POI"
+msgstr ""
 
 msgid "_Stop Navigation"
-msgstr "Přestat navigovat"
+msgstr ""
 
 msgid "Test"
-msgstr "Vyzkoušet"
+msgstr ""
 
 msgid "_Quit"
-msgstr "_Konec"
+msgstr ""
 
 msgid "Quit the application"
-msgstr "Zavře aplikaci"
+msgstr ""
 
 msgid "Show position _cursor"
-msgstr "Zobrazit pozici _kurzoru"
+msgstr ""
 
 msgid "_Lock on Road"
-msgstr "Jet jen po silnici"
+msgstr ""
 
 msgid "_Keep orientation to the North"
-msgstr "_Orientovat na sever"
+msgstr ""
 
 msgid "Switches map orientation to the north or the vehicle"
-msgstr "Přepíná orientaci mapy podle směru vozidla nebo severu"
+msgstr ""
 
 msgid "_Roadbook"
-msgstr "Itinerář"
+msgstr ""
 
 msgid "Show/hide route description"
-msgstr "Zobrazí/skryje popis cesty"
+msgstr ""
 
 msgid "_Autozoom"
-msgstr "Autozoom"
+msgstr ""
 
 msgid "Enable/disable automatic zoom level changing"
-msgstr "Povolí/zakáže automatické změny úrovně zoomu"
+msgstr ""
 
 msgid "_Fullscreen"
-msgstr "Celá obrazovka"
+msgstr ""
 
 msgid "Data"
-msgstr "Data"
+msgstr ""
 
 msgid "Pharmacy"
-msgstr "Lékárna"
+msgstr ""
 
 msgid "Restaurant"
-msgstr "Restaurace"
+msgstr ""
 
 msgid "Restaurant. Fast food"
-msgstr "Restaurace. Rychlé občerstvení"
+msgstr ""
 
 msgid "Hotel"
-msgstr "Hotel"
+msgstr ""
 
 msgid "Car parking"
-msgstr "Parkoviště"
+msgstr ""
 
 msgid "Fuel station"
-msgstr "Čerpací stanice"
+msgstr ""
 
 msgid "Bank"
-msgstr "Banka"
+msgstr ""
 
 msgid "Hospital"
-msgstr "Nemocnice"
+msgstr ""
 
 msgid "Cinema"
-msgstr "Kino"
+msgstr ""
 
 msgid "Train station"
-msgstr "Vlaková stanice"
+msgstr ""
 
 msgid "School"
-msgstr "Škola"
+msgstr ""
 
 msgid "Police"
-msgstr "Policie"
+msgstr ""
 
 msgid "Justice"
 msgstr ""
 
 msgid "Taxi"
-msgstr "Taxi"
+msgstr ""
 
 msgid "Shopping"
-msgstr "Nakupování"
+msgstr ""
 
 msgid "Distance from screen center (km)"
 msgstr ""
@@ -1575,255 +1550,255 @@ msgstr ""
 
 #, c-format
 msgid "Set destination to %ld, %ld \n"
-msgstr "Nastav cíl na %ld, %ld \n"
+msgstr ""
 
 #, c-format
 msgid "Set map to %ld, %ld \n"
-msgstr "Posuň mapu na %ld, %ld \n"
+msgstr ""
 
 #, c-format
 msgid "Set next visit to %ld, %ld \n"
-msgstr "Nastav další zastavení na %ld, %ld \n"
+msgstr ""
 
 msgid "POI search"
-msgstr "Vyhledávání POI"
+msgstr ""
 
 msgid "Select a category"
-msgstr "Vyberte kategorii"
+msgstr ""
 
 msgid "Select a distance to look for (km)"
-msgstr "Vyberte vzdálenost ve které hledat (km)"
+msgstr ""
 
 msgid "Select a POI"
-msgstr "Vyberte POI"
+msgstr ""
 
 msgid " "
-msgstr " "
+msgstr ""
 
 msgid "Category"
-msgstr "Kategorie"
+msgstr ""
 
 msgid "Direction"
-msgstr "Směr"
+msgstr ""
 
 msgid "Distance(m)"
-msgstr "Vzdálenost (m)"
+msgstr ""
 
 msgid "Name"
-msgstr "Název"
+msgstr ""
 
 msgid "Visit Before"
-msgstr "Navštívit před"
+msgstr ""
 
 msgid "N"
-msgstr "S"
+msgstr ""
 
 msgid "NE"
-msgstr "SV"
+msgstr ""
 
 msgid "E"
-msgstr "V"
+msgstr ""
 
 msgid "SE"
-msgstr "JV"
+msgstr ""
 
 msgid "S"
-msgstr "J"
+msgstr ""
 
 msgid "SW"
-msgstr "JZ"
+msgstr ""
 
 msgid "W"
-msgstr "Z"
+msgstr ""
 
 msgid "NW"
-msgstr "SZ"
+msgstr ""
 
 #. Android resource: @strings/no
 msgid "No"
-msgstr "Ne"
+msgstr ""
 
 msgid "2D"
-msgstr "2D"
+msgstr ""
 
 msgid "3D"
-msgstr "3D"
+msgstr ""
 
 msgid "OT"
-msgstr "OT"
+msgstr ""
 
 #, c-format
 msgid "Route %4.0fkm    %02d:%02d ETA"
-msgstr "Trasa %4.0fkm    %02d:%02d ETA"
+msgstr ""
 
 msgid "Route 0000km  0+00:00 ETA"
-msgstr "Trasa 0000km  0+00:00 ETA"
+msgstr ""
 
 msgid "Help"
-msgstr "Nápověda"
+msgstr ""
 
 #, c-format
 msgid "Waypoint %s"
-msgstr "Bod trasy %s"
+msgstr ""
 
 msgid "Select waypoint to insert the new one before"
-msgstr "Vyberte bod  trasy pro vložení nového před něho"
+msgstr ""
 
 msgid "View in Browser"
-msgstr "Zobrazit v prohlížeči"
+msgstr ""
 
 msgid "Item type"
-msgstr "Typ položky"
+msgstr ""
 
 #. Android resource: @strings/address_search_streets
 msgid "Streets"
-msgstr "Ulice"
+msgstr ""
 
 msgid "House numbers"
-msgstr "Čísla domů"
+msgstr ""
 
 msgid "View Attributes"
-msgstr "Zobrazit atributy"
+msgstr ""
 
 msgid "Set as position (and deactivate vehicle)"
-msgstr "Nastavit jako polohu (a deaktivovat vozidlo)"
+msgstr ""
 
 msgid "POIs"
-msgstr "Body zájmu"
+msgstr ""
 
 msgid "View on map"
-msgstr "Zobrazit na mapě"
+msgstr ""
 
 msgid "Remove search results from the map"
-msgstr "Odstranit výsledky hledání z mapy"
+msgstr ""
 
 msgid "Show results on the map"
-msgstr "Zobrazit výsledky na mapě"
+msgstr ""
 
 msgid "Cut Bookmark"
-msgstr "Vyjmout záložku"
+msgstr ""
 
 msgid "Copy Bookmark"
-msgstr "Kopírovat záložku"
+msgstr ""
 
 msgid "Rename Bookmark"
-msgstr "Přejmenovat záložku"
+msgstr ""
 
 msgid "Paste Bookmark"
-msgstr "Vložit záložku"
+msgstr ""
 
 msgid "Delete Bookmark"
-msgstr "Smazat záložku"
+msgstr ""
 
 msgid "Delete waypoint"
-msgstr "Smazat bod trasy"
+msgstr ""
 
 msgid "Bookmarks"
-msgstr "Záložky"
+msgstr ""
 
 msgid "Bookmarks as waypoints"
-msgstr "Záložky jako body trasy"
+msgstr ""
 
 msgid "Save waypoints"
-msgstr "Uložit body trasy"
+msgstr ""
 
 msgid "Replace with waypoints"
-msgstr "Nahradit body na trase"
+msgstr ""
 
 msgid "Delete Folder"
-msgstr "Smazat složku"
+msgstr ""
 
 #. Adds the Bookmark folders
 msgid "Add Bookmark folder"
-msgstr "Přidat složku záložek"
+msgstr ""
 
 #. Pastes the Bookmark
 msgid "Paste bookmark"
-msgstr "Vložit záložku"
+msgstr ""
 
 #, c-format
 msgid "Bookmark %s"
-msgstr "Záložka %s"
+msgstr ""
 
 #, c-format
 msgid "Download %s"
-msgstr "Stáhnout %s"
+msgstr ""
 
 msgid "Map Download"
-msgstr "Mapa ke stažení"
+msgstr ""
 
 msgid "Active"
-msgstr "Aktivní"
+msgstr ""
 
 msgid "Download Enabled"
-msgstr "Stahování povoleno"
+msgstr ""
 
 msgid "Download completely"
-msgstr "Stáhnuto kompletní"
+msgstr ""
 
 msgid "Show Satellite Status"
-msgstr "Ukázat stav satelitu"
+msgstr ""
 
 msgid " Elevation "
-msgstr " Převýšení "
+msgstr ""
 
 msgid " Azimuth "
-msgstr " Azimut "
+msgstr ""
 
 msgid "Show NMEA Data"
-msgstr "Ukázat NMEA data"
+msgstr ""
 
 msgid "car"
-msgstr "auto"
+msgstr ""
 
 msgid "bike"
-msgstr "kolo"
+msgstr ""
 
 msgid "pedestrian"
-msgstr "chodec"
+msgstr ""
 
 #, c-format
 msgid "Current profile: %s"
-msgstr "Aktuální profil: %s"
+msgstr ""
 
 #, c-format
 msgid "Change profile to: %s"
-msgstr "Změnit profil na: %s"
+msgstr ""
 
 msgid "Set as active"
-msgstr "Nastavit jako aktivní"
+msgstr ""
 
 msgid "Show Satellite status"
-msgstr "Ukázat stav satelitu"
+msgstr ""
 
 msgid "Show NMEA data"
-msgstr "Ukázat NMEA data"
+msgstr ""
 
 msgid "Add Bookmark"
-msgstr "Přidat značku"
+msgstr ""
 
 msgid "Rename"
-msgstr "Přejmenovat"
+msgstr ""
 
 msgid "About Navit"
-msgstr "O Navitu"
+msgstr ""
 
 #. Authors
 msgid "By"
-msgstr "Od"
+msgstr ""
 
 #. Contributors
 msgid "And all the Navit Team"
-msgstr "A další z Navit týmu"
+msgstr ""
 
 msgid "members and contributors."
-msgstr "členové a přispívající"
+msgstr ""
 
 msgid "Waypoints"
-msgstr "Body trasy"
+msgstr ""
 
 msgid "Enter Coordinates"
-msgstr "Zadejte souřadnice"
+msgstr ""
 
 #. 
 #. w=gui_internal_box_new(this, gravity_left_top|orientation_vertical|flags_expand|flags_fill)
@@ -1832,608 +1807,598 @@ msgstr "Zadejte souřadnice"
 #. we=gui_internal_box_new(this, gravity_left_center|orientation_horizontal|flags_fill)
 #. gui_internal_widget_append(w, we)
 msgid "Latitude Longitude"
-msgstr "Zeměpisná délka a šířka"
+msgstr ""
 
 msgid "Enter coordinates, for example:"
-msgstr "Zadejte souřadnice, například:"
+msgstr ""
 
 msgid "Vehicle"
-msgstr "Vozidlo"
+msgstr ""
 
 msgid "Rules"
-msgstr "Pravidla"
+msgstr ""
 
 msgid "Lock on road"
-msgstr "Uchytit na cestu"
+msgstr ""
 
 msgid "Northing"
-msgstr "Severně"
+msgstr ""
 
 msgid "Map follows Vehicle"
-msgstr "Mapa sleduje vozidlo"
+msgstr ""
 
 msgid "Plan with Waypoints"
-msgstr "Plán s bodama trasy"
+msgstr ""
 
 msgid "Maps"
-msgstr "Mapy"
+msgstr ""
 
 msgid "Layout"
-msgstr "Rozvržení"
+msgstr ""
 
 msgid "Height Profile"
-msgstr "Výškový profil"
+msgstr ""
 
 msgid "Route Description"
-msgstr "Popis trasy"
+msgstr ""
 
 msgid "Show Locale"
-msgstr "Zobrazit jazyk"
+msgstr ""
 
 msgid "Former Destinations"
-msgstr "Minulé cíle"
+msgstr ""
 
 msgid "- No former destinations available -"
-msgstr "- Minulé cíle nejsou dostupné -"
+msgstr ""
 
 msgid "Message"
-msgstr "Zpráva"
+msgstr ""
 
 msgid "Back"
-msgstr "Zpět"
+msgstr ""
 
 msgid "Back to map"
-msgstr "Zpět na mapu"
+msgstr ""
 
 msgid "Main Menu"
-msgstr "Hlavní menu"
+msgstr ""
 
 msgid "House number"
-msgstr "Číslo domu"
+msgstr ""
 
 msgid "Next"
-msgstr "Další"
+msgstr ""
 
 msgid "Prev"
-msgstr "Předchozí"
+msgstr ""
 
 msgid "Return to route!"
-msgstr "Vraťte se zpět!"
+msgstr ""
 
 #. warning told
 msgid "Look out! Camera!"
-msgstr "Podívejte se! Kamera!"
+msgstr ""
 
 #. warning told
 msgid "Please decrease your speed"
-msgstr "Prosím snižte rychlost"
+msgstr ""
 
 msgid "partial match"
-msgstr "Částečná shoda"
+msgstr ""
 
 #. Android resource: @strings/address_search_button
 msgid "Search"
-msgstr "Vyhledat"
+msgstr ""
 
 #. Android resource: @strings/address_search_towns
 msgid "Towns"
-msgstr "Města"
+msgstr ""
 
 #. Android resource: @strings/position_popup_drive_here
 msgid "Route to here"
-msgstr "Cestovat sem"
+msgstr ""
 
 msgid "Map data (c) OpenStreetMap contributors, ODBL"
-msgstr "Mapová data (c) přispěvatelé OpenStreetMap, ODBL"
+msgstr ""
 
 msgid "Downloaded maps"
-msgstr "Stažené mapy"
+msgstr ""
 
 msgid "Cancel"
-msgstr "Storno"
+msgstr ""
 
 msgid "Whole Planet"
-msgstr "Celá planeta"
+msgstr ""
 
 msgid "Africa"
-msgstr "Afrika"
+msgstr ""
 
 msgid "Canary Islands"
-msgstr "Kanárské ostrovy"
+msgstr ""
 
 msgid "Asia"
-msgstr "Asie"
+msgstr ""
 
 msgid "Korea"
-msgstr "Korea"
+msgstr ""
 
 msgid "Taiwan"
-msgstr "Taiwan"
+msgstr ""
 
 msgid "UAE+Other"
-msgstr "Spojené arabské emiráty+ostatní"
+msgstr ""
 
 msgid "Oceania"
-msgstr "Oceánie"
+msgstr ""
 
 msgid "Tasmania"
-msgstr "Tasmánie"
+msgstr ""
 
 msgid "Victoria"
-msgstr "Viktorie"
+msgstr ""
 
 msgid "New South Wales"
-msgstr "Nový Jižní Wales"
+msgstr ""
 
 msgid "Europe"
-msgstr "Evropa"
+msgstr ""
 
 msgid "Western Europe"
-msgstr "Západní Evropa"
+msgstr ""
 
 msgid "Azores"
-msgstr "Azory"
+msgstr ""
 
 msgid "BeNeLux"
-msgstr "Benelux"
+msgstr ""
 
 msgid "Alsace"
-msgstr "Alsasko"
+msgstr ""
 
 msgid "Aquitaine"
-msgstr "Akvitánie"
+msgstr ""
 
 msgid "Auvergne"
-msgstr "Auvergne"
+msgstr ""
 
 msgid "Basse-Normandie"
-msgstr "Dolní Normandie"
+msgstr ""
 
 msgid "Bourgogne"
-msgstr "Burgundsko"
+msgstr ""
 
 msgid "Bretagne"
-msgstr "Bretaň"
+msgstr ""
 
 msgid "Centre"
-msgstr "Střed"
+msgstr ""
 
 msgid "Champagne-Ardenne"
-msgstr "Champagne-Ardennes"
+msgstr ""
 
 msgid "Corse"
-msgstr "Korsika"
+msgstr ""
 
 msgid "Franche-Comte"
-msgstr "Franche-Comté"
+msgstr ""
 
 msgid "Haute-Normandie"
-msgstr "Horní Normandie"
+msgstr ""
 
 msgid "Ile-de-France"
-msgstr "Ile-de-France"
+msgstr ""
 
 msgid "Languedoc-Roussillon"
-msgstr "Languedoc-Roussillon"
+msgstr ""
 
 msgid "Limousin"
-msgstr "Limousin"
+msgstr ""
 
 msgid "Lorraine"
-msgstr "Lotrinsko"
+msgstr ""
 
 msgid "Midi-Pyrenees"
-msgstr "Jižní Pyreneje"
+msgstr ""
 
 msgid "Nord-pas-de-Calais"
-msgstr "Nord-pas-de-Calais"
+msgstr ""
 
 msgid "Pays-de-la-Loire"
-msgstr "Pays-de-la-Loire"
+msgstr ""
 
 msgid "Picardie"
-msgstr "Pikardie"
+msgstr ""
 
 msgid "Poitou-Charentes"
-msgstr "Poitou-Charentes"
+msgstr ""
 
 msgid "Provence-Alpes-Cote-d-Azur"
-msgstr "Provensálsko-Alpy-Azurové pobřeží"
+msgstr ""
 
 msgid "Rhone-Alpes"
-msgstr "Rhone-Alpy"
+msgstr ""
 
 msgid "Baden-Wuerttemberg"
-msgstr "Baden-Württembersko"
+msgstr ""
 
 msgid "Bayern"
-msgstr "Bavorsko"
+msgstr ""
 
 msgid "Mittelfranken"
-msgstr "Střední Franky"
+msgstr ""
 
 msgid "Niederbayern"
-msgstr "Dolní Bavorsko"
+msgstr ""
 
 msgid "Oberbayern"
-msgstr "Horní Bavorsko"
+msgstr ""
 
 msgid "Oberfranken"
-msgstr "Horní Franky"
+msgstr ""
 
 msgid "Oberpfalz"
-msgstr "Horní Falcko"
+msgstr ""
 
 msgid "Schwaben"
-msgstr "Švábsko"
+msgstr ""
 
 msgid "Unterfranken"
-msgstr "Dolní Franky"
+msgstr ""
 
 msgid "Berlin"
-msgstr "Berlin"
+msgstr ""
 
 msgid "Brandenburg"
-msgstr "Braniborsko"
+msgstr ""
 
 msgid "Bremen"
-msgstr "Brémy"
+msgstr ""
 
 msgid "Hamburg"
-msgstr "Hamburg"
+msgstr ""
 
 msgid "Hessen"
-msgstr "Hessensko"
+msgstr ""
 
 msgid "Mecklenburg-Vorpommern"
-msgstr "Meklenbursko-Pomořansko"
+msgstr ""
 
 msgid "Niedersachsen"
-msgstr "Dolní Sasko"
+msgstr ""
 
 msgid "Nordrhein-westfalen"
-msgstr "Severní Porýní-Vestfálsko"
+msgstr ""
 
 msgid "Rheinland-Pfalz"
-msgstr "Porýnsko-Falcko"
+msgstr ""
 
 msgid "Saarland"
-msgstr "Sársko"
+msgstr ""
 
 msgid "Sachsen-Anhalt"
-msgstr "Sasko-Anhaltsko"
+msgstr ""
 
 msgid "Sachsen"
-msgstr "Sasko"
+msgstr ""
 
 msgid "Schleswig-Holstein"
-msgstr "Šlesvicko-Holštýnsko"
+msgstr ""
 
 msgid "Thueringen"
-msgstr "Thueringen"
+msgstr ""
 
 msgid "Mallorca"
-msgstr "Mallorca"
+msgstr ""
 
 msgid "Galicia"
-msgstr "Galície"
+msgstr ""
 
 msgid "Scandinavia"
-msgstr "Skandinávie"
+msgstr ""
 
 msgid "England"
-msgstr "Anglie"
+msgstr ""
 
 msgid "Buckinghamshire"
-msgstr "Buckinghamshire"
+msgstr ""
 
 msgid "Cambridgeshire"
-msgstr "Cambridgeshire"
+msgstr ""
 
 msgid "Cumbria"
-msgstr "Cumbria"
+msgstr ""
 
 msgid "East yorkshire with hull"
-msgstr "Východní Yorkshire a Hull"
+msgstr ""
 
 msgid "Essex"
-msgstr "Essex"
+msgstr ""
 
 msgid "Herefordshire"
-msgstr "Herefordshire"
+msgstr ""
 
 msgid "Kent"
-msgstr "Kent"
+msgstr ""
 
 msgid "Lancashire"
-msgstr "Lancashire"
+msgstr ""
 
 msgid "Leicestershire"
-msgstr "Leicestershire"
+msgstr ""
 
 msgid "Norfolk"
-msgstr "Norfolk"
+msgstr ""
 
 msgid "Nottinghamshire"
-msgstr "Nottinghamshire"
+msgstr ""
 
 msgid "Oxfordshire"
-msgstr "Oxfordshire"
+msgstr ""
 
 msgid "Shropshire"
-msgstr "Shropshire"
+msgstr ""
 
 msgid "Somerset"
-msgstr "Somerset"
+msgstr ""
 
 msgid "South yorkshire"
-msgstr "Jižní Yorkshire"
+msgstr ""
 
 msgid "Suffolk"
-msgstr "Suffolk"
+msgstr ""
 
 msgid "Surrey"
-msgstr "Surrey"
+msgstr ""
 
 msgid "Wiltshire"
-msgstr "Wiltshire"
+msgstr ""
 
 msgid "Scotland"
-msgstr "Skotsko"
+msgstr ""
 
 msgid "Wales"
-msgstr "Wales"
+msgstr ""
 
 msgid "Crete"
-msgstr "Kréta"
+msgstr ""
 
 msgid "North America"
-msgstr "Severní Amerika"
+msgstr ""
 
 msgid "Alaska"
-msgstr "Aljaška"
+msgstr ""
 
 msgid "Hawaii"
-msgstr "Havaj"
+msgstr ""
 
 msgid "USA"
-msgstr "USA"
+msgstr ""
 
 msgid " (except Alaska and Hawaii)"
-msgstr " (mimo Aljašky a Havaje)"
+msgstr ""
 
 msgid "Midwest"
-msgstr "Středozápad"
+msgstr ""
 
 msgid "Michigan"
-msgstr "Michigan"
+msgstr ""
 
 msgid "Ohio"
-msgstr "Ohio"
+msgstr ""
 
 msgid "Northeast"
-msgstr "Severovýchod"
+msgstr ""
 
 msgid "Massachusetts"
-msgstr "Massachusetts"
+msgstr ""
 
 msgid "Vermont"
-msgstr "Vermont"
+msgstr ""
 
 msgid "Pacific"
-msgstr "Tichý oceán"
+msgstr ""
 
 msgid "South"
-msgstr "Jih"
+msgstr ""
 
 msgid "Arkansas"
-msgstr "Arkansas"
+msgstr ""
 
 msgid "District of Columbia"
-msgstr "Washington D.C."
+msgstr ""
 
 msgid "Florida"
-msgstr "Florida"
+msgstr ""
 
 msgid "Louisiana"
-msgstr "Louisiana"
+msgstr ""
 
 msgid "Maryland"
-msgstr "Maryland"
+msgstr ""
 
 msgid "Mississippi"
-msgstr "Mississippi"
+msgstr ""
 
 msgid "Oklahoma"
-msgstr "Oklahoma"
+msgstr ""
 
 msgid "Texas"
-msgstr "Texas"
+msgstr ""
 
 msgid "Virginia"
-msgstr "Virginie"
+msgstr ""
 
 msgid "West Virginia"
-msgstr "Západní Virginie"
+msgstr ""
 
 msgid "West"
-msgstr "Západ"
+msgstr ""
 
 msgid "Arizona"
-msgstr "Arizona"
+msgstr ""
 
 msgid "California"
-msgstr "Kalifornie"
+msgstr ""
 
 msgid "Colorado"
-msgstr "Colorado"
+msgstr ""
 
 msgid "Idaho"
-msgstr "Idaho"
+msgstr ""
 
 msgid "Montana"
-msgstr "Montana"
+msgstr ""
 
 msgid "New Mexico"
-msgstr "Nové Mexico"
+msgstr ""
 
 msgid "Nevada"
-msgstr "Nevada"
+msgstr ""
 
 msgid "Oregon"
-msgstr "Oregon"
+msgstr ""
 
 msgid "Utah"
-msgstr "Utah"
+msgstr ""
 
 msgid "Washington State"
-msgstr "Stát Washington"
+msgstr ""
 
 msgid "South+Middle America"
-msgstr "Jižní+Střední Amerika"
+msgstr ""
 
 msgid "Guyane Francaise"
-msgstr "Francouzská Guyana"
+msgstr ""
 
 msgid "downloading"
-msgstr "stahuji"
+msgstr ""
 
 #. Android resource: @strings/map_download_ready
 msgid "ready"
-msgstr "mapa připravena"
+msgstr ""
 
 msgid "Error downloading map!"
-msgstr "Chyba při stahování mapy!"
+msgstr ""
 
 #. Android resource: @strings/map_download_not_enough_free_space
 msgid "Not enough free space"
-msgstr "Není dostatek volného místa"
+msgstr ""
 
 msgid "Error writing map!"
-msgstr "Chyba při zápisu mapy!"
+msgstr ""
 
 msgid "Map download aborted!"
-msgstr "Stahování mapy přerušeno!"
+msgstr ""
 
 #. Android resource: @strings/map_download_eta
 msgid "ETA"
-msgstr "Zbývající čas"
+msgstr ""
 
 #. Android resource: @strings/map_download_title
 msgid "Map download"
-msgstr "Mapa ke stažení"
+msgstr ""
 
 msgid "Vehicle Position"
-msgstr "Poloha vozidla"
+msgstr ""
 
 msgid "Main menu"
-msgstr "Hlavní menu"
+msgstr ""
 
 msgid ""
 "Show\n"
 "Map"
 msgstr ""
-"Ukázat\n"
-"mapu"
 
 msgid "Settings"
-msgstr "Nastavení"
+msgstr ""
 
 msgid "Tools"
-msgstr "Nástroje"
+msgstr ""
 
 msgid "Route"
-msgstr "Trasa"
+msgstr ""
 
 msgid "About"
-msgstr "O programu"
+msgstr ""
 
 msgid "Quit"
-msgstr "Konec"
+msgstr ""
 
 msgid "Actions"
-msgstr "Akce"
+msgstr ""
 
 msgid ""
 "Former\n"
 "Destinations"
 msgstr ""
-"Minulé\n"
-"cíle"
 
 msgid "Coordinates"
-msgstr "Souřadnice"
+msgstr ""
 
 msgid ""
 "Stop\n"
 "Navigation"
 msgstr ""
-"Ukonči\n"
-"Navigaci"
 
 msgid "Display"
-msgstr "Zobrazit"
+msgstr ""
 
 msgid "Fullscreen"
-msgstr "Celá obrazovka"
+msgstr ""
 
 msgid "Window Mode"
-msgstr "V okně"
+msgstr ""
 
 msgid "Description"
-msgstr "Popis"
+msgstr ""
 
 msgid ""
 "Drop last \n"
 "Waypoint"
 msgstr ""
-"Zrušit minulý \n"
-"bod trasy"
 
 msgid ""
 "Drop next \n"
 "Waypoint"
 msgstr ""
-"Zrušit příští \n"
-" bod trasy"
 
 msgid "Satellite Status"
-msgstr "Stav satelitu"
+msgstr ""
 
 msgid "NMEA Data"
-msgstr "NMEA Data"
+msgstr ""
 
 msgid "car_shortest"
-msgstr "auto nejkratší"
+msgstr ""
 
 msgid "car_avoid_tolls"
-msgstr "auto bez mýtného"
+msgstr ""
 
 msgid "car_pedantic"
-msgstr "auto puntičkářské"
+msgstr ""
 
 msgid "horse"
-msgstr "kůň"
+msgstr ""
 
 msgid "Truck"
-msgstr "kamión"
+msgstr ""
 
 #. Strings from android/res/values/strings.xml
 #. Android resource: @strings/yes
 msgid "Yes"
-msgstr "Ano"
+msgstr ""
 
 #. Android resource: @strings/notification_ticker
 msgid "Navit started"
-msgstr "Startuje Navit"
+msgstr ""
 
 #. Android resource: @strings/notification_event_default
 msgid "Navit running"
-msgstr "Navit běží"
+msgstr ""
 
 #. Android resource: @strings/initial_info_box_title
 msgid "Welcome to Navit"
-msgstr "Vítejte v Navit"
+msgstr ""
 
 #. Android resource: @strings/initial_info_box_message
 msgid ""
@@ -2446,172 +2411,161 @@ msgid ""
 "\n"
 "Enjoy Navit!"
 msgstr ""
-"Děkujeme za instalaci Navit!\n"
-"\n"
-"Pro začátek, vyberte \"Stáhnout mapy\" z menu pro stažení map. Poznámka: "
-"Velikost souboru map mohou být velké (>50MB) - wifi připojení je "
-"doporučeno.\n"
-"\n"
-"Mapdata: (c) OpenStreetMap a přispěvovatelé\n"
-"\n"
-"Užijte si Navit!"
 
 #. Android resource: @strings/initial_info_box_OK
 msgid "OK"
-msgstr "OK"
+msgstr ""
 
 #. Android resource: @strings/initial_info_box_more_info
 msgid "More info"
-msgstr "Další informace"
+msgstr ""
 
 #. Android resource: @strings/optionsmenu_zoom_in
 msgid "Zoom in"
-msgstr "Přiblížit"
+msgstr ""
 
 #. Android resource: @strings/optionsmenu_zoom_out
 msgid "Zoom out"
-msgstr "Oddálit"
+msgstr ""
 
 #. Android resource: @strings/optionsmenu_download_maps
 msgid "Download maps"
-msgstr "Stáhnout mapy"
+msgstr ""
 
 #. Android resource: @strings/optionsmenu_toggle_poi
 msgid "Toggle POIs"
-msgstr "Přepnout Body zájmu (POIs = Points of Interest)"
+msgstr ""
 
 #. Android resource: @strings/optionsmenu_exit_navit
 msgid "Exit Navit"
-msgstr "Ukončit Navit"
+msgstr ""
 
 #. Android resource: @strings/optionsmenu_backup_restore
 msgid "Backup / Restore"
-msgstr "Zálohovat / Obnovit"
+msgstr ""
 
 #. Android resource: @strings/map_delete
 msgid "Delete this map?"
-msgstr "Smazat tuto mapu?"
+msgstr ""
 
 #. Android resource: @strings/map_download_downloading
 msgid "Downloading:"
-msgstr "Stahuji:"
+msgstr ""
 
 #. Android resource: @strings/map_download_download_error
 msgid "Error downloading map."
-msgstr "Chyba při stahování map."
+msgstr ""
 
 #. Android resource: @strings/map_download_download_aborted
 msgid "Map download aborted"
-msgstr "Stahování map přerušeno"
+msgstr ""
 
 #. Android resource: @strings/map_no_fix
 msgid "No location. Reopen after location fix."
-msgstr "Žádné umístění. Zkuste znovu po opravě umístění."
+msgstr ""
 
 #. Android resource: @strings/maps_for_current_location
 msgid "Maps containing current location"
-msgstr "Mapy obsahující nynější umístění"
+msgstr ""
 
 #. Android resource: @strings/address_search_title
 msgid "Address search"
-msgstr "Hledat dle adresy"
+msgstr ""
 
 #. Android resource: @strings/address_enter_destination
 msgid "Enter destination"
-msgstr "Zadejte cíl"
+msgstr ""
 
 #. Android resource: @strings/address_partial_match
 msgid "Match partial address"
-msgstr "Shoda částí adresy"
+msgstr ""
 
 #. Android resource: @strings/address_search_searching
 msgid "Searching..."
-msgstr "Vyhledávám..."
+msgstr ""
 
 #. Android resource: @strings/address_search_not_found
 msgid "Address not found"
-msgstr "Adresa nebyla nalezena"
+msgstr ""
 
 #. Android resource: @strings/address_search_getting_results
 msgid "Getting search results"
-msgstr "Výsledky hledání"
+msgstr ""
 
 #. Android resource: @strings/address_search_loading_results
 msgid "Loading search results"
-msgstr "Načítání výsledku vyhledávání"
+msgstr ""
 
 #. Android resource: @strings/address_search_no_results
 msgid "No results found"
-msgstr "Výsledky nenalezeny."
+msgstr ""
 
 #. Android resource: @strings/address_search_no_text_entered
 msgid "No text entered"
-msgstr "Text nebyl zadán"
+msgstr ""
 
 #. Android resource: @strings/address_search_set_destination
 msgid "Setting destination to:"
-msgstr "Nastavení cíle v:"
+msgstr ""
 
 #. Android resource: @strings/choose_an_action
 msgid "Choose an action"
-msgstr "Vyberte akci"
+msgstr ""
 
 #. Android resource: @strings/please_insert_an_sd_card
 msgid "Please insert an SD Card"
-msgstr "Prosím vložte SD kartu"
+msgstr ""
 
 #. Android resource: @strings/backing_up
 msgid "Backing up..."
-msgstr "Zálohuji..."
+msgstr ""
 
 #. Android resource: @strings/restoring
 msgid "Restoring..."
-msgstr "Obnovuji..."
+msgstr ""
 
 #. Android resource: @strings/failed_to_create_backup_directory
 msgid "Failed to create backup directory"
-msgstr "Nezdařilo se vytvořit adresář pro zálohu"
+msgstr ""
 
 #. Android resource: @strings/backup_failed
 msgid "Backup failed"
-msgstr "Záloha se nezdařila"
+msgstr ""
 
 #. Android resource: @strings/no_backup_found
 msgid "No backup found"
-msgstr "Záloha nenalezena"
+msgstr ""
 
 #. Android resource: @strings/failed_to_restore
 msgid "Failed to restore"
-msgstr "Obnova se nezdařila"
+msgstr ""
 
 #. Android resource: @strings/backup_successful
 msgid "Backup successful"
-msgstr "Záloha byla úspěšná"
+msgstr ""
 
 #. Android resource: @strings/restore_successful_please_restart_navit
 msgid ""
 "Restore Successful\n"
 "Please restart Navit"
 msgstr ""
-"Obnova byla úspěšná.\n"
-"Restartujte prosím Navit."
 
 #. Android resource: @strings/backup_not_found
 msgid "Backup not found"
-msgstr "Záloha nenalezena"
+msgstr ""
 
 #. Android resource: @strings/restore_failed
 msgid "Restore failed"
-msgstr "Obnova selhala"
+msgstr ""
 
 #. Android resource: @strings/select_backup
 msgid "Select backup"
-msgstr "Vyberte zálohu"
+msgstr ""
 
 #. Android resource: @strings/backup
 msgid "Backup"
-msgstr "Zálohování"
+msgstr ""
 
 #. Android resource: @strings/restore
 msgid "Restore"
-msgstr "Obnova"
+msgstr ""
