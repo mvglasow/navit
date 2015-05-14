@@ -201,19 +201,20 @@ int distances[]={1,2,3,4,5,10,25,50,75,100,150,200,250,300,400,500,750,-1};
  * 1=merge, 2=exit, 4=interchange, 8=right, 16=left
  * Identifiers were chosen over flags to enforce certain rules
  * (merge/exit/interchange and left/right are mutually exclusive, left/right requires merge or exit). */
-//FIXME: should we make this an enum?
 
 /** Not merging into or exiting from a motorway_like road */
 #define mex_none 0
 
-/** Merging into a motorway-like road, direction undefined */
-//FIXME: do we need this constant?
+/** Merging into a motorway-like road, direction undefined.
+ * This value is not intended to be set directly but can be used for
+ * comparisons, e.g. {@code merge_or_exit & mex_merge}. */
 #define mex_merge 1
 
 /** Exiting from a motorway-like road, direction undefined.
  * This should only be used for ramps leading to a non-motorway road.
- * For interchanges, use {@code mex_interchange} instead. */
-//FIXME: do we need this constant?
+ * For interchanges, use {@code mex_interchange} instead.
+ * This value is not intended to be set directly but can be used for
+ * comparisons, e.g. {@code merge_or_exit & mex_exit}. */
 #define mex_exit 2
 
 /** Motorway-like road splits in two.
@@ -256,7 +257,8 @@ struct navigation_maneuver {
 	                                would expect an announcement in such cases. */
 	int num_options;           /**< Number of permitted candidate ways, i.e. ways which we may enter (based on access flags of the
 	                                way but without considering turn restrictions). Permitted candidate ways include the route. */
-	int num_new_motorways;     /**< Number of permitted candidate ways that are motorway-like */
+	int num_new_motorways;     /**< Number of permitted candidate ways that are motorway-like.
+	                                Numbers greater then one should be interpreted as "more than one", not as a precise number. */
 	int num_other_ways;        /**< Number of permitted candidate ways that are neither ramps nor motorway-like */
 	int old_cat;               /**< Maneuver category of the way leading to the maneuver */
 	int new_cat;               /**< Maneuver category of the selected way after the maneuver */
@@ -293,29 +295,29 @@ struct navigation_command {
  *
  */
 struct navigation_way {
-	struct navigation_way *next;	/**< Pointer to a linked-list of all navigation_ways from this navigation item */
-	short dir;						/**< The direction -1 or 1 of the way */
-	short angle2;					/**< The bearing at the start or the way (0 = north, 90 =east etc.) */
-	int flags;						/**< The flags of the way */
-	struct item item;				/**< The item of the way */
-	char *name;						/**< The street name ({@code street_name} attribute) */
+	struct navigation_way *next;		/**< Pointer to a linked-list of all navigation_ways from this navigation item */
+	short dir;				/**< The direction -1 or 1 of the way */
+	short angle2;				/**< The bearing at the start or the way (0 = north, 90 =east etc.) */
+	int flags;				/**< The flags of the way */
+	struct item item;			/**< The item of the way */
+	char *name;				/**< The street name ({@code street_name} attribute) */
 	char *name_systematic;			/**< The road number ({@code street_name_systematic} attribute, OSM: {@code ref}) */
-	char *exit_ref;					/**< Exit_ref if found on the first node of the way*/
-	char *exit_label;				/**< Exit_label if found on the first node of the way*/
-	struct street_destination *destination;				/**< The destination this way leads to (OSM: {@code destination}) */
+	char *exit_ref;				/**< Exit_ref if found on the first node of the way*/
+	char *exit_label;			/**< Exit_label if found on the first node of the way*/
+	struct street_destination *destination;	/**< The destination this way leads to (OSM: {@code destination}) */
 };
 
 struct navigation_itm {
 	struct navigation_way way;
-	int angle_end;                      /**< The bearing at the end of {@code way} */
+	int angle_end;				/**< The bearing at the end of {@code way} */
 	struct coord start,end;
 	int time;
 	int length;
 	int speed;
 	int dest_time;
 	int dest_length;
-	int told;							/**< Indicates if this item's announcement has been told earlier and should not be told again*/
-	int streetname_told;				/**< Indicates if this item's streetname has been told in speech navigation*/
+	int told;				/**< Indicates if this item's announcement has been told earlier and should not be told again*/
+	int streetname_told;			/**< Indicates if this item's streetname has been told in speech navigation*/
 	int dest_count;
 	struct navigation_itm *next;
 	struct navigation_itm *prev;
@@ -381,6 +383,64 @@ angle_opposite(int angle)
 {
 	return ((angle+180)%360);
 }
+
+
+/**
+ * @brief Checks if two navigation items are on the same street
+ *
+ * This function checks if two navigation items are on the same street. It returns
+ * true if either their name or their "systematic name" (e.g. "A6" or "B256") are the
+ * same.
+ *
+ * @param old_name The name of the first item to be checked
+ * @param old_name_systematic The systematic name of the first item to be checked
+ * @param new_name The name of the second item to be checked
+ * @param new_name_systematic The systematic name of the second item to be checked
+ * @return True if both old and new are on the same street
+ */
+static int
+is_same_street2(char *old_name, char *old_name_systematic, char *new_name, char *new_name_systematic)
+{
+	if (old_name && new_name && !strcmp(old_name, new_name)) {
+		dbg(lvl_debug,"is_same_street: '%s' '%s' vs '%s' '%s' yes (1.)\n", old_name_systematic, new_name_systematic, old_name, new_name);
+		return 1;
+	}
+	if (old_name_systematic && new_name_systematic && !strcmp(old_name_systematic, new_name_systematic)) {
+		dbg(lvl_debug,"is_same_street: '%s' '%s' vs '%s' '%s' yes (2.)\n", old_name_systematic, new_name_systematic, old_name, new_name);
+		return 1;
+	}
+	dbg(lvl_debug,"is_same_street: '%s' '%s' vs '%s' '%s' no\n", old_name_systematic, new_name_systematic, old_name, new_name);
+	return 0;
+}
+
+
+/**
+ * @brief Checks if two ways are identical
+ *
+ * This function checks if two {@code navigation_way}s are likely to represent the same way on the ground.
+ * It does this by comparing the {@code name}, {@code name_systematic}, {@code angle2} and {@code item.type}
+ * members of both ways and returning {@code true} if all of them match.
+ *
+ * Names are compared by calling {@code is_same_street()}.
+ *
+ * ID attributes (such as OSM IDs) are not used for comparison, which allows the function to handle even
+ * overlapping maps for the same area created from different versions of OSM data, in which IDs may have
+ * changed as a result of ways being merged or split. As long as the above attributes match, the ways will
+ * still be considered equal.
+ *
+ * Note that way geometry (other than {@code angle2}) is not compared. If necessary, the caller needs to
+ * make geometry-related comparisons separately.
+ */
+static int
+is_same_way(struct navigation_way * w1, struct navigation_way * w2) {
+	if (!is_same_street2(w1->name, w1->name_systematic, w2->name, w2->name_systematic))
+		return 0;
+	if ((w1->angle2 == w2->angle2) && (w1->item.type == w2->item.type))
+		return 1;
+	else
+		return 0;
+}
+
 
 /**
  * @brief Frees a list as constructed with split_string_to_list()
@@ -824,6 +884,7 @@ static const char
 		return NULL;
 	}
 }
+
 static int
 round_distance(int dist)
 {
@@ -1368,7 +1429,9 @@ navigation_itm_ways_update(struct navigation_itm *itm, struct map *graph_map)
 	struct map_rect *g_rect; /* Contains a map rectangle from the route graph's map */
 	struct item *i,*sitem;
 	struct attr sitem_attr,direction_attr;
-	struct navigation_way *w,*l;
+	struct navigation_way *w, *l, *h;
+
+	dbg(lvl_debug, "entering for item: %s %s %s\n", item_to_name(itm->way.item.type), itm->way.name_systematic, itm->way.name);
 
 	navigation_itm_ways_clear(itm);
 
@@ -1421,7 +1484,20 @@ navigation_itm_ways_update(struct navigation_itm *itm, struct map *graph_map)
 		w->dir = direction_attr.u.num;
 		w->item = *sitem;
 		w->next = l;
-		navigation_way_init(w);	/* calculte and set w->angle2 */
+		navigation_way_init(w);	/* calculate and set w->angle2 */
+
+		dbg(lvl_debug, "- retrieved way: %s %s %s\n", item_to_name(w->item.type), w->name_systematic, w->name);
+
+		/* check if w is already in the list */
+		h = l;
+		while (h) {
+			if (is_same_way(w, h)) {
+				g_free(w);
+				w = l;
+				dbg(lvl_debug, "  - way is already in list, discarding\n");
+			}
+			h = h->next;
+		}
 	}
 
 	map_rect_destroy(g_rect);
@@ -1627,15 +1703,20 @@ navigation_itm_new(struct navigation *this_, struct item *routeitem)
 		ret->start=c[0];
 		ret->end=c[i];
 
-		/*	If we have a ramp check the map for higway_exit info,
-		 *  but only on the first node of the ramp.
-		 *  Ramps with nodes in reverse order and oneway=-1 are not
-		 *  specifically handled, but no occurence known so far either.
-		 *  If present, obtain exit_ref, exit_label and exit_to
-		 *  from the map.
+		/* If we have a ramp, check the map for higway_exit info,
+		 * but only on the first node of the ramp.
+		 * We are doing the same for motorway-like roads because some
+		 * interchanges use motorway types for the links between two
+		 * motorways.
+		 * Ramps with nodes in reverse order and oneway=-1 are not
+		 * specifically handled, but no occurence known so far either.
+		 * If present, obtain exit_ref, exit_label and exit_to
+		 * from the map.
 		 */
-		if (streetitem->type == type_ramp )
-		{
+		if (   (streetitem->type == type_ramp)
+		    || (streetitem->type == type_highway_land)
+		    || (streetitem->type == type_highway_city)
+		    || (streetitem->type == type_street_n_lanes)) {
 			struct map_selection mselexit;
 			struct item *rampitem;
 			dbg(lvl_debug,"test ramp\n");
@@ -1671,8 +1752,11 @@ navigation_itm_new(struct navigation *this_, struct item *routeitem)
 							 * - there is no regular destination info
 							 * - we are not coming from a ramp already
 							 */
-							if (attr.u.str && !ret->way.destination && (this_->last) && (!(this_->last->way.item.type == type_ramp)))
-							{
+							if (attr.u.str
+									&& !ret->way.destination
+									&& (ret->way.item.type == type_ramp)
+									&& (this_->last)
+									&& (!(this_->last->way.item.type == type_ramp))) {
 								char *destination_raw;
 								destination_raw=map_convert_string(streetitem->map,attr.u.str);
 								dbg(lvl_debug,"destination_raw from exit_to =%s\n",destination_raw);
@@ -1809,32 +1893,6 @@ calculate_dest_distance(struct navigation *this_, int incr)
 	dbg(lvl_debug,"len %d time %d\n", len, time);
 }
 
-/**
- * @brief Checks if two navigation items are on the same street
- *
- * This function checks if two navigation items are on the same street. It returns
- * true if either their name or their "systematic name" (e.g. "A6" or "B256") are the
- * same.
- *
- * @param old The first item to be checked
- * @param new The second item to be checked
- * @return True if both old and new are on the same street
- */
-static int
-is_same_street2(char *old_name, char *old_name_systematic, char *new_name, char *new_name_systematic)
-{
-	if (old_name && new_name && !strcmp(old_name, new_name)) {
-		dbg(lvl_debug,"is_same_street: '%s' '%s' vs '%s' '%s' yes (1.)\n", old_name_systematic, new_name_systematic, old_name, new_name);
-		return 1;
-	}
-	if (old_name_systematic && new_name_systematic && !strcmp(old_name_systematic, new_name_systematic)) {
-		dbg(lvl_debug,"is_same_street: '%s' '%s' vs '%s' '%s' yes (2.)\n", old_name_systematic, new_name_systematic, old_name, new_name);
-		return 1;
-	}
-	dbg(lvl_debug,"is_same_street: '%s' '%s' vs '%s' '%s' no\n", old_name_systematic, new_name_systematic, old_name, new_name);
-	return 0;
-}
-
 
 static int maneuver_category(enum item_type type)
 {
@@ -1893,8 +1951,8 @@ static int maneuver_category(enum item_type type)
 
  /* (jandegr) this gets called from within show_maneuver with mode=3 for roundabouts
  * and with mode=4 from within count_possible_turns() for the use with
- * 'take the manieTH road to the left/right'
- * However over here mode is ignored, so the 'manieTH' road excludes unallowed oneway's,
+ * 'take the manieth road to the left/right'
+ * However over here mode is ignored, so the 'manieth' road excludes unallowed oneway's,
  * but IMHO it should count all drivable roads. For roundabouts it seems to be ok.
  *
  */
@@ -1971,6 +2029,7 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 	int dc; /* if new and another way are within +/-min_turn_limit and on the same side, bearing difference for the other way; else d */
 	char *r=NULL; /* human-legible reason for announcing or not announcing the maneuver */
 	struct navigation_way *w; /* temporary way to examine */
+	struct navigation_way *through_segment2 = NULL; /* off-route segment of through road at complex T junction */
 	int wcat;
 	int junction_limit = 100; /* maximum distance between two carriageways at a junction */
 	int motorways_left = 0, motorways_right = 0; /* number of motorway-like roads left or right of new->way */
@@ -2043,12 +2102,35 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 					m.num_options++;
 					/* ways of similar category */
 					if (maneuver_category(w->item.type) == m.old_cat) {
-						/* TODO: decide if a maneuver_category difference of 1 is still similar */
+						/* TODO: considering a maneuver_category difference of 1 to be similar, e.g.
+						 * if (abs(maneuver_category(w->item.type) - m.old_cat) <= 1)
+						 * will improve things in some cases but also introduce some junk maneuvers,
+						 * e.g. at complex junctions. If we relax the maneuver_category requirement,
+						 * we may need some extra requirements. */
 						m.num_similar_ways++;
 					}
 					/* motorway-like ways */
-					if (is_motorway_like(w, 0)) {
-						m.num_new_motorways++;
+					if ((m.num_new_motorways < 2) && is_motorway_like(w, 0)) {
+						/* Count all motorway-like segments:
+						 * - always count new
+						 * - if new or w have an exit_ref or exit_label, count w
+						 * - if old, new and w have the same name_systematic, do not count w
+						 * - if one of old, new and w has no name_systematic, count w
+						 * This is for handling temporary splits (e.g. at toll booths), which should
+						 * be counted as one motorway for the purpose of navigation. On the other hand,
+						 * occasionally a motorway may split at an interchange with both segments
+						 * retaining the name, in which case we want to count both motorways. */
+						if ((w == &(new->way))
+								|| new->way.exit_ref
+								|| new->way.exit_label
+								|| w->exit_ref
+								|| w->exit_label
+								|| !old->way.name_systematic
+								|| !new->way.name_systematic
+								|| !w->name_systematic
+								|| strcmp(old->way.name_systematic, new->way.name_systematic)
+								|| strcmp(old->way.name_systematic, w->name_systematic))
+							m.num_new_motorways++;
 					} else if (!is_motorway_like(w, 1)) {
 						m.num_other_ways++;
 					}
@@ -2114,10 +2196,20 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 					}
 					/* if !is_way_allowed */
 				} /* if is_way_allowed || !is_way_allowed */
-				if ((w->flags & AF_ONEWAYMASK) && is_same_street2(new->way.name, new->way.name_systematic, w->name, w->name_systematic))
+				if (w->flags & AF_ONEWAYMASK) {
 					/* count through_segments (even if they are not allowed) to check if we are at a complex T junction */
-					through_segments++;
-			} /* if w... */
+					if (is_same_street2(new->way.name, new->way.name_systematic, w->name, w->name_systematic))
+						/* count segments belonging to the same street */
+						through_segments++;
+					else if ((!through_segment2 && (abs(angle_delta(angle_opposite(w->angle2), new->way.angle2)) < min_turn_limit))
+							|| (through_segment2 && (abs(angle_delta(angle_opposite(w->angle2), new->way.angle2)) < abs(angle_delta(angle_opposite(through_segment2->angle2), new->way.angle2))))) {
+						/* also count near-straight continuations of new (the through road may change names at the junction) */
+						if (!through_segment2)
+							through_segments++;
+						through_segment2 = w;
+					}
+				}
+			} /* if w is not a duplicate of way->next */
 			w = w->next;
 		} /* while w */
 		if ((abs(m.delta) >= min_turn_limit) && (through_segments >= 2)) {
@@ -2125,9 +2217,10 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 			 * check whether we are approaching a complex T junction from the "stem"
 			 * (which would need an announcement).
 			 * Complex means that the through road is a dual-carriageway road.
-			 * This is the case only if at least 2 segments (including new) have the same
-			 * name as new and are one-way, regardless of direction. More than 2 such segments
-			 * are possible e.g. where two physically separated lanes join.
+			 * This is the case only if at least 2 segments (including new) are one-way
+			 * (regardless of direction) and have the same name as new or through_segment2.
+			 * More than 2 such segments are possible e.g. where two physically separated
+			 * lanes join.
 			 * To find out if there is another carriageway, we need to analyze the previous
 			 * maneuvers.
 			 */
@@ -2135,9 +2228,11 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 			int hist_dist = old->length; /* distance between previous and current maneuver */
 			ni = old;
 			while (ni && (hist_through_segments == 0) && (hist_dist <= junction_limit)) {
+				// TODO: shouldn't the condition be (hist_through_segments < 2) to catch through segments that are slightly offset??
 				struct navigation_way *w = ni->way.next;
 				while (w) {
-					if (is_same_street2(new->way.name, new->way.name_systematic, w->name, w->name_systematic))
+					if (is_same_street2(new->way.name, new->way.name_systematic, w->name, w->name_systematic)
+							|| (through_segment2 && is_same_street2(through_segment2->name, through_segment2->name_systematic, w->name, w->name_systematic)))
 						hist_through_segments++;
 					w = w->next;
 				}
@@ -2172,10 +2267,14 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 	if ((!r) && (m.num_options <= 1))
 		r="no: only one option permitted";
 	if (!r) {
-		if (is_motorway_like(&(old->way), 0) && (m.num_other_ways == 0) && (m.num_new_motorways > 1)) {
+		if (is_motorway_like(&(old->way), 0) && (m.num_other_ways == 0) && (m.num_new_motorways > 1) && ((m.left > -90) || (m.right < 90))) {
 			/* If we are at a motorway interchange, ANNOUNCE
 			 * We are assuming a motorway interchange when old way and at least
 			 * two possible ways are motorway-like and allowed.
+			 * Additionally we require one way (other than the new way) within +/-90°.
+			 * This prevents the rule from essentially announcing "don't do the U turn"
+			 * at the beginning of a single-carriageway section, which is occasionally
+			 * found on motorways.
 			 * If any of the possible ways is neither motorway-like nor a ramp,
 			 * we are probably on a trunk road with level crossings and not
 			 * at a motorway interchange.
@@ -2183,12 +2282,11 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 			r="yes: motorway interchange (multiple motorways)";
 			m.merge_or_exit = mex_interchange;
 			ret=1;
-		} else if (is_motorway_like(&(old->way), 0) && (m.num_other_ways == 0) && (!m.is_same_street)) {
+		} else if (is_motorway_like(&(old->way), 0) && is_motorway_like(&(new->way), 0) && (m.num_other_ways == 0) && (!m.is_same_street)) {
 			/* Another sign that we are at a motorway interchange is if the street name changes
 			 */
 			r="yes: motorway interchange (name changes)";
-			/* TODO: tell motorway interchanges from exits (is_motorway_like(&(new->way), 0)) */
-			/* m.merge_or_exit = mex_interchange; */
+			m.merge_or_exit = mex_interchange;
 			ret=1;
 		} else if ((new->way.item.type == type_ramp) && ((m.num_other_ways == 0) || (abs(m.delta) >= min_turn_limit)) && ((m.left > -90) || (m.right < 90))) {
 			/* Motorway ramps can be confusing, therefore we need to lower the bar for announcing a maneuver.
@@ -2242,13 +2340,7 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 		r=g_strdup_printf("%s: d %d left %d right %d dlim=%d cat old:%d new:%d max:%d unambiguous=%d same_street=%d", ret==1?"yes":"no", m.delta, m.left, m.right, dlim, m.old_cat, m.new_cat, m.max_cat, m.is_unambiguous, m.is_same_street);
 #endif
 	}
-	*delta=d;
-	if (reason)
-		*reason=r;
-	if (r)
-		dbg(lvl_debug, "%s %s -> %s %s: %s\n", old->way.name2, old->way.name1, new->way.name2, new->way.name1, r);
-	return ret;
-	
+
 	if (m.merge_or_exit == mex_none) {
 		if (old->way.item.type == type_ramp && is_motorway_like(&(new->way), 0)) {
 			if (motorways_left)
@@ -2263,7 +2355,7 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 				if (!r)
 					r = "yes: merging onto motorway-like road";
 			}
-		} else if (is_motorway_like(&(old->way), 1) && (new->way.item.type == type_ramp || new->way.exit_ref)) {
+		} else if (is_motorway_like(&(old->way), 1) && (new->way.item.type == type_ramp)) {
 			/* Detect interchanges - if:
 			 * - we're entering a ramp,
 			 * - we're coming from a motorway-like road (directly or via ramps),
@@ -2657,11 +2749,11 @@ static struct navigation_command *
 command_new(struct navigation *this_, struct navigation_itm *itm, struct navigation_maneuver *maneuver)
 {
 	struct navigation_command *ret=g_new0(struct navigation_command, 1);
-	struct navigation_way *w;    /* the way in which to turn. */
+	struct navigation_way *w;	/* the way in which to turn. */
 	int more_ways_for_strength = 0; /* Counts the number of ways of the current node that turn
-							   	   	   to the same direction as the route way. Strengthening criterion. */
+					   to the same direction as the route way. Strengthening criterion. */
 	int turn_no_of_route_way = 0;   /* The number of the route way of all ways that turn to the same direction.
-							   	   	   Count direction from abs(0 degree) up to abs(180 degree). Strengthening criterion. */
+					   Count direction from abs(0 degree) up to abs(180 degree). Strengthening criterion. */
 
 	dbg(lvl_debug,"enter this_=%p itm=%p maneuver=%p delta=%d\n", this_, itm, maneuver, maneuver->delta);
 	ret->maneuver = maneuver;
@@ -2896,23 +2988,25 @@ replace_suffix(char *name, char *search, char *replace)
 /**
  * @brief Creates a text description for the destination of a maneuver, which can be used in announcements.
  *
- * @param nav The navigation object
- * @param cmd The {@code navigation_command} for which to generate an announcement
+ * @param nav  The navigation object
+ * @param cmd  The {@code navigation_command} for which to generate an announcement
  * @param next The current navigation item. In speech mode this should be set to the navigation
- * item starting at the vehicle's current position; in route description mode this should be set to
- * the {@code navigation_item} associated with the previous {@code navigation_command}
- * @param prefix A prefix which will be prepended to the string returned, or NULL for no prefix
+ *             item starting at the vehicle's current position; in route description mode this should be set to
+ *             the {@code navigation_item} associated with the previous {@code navigation_command}
+ * @param prefix A space will be added as a prefix to the string returned, or a null string for no prefix
  */
 static char *
 navigation_item_destination(struct navigation *nav, struct navigation_command *cmd, struct navigation_itm *next, char *prefix)
 {
-	char *ret = NULL, *name1 = NULL, *sep = "", *name2 = "";
-	char *name=NULL,*name_systematic=NULL;
+	char *ret  = NULL, *name1 = NULL, *sep = "", *name2 = "";
+	char *name = NULL, *name_systematic=NULL;
 	int i, gender = unknown;
 	int vocabulary1=1;
 	int vocabulary2=1;
 	struct attr attr;
 	struct navigation_itm *itm = cmd->itm;
+	struct navigation_itm *itm_pre = NULL;
+	struct navigation_itm *itm_post = NULL;
 
 	if (! prefix)
 		prefix="";
@@ -2952,8 +3046,7 @@ navigation_item_destination(struct navigation *nav, struct navigation_command *c
 	} else
 		name1 = g_strdup("");
 
-	if (cmd->maneuver && cmd->maneuver->type && ((cmd->maneuver->merge_or_exit==mex_merge_left)
-			||(cmd->maneuver->merge_or_exit==mex_merge_right) )) {
+	if (cmd->maneuver && cmd->maneuver->type && (cmd->maneuver->merge_or_exit & mex_merge)) {
 		if (name_systematic)
 			/* TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Systematic Street Name 3: Separator (Space if required), 4: Street Name */
 			ret = g_strdup_printf(_("%1$sonto the %2$s%3$s%4$s"), prefix, name_systematic, sep, name1);
@@ -2977,13 +3070,21 @@ navigation_item_destination(struct navigation *nav, struct navigation_command *c
 				break;
 			}
 		else ret = g_strdup("");
-	} else if (!name && !name_systematic && itm->way.item.type == type_ramp && vocabulary2) {
-		if (next->way.item.type == type_ramp)
-			ret = NULL;
+	} else if (!name && !name_systematic && itm->way.item.type == type_ramp && (!cmd->maneuver || (cmd->maneuver->merge_or_exit != mex_interchange))) {
+		itm_pre = itm->prev;
+		while (itm_pre && (itm_pre->way.item.type == type_ramp))
+			itm_pre = itm_pre->prev;
+		itm_post = itm->next;
+		while (itm_post && (itm_post->way.item.type == type_ramp) && (!cmd->next || (itm_post != cmd->next->itm)))
+			itm_post = itm_post->next;
+		if (((itm_post) && is_motorway_like(&(itm_post->way), 0))
+				&& ((itm_pre) && !is_motorway_like(&(itm_pre->way), 0)))
+			/* TRANSLATORS: motorway ramp refers to the slip road for entering a motorway. */
+			ret = g_strdup_printf("%s%s",prefix,_("onto the motorway ramp")); /* This is only announced when there is no additional info about the ramp and the ramp leads to a motorway. */
 		else
-			ret = g_strdup_printf("%s%s",prefix,_("into the ramp"));
+			ret = g_strdup("");
 	} else if (!name && !name_systematic)
-		ret = NULL;
+		ret = g_strdup("");
 	else if (name) {
 		switch (gender) {
 		case unknown:
@@ -3025,6 +3126,60 @@ navigation_item_destination(struct navigation *nav, struct navigation_command *c
 	return ret;
 }
 
+
+/**
+ * @brief Formats the exit ref and name for display and speech output
+ *
+ * This function takes the navigation command for a motorway maneuver (exit or interchange) and
+ * returns a string describing the exit.
+ *
+ * If the exit has a name and ref and the name is different from {@code street_destination_announce},
+ * a string of the form "ref name" is returned. If only one of the two is different from NULL, it
+ * is returned unchanged.
+ *
+ * If the name matches {@code street_destination_announce}, it is always treated as if it were NULL.
+ * This prevents redundancy in announcements.
+ *
+ * No checks are done that the maneuver actually has the appropriate merge_or_exit flags set. The
+ * caller is responsible for performing such checks prior to calling this function.
+ *
+ * @param this_ The navigation command
+ * @param street_destination_announce The name of the street following the maneuver. This argument
+ * may be NULL, in which case the exit name will not be suppressed.
+ */
+static char *
+navigation_cmd_get_exit_announce(struct navigation_command *this_, char *street_destination_announce) {
+	char * ret = NULL;
+	char *folded_exit_label=NULL;
+	char *folded_street_destination_announce=NULL;
+
+	if (this_->itm->way.exit_label) {
+		folded_exit_label = linguistics_casefold(this_->itm->way.exit_label);
+		if (street_destination_announce)
+			folded_street_destination_announce = linguistics_casefold(street_destination_announce);
+		else
+			folded_street_destination_announce = g_strdup("");
+
+		if (!strstr(folded_street_destination_announce, folded_exit_label)) { /* No redundancy? */
+			if (this_->itm->way.exit_ref)
+				ret = g_strdup_printf("%1$s %2$s", this_->itm->way.exit_ref, this_->itm->way.exit_label);
+			else
+				ret = g_strdup_printf("%1$s", this_->itm->way.exit_label);
+		} else if (this_->itm->way.exit_ref)
+			ret = g_strdup_printf("%1$s", this_->itm->way.exit_ref);
+
+	} else {
+		if (this_->itm->way.exit_ref)
+			ret = g_strdup_printf("%1$s", this_->itm->way.exit_ref);
+	}
+
+	g_free(folded_exit_label);
+	g_free(folded_street_destination_announce);
+
+	return ret;
+}
+
+
 /**
  * @brief Creates turn by turn guidance sentences for the speech and for the route description
  *
@@ -3046,7 +3201,6 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 
 	int distance=itm->dest_length-cmd->itm->dest_length;
 	char *d=NULL,*ret=NULL;
-	char *exit_announce=NULL;
 	char *street_destination_announce=NULL;
 	int level;
 	int skip_roads = 0;
@@ -3131,8 +3285,8 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 			/* In Voice Mode only tell the street name in level 1 or in level 0 if level 1	was skipped */
 				if (level == 1)
 				{ /* we are close to the intersection */
-					cmd->itm->streetname_told = 1; // remeber to be checked when we turn
-					tellstreetname = 1; // Ok so we tell the name of the street
+					cmd->itm->streetname_told = 1; /* remember to be checked when we turn */
+					tellstreetname = 1;	       /* Ok, so we tell the name of the street */
 				}
 				if (level == 0)
 				{
@@ -3167,20 +3321,29 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 				break;
 		}
 
+		if (tellstreetname)
+			destination=navigation_item_destination(nav, cmd, itm, " ");
+		else destination = g_strdup("");
+
 		if (!(cmd->maneuver->merge_or_exit == mex_none ))
 		{
-			char *folded_exit_label=NULL;
-			char *folded_street_destination_announce=NULL;
+			char *exit_announce=NULL;
+
+			 /* interchange or exit announcement shall be a long distance information only.
+			    But if so, exit_label shall not be announced in case it is a substring 
+			    of destination info to avoid redundancy and not let the sentence become too long.
+			    Otherwise, if there is no additional destination info, just say it at level 1. */
+			if ((level == 2) || ((level == 1) && (!street_destination_announce && !destination)) || (type != attr_navigation_speech)) {
+				exit_announce = navigation_cmd_get_exit_announce(cmd, street_destination_announce);
+			}
+
 			switch (cmd->maneuver->merge_or_exit)
 			{
 				case mex_merge_left:
 				case mex_merge_right:
-					if (tellstreetname)
-						destination=navigation_item_destination(nav, cmd, itm, " ");
-					else destination = g_strdup("");
 					if (cmd->maneuver->merge_or_exit == mex_merge_right) {
 						if (level == -2)
-							/* TRANSLATORS: the arg. is the phrase 'onto ...'. Left merge, the stuff after | doesn't have to be included. */
+							/* TRANSLATORS: the arg. is the phrase 'onto ...'. Right merge, the stuff after | doesn't have to be included. */
 							instruction = g_strdup_printf(_("then merge%1$s|right"), d);
 						else
 							/* TRANSLATORS: the first arg. is distance, the second is the phrase 'onto ...'. Right merge, the stuff after | doesn't have to be included. */
@@ -3194,179 +3357,162 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 							instruction = g_strdup_printf(_("Merge %1$s%2$s|left"), d, destination);
 					}
 					break;
-					/* for mex_exit_left/right, exit_label is not announced in case it is
-					* a substring of destination info to avoid redundancy and not let the sentence
-					* become too long
-					*/
 				case mex_exit_left:
 				case mex_exit_right:
 					direction = (cmd->maneuver->merge_or_exit == mex_exit_left) ?
 							g_strdup(_("on your left")) :
 							g_strdup(_("on your right"));
-					if (cmd->itm->way.exit_label)
-						folded_exit_label = linguistics_casefold(cmd->itm->way.exit_label);
-					else folded_exit_label = g_strdup("");
-					folded_street_destination_announce = linguistics_casefold(street_destination_announce);
-					if ((!strstr(folded_street_destination_announce,folded_exit_label)) && cmd->itm->way.exit_ref)
-						exit_announce = g_strdup_printf(("%1$s %2$s"), cmd->itm->way.exit_ref, cmd->itm->way.exit_label);
-					else if (cmd->itm->way.exit_ref)
-						exit_announce = g_strdup_printf(("%1$s"), cmd->itm->way.exit_ref);
-					else if (cmd->itm->way.exit_label)
-						exit_announce = g_strdup_printf(("%1$s"), cmd->itm->way.exit_label);
 					if (exit_announce)
 						/* TRANSLATORS: the first arg. is exit ref and/or name, the second is the direction of exit and the third is distance */
 						instruction = g_strdup_printf(_("Take exit %1$s %2$s %3$s"), exit_announce, direction, d);
 					else
-						/* TRANSLATORS: the first arg. is the direction of exit, the second is distance */
-						instruction = g_strdup_printf(_("Take the exit %1$s %2$s"), direction, d);
-					g_free(exit_announce);
-					g_free(folded_exit_label);
-					g_free(folded_street_destination_announce);
+						/* TRANSLATORS: the first arg. is the direction of exit, the second is distance, the third is destination */
+						instruction = g_strdup_printf(_("Take the exit %1$s %2$s%3$s"), direction, d, destination);
+
 					break;
 			}
 
-			if (!instruction && (cmd->itm->way.exit_ref || cmd->itm->way.exit_label))
-				at = g_strdup_printf(" %1$s %2$s %3$s", cmd->maneuver->merge_or_exit == mex_interchange ? (_("at interchange")) : (_( "at exit")),
-						cmd->itm->way.exit_ref ? cmd->itm->way.exit_ref : "", cmd->itm->way.exit_label ? cmd->itm->way.exit_label : "");
+			if (!instruction && exit_announce) {
+				/* TRANSLATORS: as in "Keep right at interchange 42 Greenmond-West" */
+				at = g_strdup_printf(" %1$s %2$s", cmd->maneuver->merge_or_exit == mex_interchange ? (_("at interchange")) : (_( "at exit")),
+								   exit_announce ? exit_announce : "");
+			}
+			g_free(exit_announce);
 		}
-	}
-	if (!instruction && cmd->maneuver) {
-		if (!at)
-			at = g_strdup("");
-		switch (cmd->maneuver->type) {
-			case type_nav_straight :
-				if (level == -2)
-					/* TRANSLATORS: the arg. is where to do the maneuver */
-					instruction = g_strdup_printf(_("then continue straight%1$s"), at);
-				else
-					/* TRANSLATORS: the first arg. is distance, the second is where to do the maneuver */
-					instruction = g_strdup_printf(_("Continue straight %1$s%2$s"), d, at);
-				break;
-			case type_nav_keep_right :
-				if (level == -2)
-					/* TRANSLATORS: the arg. is where to do the maneuver */
-					instruction = g_strdup_printf(_("then keep right%1$s"), at);
-				else
-					/* TRANSLATORS: the first arg. is distance, the second is where to do the maneuver */
-					instruction = g_strdup_printf(_("Keep right %1$s%2$s"), d, at);
-				break;
-			case type_nav_keep_left :
-				if (level == -2)
-					/* TRANSLATORS: the arg. is where to do the maneuver */
-					instruction = g_strdup_printf(_("then keep left%1$s"), at);
-				else
-					/* TRANSLATORS: the first arg. is distance, the second is where to do the maneuver */
-					instruction = g_strdup_printf(_("Keep left %1$s%2$s"), d, at);
-				break;
-			case type_nav_right_1 :
-			case type_nav_right_2 :
-			case type_nav_right_3 :
-			case type_nav_left_1 :
-			case type_nav_left_2 :
-			case type_nav_left_3 :
-				/* generic turn case */
-				switch (cmd->maneuver->type) {
+		if (!instruction) {
+			if (!at)
+				at = g_strdup("");
+			switch (cmd->maneuver->type) {
+				case type_nav_straight :
+					if (level == -2)
+						/* TRANSLATORS: the arg. is where to do the maneuver */
+						instruction = g_strdup_printf(_("then continue straight%1$s"), at);
+					else
+						/* TRANSLATORS: the first arg. is distance, the second is where to do the maneuver, the third is destination */
+						instruction = g_strdup_printf(_("Continue straight %1$s%2$s%3$s"), d, at, destination);
+					break;
+				case type_nav_keep_right :
+					if (level == -2)
+						/* TRANSLATORS: the arg. is where to do the maneuver */
+						instruction = g_strdup_printf(_("then keep right%1$s"), at);
+					else
+						/* TRANSLATORS: the first arg. is distance, the second is where to do the maneuver, the third is destination */
+						instruction = g_strdup_printf(_("Keep right %1$s%2$s%3$s"), d, at, destination);
+					break;
+				case type_nav_keep_left :
+					if (level == -2)
+						/* TRANSLATORS: the arg. is where to do the maneuver */
+						instruction = g_strdup_printf(_("then keep left%1$s"), at);
+					else
+						/* TRANSLATORS: the first arg. is distance, the second is where to do the maneuver, the third is destination */
+						instruction = g_strdup_printf(_("Keep left %1$s%2$s%3$s"), d, at, destination);
+					break;
 				case type_nav_right_1 :
 				case type_nav_right_2 :
 				case type_nav_right_3 :
-					/* TRANSLATORS: "right" as in "turn right" */
-					direction = g_strdup(_("right"));
-					if (level==-2 || level == 0)
-						skip_roads = count_possible_turns(nav,cmd->prev ? cmd->prev->itm : nav->first,cmd->itm,90);
-					break;
 				case type_nav_left_1 :
 				case type_nav_left_2 :
 				case type_nav_left_3 :
-					/* TRANSLATORS: "left" as in "turn left" */
-					direction = g_strdup(_("left"));
-					if (level==-2 || level == 0)
-						skip_roads = count_possible_turns(nav,cmd->prev ? cmd->prev->itm : nav->first,cmd->itm,-90);
-					break;
-				default:
-					direction = g_strdup("");
-					break;
-				}
-				switch (cmd->maneuver->type) {
-				case type_nav_right_1 :
-				case type_nav_left_1 :
-					/* TRANSLATORS: as in "turn easily right" */
-					strength = g_strdup(_("easily "));
-					break;
-				case type_nav_right_3 :
-				case type_nav_left_3 :
-					/* TRANSLATORS: as in "turn strongly right" */
-					strength = g_strdup(_("strongly "));
-					break;
-				default:
-					strength = g_strdup("");
-					break;
-				}
-				if (tellstreetname)
-					destination=navigation_item_destination(nav, cmd, itm, " ");
-				if (!destination)
-					destination = g_strdup("");
-				if (skip_roads) {
-					if (skip_roads < 6)
-						instruction = g_strdup_printf(_("Take the %1$s road to the %2$s"), get_count_str(skip_roads+1), direction);
-						/*and preserve skip_roads to signal we already have an instruction*/
-					else {
-						g_free(d);
-						d=g_strdup_printf(_("after %i roads"),skip_roads);
-						skip_roads = 0; /*signal an instruction still has to be created*/
+					/* generic turn case */
+					switch (cmd->maneuver->type) {
+					case type_nav_right_1 :
+					case type_nav_right_2 :
+					case type_nav_right_3 :
+						/* TRANSLATORS: "right" as in "turn right" */
+						direction = g_strdup(_("right"));
+						if (level==-2 || level == 0)
+							skip_roads = count_possible_turns(nav,cmd->prev ? cmd->prev->itm : nav->first,cmd->itm,90);
+						break;
+					case type_nav_left_1 :
+					case type_nav_left_2 :
+					case type_nav_left_3 :
+						/* TRANSLATORS: "left" as in "turn left" */
+						direction = g_strdup(_("left"));
+						if (level==-2 || level == 0)
+							skip_roads = count_possible_turns(nav,cmd->prev ? cmd->prev->itm : nav->first,cmd->itm,-90);
+						break;
+					default:
+						direction = g_strdup("");
+						break;
 					}
-				}
-				if (!skip_roads)
-					/* TRANSLATORS: the first arg. is strength, the second is direction, the third is distance, the fourth is destination  */
-					instruction = g_strdup_printf(_("Turn %1$s%2$s %3$s%4$s"), strength, direction, d, destination);
-				break;
-			case type_nav_turnaround_left:
-				if (level == -2)
-					/* TRANSLATORS: Left U-turn, the stuff after | doesn't have to be included. */
-					instruction = g_strdup(_("then make a U-turn|left"));
-				else
-					/* TRANSLATORS: the arg. is distance. Left U-turn, the stuff after | doesn't have to be included. */
-					instruction = g_strdup_printf(_("Make a U-turn %1$s|left"), d);
-				break;
-			case type_nav_turnaround_right:
-				if (level == -2)
-					/* TRANSLATORS: Right U-turn, the stuff after | doesn't have to be included. */
-					instruction = g_strdup(_("then make a U-turn|right"));
-				else
-					/* TRANSLATORS: the arg. is distance. Right U-turn, the stuff after | doesn't have to be included. */
-					instruction = g_strdup_printf(_("Make a U-turn %1$s|right"), d);
-				break;
-			case type_nav_none:
-				/*An empty placeholder that we can use in the future for
-				 * some motorway commands that are now suppressed but we
-				 * can in some cases make it say here :
-				 * 'follow destination blabla' without any further driving instructions,
-				 * in cases where relevant destination info is available.
-				 * Even if there is no driving command to be announced, in some cases
-				 * there is an overhead roadsign in preparation of an upcoming road-split,
-				 * and then we can give usefull info to the driver.
-				 *
-				 *  UNTESTED !
-				 *
-				 */
-				instruction = g_strdup(_("follow"));
-				break;
-			case type_nav_destination:
-				/* the old code used to clear the route destination when this was the only
-				 * instruction left. Was that usefull ?
-				 * Should be tested with the old code what happens if the driver
-				 * 'overshoots' the destination and the route destination is already cleared.
-				 * I suppose it will now keep guiding the user to destination untill another one
-				 * is set or a 'stop navigation' action is done using the gui.
-				 */
-				if (level == -2)
-					instruction=g_strdup(_("then you have reached your destination."));
-				else
-					/* TRANSLATORS: the arg. is distance  */
-					instruction=g_strdup_printf(_("You have reached your destination %s"), d);
-				break;
-			default:
-				dbg(lvl_error,"unhandled instruction\n");
-				break;
+					switch (cmd->maneuver->type) {
+					case type_nav_right_1 :
+					case type_nav_left_1 :
+						/* TRANSLATORS: as in "turn easily right" */
+						strength = g_strdup(_("easily "));
+						break;
+					case type_nav_right_3 :
+					case type_nav_left_3 :
+						/* TRANSLATORS: as in "turn strongly right" */
+						strength = g_strdup(_("strongly "));
+						break;
+					default:
+						strength = g_strdup("");
+						break;
+					}
+					if (skip_roads) {
+						if (skip_roads < 6)
+							instruction = g_strdup_printf(_("Take the %1$s road to the %2$s"), get_count_str(skip_roads+1), direction);
+							/*and preserve skip_roads to signal we already have an instruction*/
+						else {
+							g_free(d);
+							d=g_strdup_printf(_("after %i roads"),skip_roads);
+							skip_roads = 0; /*signal an instruction still has to be created*/
+						}
+					}
+					if (!skip_roads) /* cave: no else - may come from 'if (skip_roads)' above ! */
+						/* TRANSLATORS: the first arg. is strength, the second is direction, the third is distance, the fourth is destination  */
+						instruction = g_strdup_printf(_("Turn %1$s%2$s %3$s%4$s"), strength, direction, d, destination);
+					break;
+				case type_nav_turnaround_left:
+					if (level == -2)
+						/* TRANSLATORS: Left U-turn, the stuff after | doesn't have to be included. */
+						instruction = g_strdup(_("then make a U-turn|left"));
+					else
+						/* TRANSLATORS: the arg. is distance. Left U-turn, the stuff after | doesn't have to be included. */
+						instruction = g_strdup_printf(_("Make a U-turn %1$s|left"), d);
+					break;
+				case type_nav_turnaround_right:
+					if (level == -2)
+						/* TRANSLATORS: Right U-turn, the stuff after | doesn't have to be included. */
+						instruction = g_strdup(_("then make a U-turn|right"));
+					else
+						/* TRANSLATORS: the arg. is distance. Right U-turn, the stuff after | doesn't have to be included. */
+						instruction = g_strdup_printf(_("Make a U-turn %1$s|right"), d);
+					break;
+				case type_nav_none:
+					/*An empty placeholder that we can use in the future for
+					 * some motorway commands that are now suppressed but we
+					 * can in some cases make it say here :
+					 * 'follow destination blabla' without any further driving instructions,
+					 * in cases where relevant destination info is available.
+					 * Even if there is no driving command to be announced, in some cases
+					 * there is an overhead roadsign in preparation of an upcoming road-split,
+					 * and then we can give usefull info to the driver.
+					 *
+					 *  UNTESTED !
+					 *
+					 */
+					instruction = g_strdup(_("follow"));
+					break;
+				case type_nav_destination:
+					/* the old code used to clear the route destination when this was the only
+					 * instruction left. Was that usefull ?
+					 * Should be tested with the old code what happens if the driver
+					 * 'overshoots' the destination and the route destination is already cleared.
+					 * I suppose it will now keep guiding the user to destination untill another one
+					 * is set or a 'stop navigation' action is done using the gui.
+					 */
+					if (level == -2)
+						instruction=g_strdup(_("then you have reached your destination."));
+					else
+						/* TRANSLATORS: the arg. is distance  */
+						instruction=g_strdup_printf(_("You have reached your destination %s"), d);
+					break;
+				default:
+					dbg(lvl_error,"unhandled instruction\n");
+					break;
+			}
 		}
 	}
 	switch (level)
@@ -3376,7 +3522,10 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 			ret=g_strdup_printf(_("Follow the road for the next %s"), d);
 			break;
 		case 2:
-			ret= g_strdup_printf(("%1$s %2$s"),instruction,street_destination_announce);
+			if (at) /* 'at' contains interchange or exit information that shall not be combined with street_destination_announce */
+				ret= g_strdup_printf(("%1$s %2$s"),instruction,"");
+			else
+				ret= g_strdup_printf(("%1$s %2$s"),instruction,street_destination_announce);
 			break;
 		case 1:
 			ret= g_strdup_printf(("%1$s %2$s"),instruction,street_destination_announce);
@@ -3741,8 +3890,10 @@ navigation_map_item_attr_get(void *priv_data, enum attr_type attr_type, struct a
 {
 	struct map_rect_priv *this_=priv_data;
 	struct navigation_command *cmd=this_->cmd;
+	struct navigation_maneuver *maneuver = NULL;
 	struct navigation_itm *itm=this_->itm;
 	struct navigation_itm *prev=itm->prev;
+	char *exit_announce=NULL;
 	attr->type=attr_type;
 
 	if (this_->str) {
@@ -3752,8 +3903,10 @@ navigation_map_item_attr_get(void *priv_data, enum attr_type attr_type, struct a
 
 	if (cmd) {
 		if (cmd->itm != itm)
-			cmd=NULL;	
+			cmd=NULL;
 	}
+	if (cmd && cmd->maneuver)
+		maneuver = cmd->maneuver;
 	switch(attr_type) {
 	case attr_level:
 		if (cmd) {
@@ -3834,27 +3987,23 @@ navigation_map_item_attr_get(void *priv_data, enum attr_type attr_type, struct a
 			return 1;}
 		return 0;
 
-		/* attr_name returns exit_ref and exit_label if available
-		 * preceeded by the word 'exit'
-		 *
-		 * if exit_label alone is available, it returns the word
-		 * 'interchange' followed by exit_label
-		 *
-		 * otherwise returns street name and name_systematic if available
-		 *
-		 * FIXME should a new attr. be defined for this and if yes, which ?
-		 *
-		 */
 	case attr_name:
+		/* attr_name returns exit_ref and exit_label if available,
+		 * preceded by the word 'exit' or 'interchange'.
+		 *
+		 * Otherwise it returns street name and name_systematic, if available
+		 *
+		 * FIXME should a new attr. be defined for this, and if yes, which ?
+		 */
 		this_->attr_next=attr_debug;
 		attr->u.str=NULL;
-		if (itm->way.exit_ref)
-			this_->str=attr->u.str=g_strdup_printf(("%s %s %s"),_("exit"),itm->way.exit_ref,
-					itm->way.exit_label ? itm->way.exit_label :"");
-		if (!attr->u.str && itm->way.exit_label)
-			this_->str=attr->u.str=g_strdup_printf(("%s %s"),_("interchange"),itm->way.exit_label);
-		else if (!attr->u.str && (itm->way.name || itm->way.name_systematic))
-			this_->str=attr->u.str=g_strdup_printf(("%s %s"),
+		exit_announce = navigation_cmd_get_exit_announce(cmd, NULL);
+		if (exit_announce && maneuver)
+			/* TRANSLATORS: Exit as a noun, as in "Exit 43 Greenmound-East" */
+			this_->str=attr->u.str=g_strdup_printf("%s %s", maneuver->merge_or_exit & mex_interchange ? (_("Interchange")) : (_("Exit")),
+					   exit_announce ? exit_announce : "");
+		else if (itm->way.name || itm->way.name_systematic)
+			this_->str=attr->u.str=g_strdup_printf("%s %s",
 					itm->way.name ? itm->way.name : "",itm->way.name_systematic ? itm->way.name_systematic : "");
 		if (attr->u.str){
 			return 1;}
