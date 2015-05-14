@@ -298,7 +298,7 @@ public class NavitMapDownloader extends Thread
 		new osm_map_values(Navit._("Venezuela"), "-73.6", "0.4", "-59.7", "12.8", 124001905L, 1)
 	};
 
-	public  static final String         MAP_FILENAME_PATH                       = Navit.MAP_FILENAME_PATH;
+	private String map_filename_path;
 	
 	public static NavitMap[] getAvailableMaps() {
 		class filterMaps implements FilenameFilter {
@@ -309,18 +309,19 @@ public class NavitMapDownloader extends Thread
 			}
 		}
 		NavitMap maps[] = new NavitMap[0];
-		File map_dir = new File(MAP_FILENAME_PATH);
+		File map_dir = new File(Navit.map_filename_path);
 		String map_file_names[] = map_dir.list(new filterMaps());
 		if (map_file_names != null) {
 			maps = new NavitMap[map_file_names.length];
 			for (int map_file_index = 0; map_file_index < map_file_names.length; map_file_index++) {
-				maps[map_file_index] = new NavitMap(MAP_FILENAME_PATH, map_file_names[map_file_index]);
+				maps[map_file_index] = new NavitMap(Navit.map_filename_path, map_file_names[map_file_index]);
 			}
 		}
 		return maps;
 	}
 	private Boolean                     stop_me                                 = false;
 	private osm_map_values              map_values;
+	private int                         map_id;
 	private long                        uiLastUpdated                           = -1;
 
 	private Boolean                     retryDownload                           = false; //Download failed, but
@@ -338,6 +339,8 @@ public class NavitMapDownloader extends Thread
 
 	public NavitMapDownloader(int map_id) {
 		this.map_values = osm_maps[map_id];
+		this.map_id=map_id;
+		this.map_filename_path=Navit.map_filename_path;
 	}
 
 	public void run() {
@@ -366,7 +369,7 @@ public class NavitMapDownloader extends Thread
 
 		if (success || stop_me ) {
 			NavitDialogs.sendDialogMessage( NavitDialogs.MSG_MAP_DOWNLOAD_FINISHED
-					, MAP_FILENAME_PATH + map_values.map_name + ".bin", null, -1, success ? 1 : 0 , 0 );
+					, map_filename_path + map_values.map_name + ".bin", null, -1, success ? 1 : 0 , map_id );
 		}
 	}
 	
@@ -382,8 +385,13 @@ public class NavitMapDownloader extends Thread
 			needed_bytes = MAP_WRITE_FILE_BUFFER;
 
 		if (free_space < needed_bytes ) {
-			Log.e(TAG, "Not enough free space. Please free at least " + needed_bytes / 1024 /1024 + "Mb.");
-			updateProgress(free_space, needed_bytes, Navit._("Error downloading map!") + "\n" + Navit._("Not enough free space"));
+			String msg;
+			Log.e(TAG, "Not enough free space or media not available. Please free at least " + needed_bytes / 1024 /1024 + "Mb.");
+			if(free_space<0)
+				msg=Navit._("Media selected for map storage is not available");
+			else
+				msg=Navit._("Not enough free space");
+			updateProgress(free_space, needed_bytes, Navit._("Error downloading map!") + "\n" + msg);
 			return false;
 		}
 		return true;
@@ -469,7 +477,7 @@ public class NavitMapDownloader extends Thread
 	}
 
 	protected File getDestinationFile() {
-		File outputFile = new File(MAP_FILENAME_PATH, map_values.map_name + ".tmp");
+		File outputFile = new File(map_filename_path, map_values.map_name + ".tmp");
 		outputFile.getParentFile().mkdir();
 		return outputFile;
 	}
@@ -510,8 +518,12 @@ public class NavitMapDownloader extends Thread
 	}
 
 	protected long getFreeSpace() {
-		StatFs fsInfo = new StatFs(MAP_FILENAME_PATH);
-		return (long)fsInfo.getAvailableBlocks() * fsInfo.getBlockSize();
+		try {
+			StatFs fsInfo = new StatFs(map_filename_path);
+			return (long)fsInfo.getAvailableBlocks() * fsInfo.getBlockSize();
+		} catch(Exception e) {
+			return -1;
+		}
 	}
 
 	protected BufferedInputStream getInputStream(URLConnection c) {
@@ -534,11 +546,11 @@ public class NavitMapDownloader extends Thread
 	}
 
 	protected File getMapFile() {
-		return new File(MAP_FILENAME_PATH, map_values.map_name + ".bin");
+		return new File(map_filename_path, map_values.map_name + ".bin");
 	}
 
 	protected File getMapInfoFile() {
-		return new File(MAP_FILENAME_PATH, map_values.map_name + ".tmp.info");
+		return new File(map_filename_path, map_values.map_name + ".tmp.info");
 	}
 
 	protected BufferedOutputStream getOutputStream(File outputFile, boolean resume) {
