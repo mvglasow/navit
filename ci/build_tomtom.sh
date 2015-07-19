@@ -77,7 +77,8 @@ fi
 if ! test -f "$PREFIX/include/png.h"
 then
   cd /tmp/
-  wget -c http://prdownloads.sourceforge.net/libpng/libpng-1.2.50.tar.gz
+  # wget -c http://prdownloads.sourceforge.net/libpng/libpng-1.2.50.tar.gz
+  wget -c "ftp://ftp.openbsd.org/ports/distfiles/by_cipher/sha256/Gf/GfF81JeC/OyN8PfRs0hEjMP2ntfipZ3iS8CQe5B/Grw=/libpng-1.2.50.tar.gz"
   tar xzf libpng-1.2.50.tar.gz
   cd libpng-1.2.50/
   ./configure --prefix=$PREFIX --host=$ARCH
