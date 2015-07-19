@@ -17,7 +17,7 @@
 set -e
 
 export ARCH=arm-linux
-cp toolchain-$ARCH.cmake /tmp
+cp cmake/toolchain-$ARCH.cmake /tmp
 
 # toolchain
 export TOMTOM_SDK_DIR=/opt/tomtom-sdk
