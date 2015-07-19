@@ -211,17 +211,9 @@ fi
 # navit
 if ! test -f "$PREFIX/bin/navit"
 then
-  cd /tmp
-  if ! test -d navit
-  then
-#     svn co https://navit.svn.sourceforge.net/svnroot/navit/trunk/navit navit 
-    svn co https://svn.code.sf.net/p/navit/code/trunk/navit navit
-  else
-    svn up navit
-  fi
-  cd navit
-  mkdir -p build
-  cd build
+  cd ~/navit
+  mkdir -p tomtom-build
+  cd tomtom-build
   sed -i "s|set ( TOMTOM_SDK_DIR /opt/tomtom-sdk )|set ( TOMTOM_SDK_DIR $TOMTOM_SDK_DIR )|g" /tmp/toolchain-$ARCH.cmake
   cmake .. -DCMAKE_INSTALL_PREFIX=$PREFIX -DCMAKE_TOOLCHAIN_FILE=/tmp/toolchain-$ARCH.cmake -DDISABLE_QT=ON -DSHARED_LIBNAVIT=ON
   make -j$JOBS
@@ -343,7 +335,7 @@ EOF
 convert $PREFIX/share/icons/hicolor/128x128/apps/navit.png  -crop 100x100+12+28 -resize 48x48 $OUT_PATH/SDKRegistry/navit.bmp
 
 # get a map!
-cp /tmp/navit/build/navit/maps/osm_bbox_11.3,47.9,11.7,48.2.bin $OUT_PATH/navit/share/maps/osm_sample.bin
+cp ~/navit/tomtom-build/navit/maps/osm_bbox_11.3,47.9,11.7,48.2.bin $OUT_PATH/navit/share/maps/osm_sample.bin
 sed -i "s|xi:include href=\"\$NAVIT_SHAREDIR/maps/\*.xml\"/|map type=\"binfile\" enabled=\"yes\" data=\"/mnt/sdcard/navit/share/maps/osm_sample.bin\" /|g" $OUT_PATH/navit/share/navit.xml
 
 # configure navit
