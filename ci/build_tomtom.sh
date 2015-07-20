@@ -357,4 +357,4 @@ EOF
 chmod a+rx $OUT_PATH/tomplayer/tomplayergui.sh
 
 
-tar cvfz $CIRCLE_ARTIFACTS/tomtom_sdcard.zip $OUT_PATH
+tar cvfz $CIRCLE_ARTIFACTS/tomtom_sdcard.tgz $OUT_PATH
