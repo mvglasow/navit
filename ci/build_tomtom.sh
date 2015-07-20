@@ -111,17 +111,17 @@ then
 fi
 
 # fontconfig
-# if ! test -f "$PREFIX/include/fontconfig/fontconfig.h"
-# then
-#   cd /tmp
-# #   wget -c http://www.freedesktop.org/software/fontconfig/release/fontconfig-2.10.91.tar.gz
-#   wget -c http://pkgs.fedoraproject.org/repo/pkgs/fontconfig/fontconfig-2.10.91.tar.bz2/c795bb39fab3a656e5dff8bad6a199f6/fontconfig-2.10.91.tar.bz2
-#   tar xjf fontconfig-2.10.91.tar.bz2
-#   cd fontconfig-2.10.91
-#   ./configure --prefix=$PREFIX --host=$ARCH --with-arch=arm --enable-libxml2
-#   make -j$JOBS
-#   make install
-# fi
+if ! test -f "$PREFIX/include/fontconfig/fontconfig.h"
+then
+  cd /tmp
+#   wget -c http://www.freedesktop.org/software/fontconfig/release/fontconfig-2.10.91.tar.gz
+  wget -c http://pkgs.fedoraproject.org/repo/pkgs/fontconfig/fontconfig-2.10.91.tar.bz2/c795bb39fab3a656e5dff8bad6a199f6/fontconfig-2.10.91.tar.bz2
+  tar xjf fontconfig-2.10.91.tar.bz2
+  cd fontconfig-2.10.91
+  ./configure --prefix=$PREFIX --host=$ARCH --with-arch=arm #--enable-libxml2
+  make -j$JOBS
+  make install
+fi
 
 # glib
 if ! test -f "$PREFIX/include/glib-2.0/glib.h"
