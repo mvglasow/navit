@@ -118,7 +118,7 @@ then
   wget -c http://pkgs.fedoraproject.org/repo/pkgs/fontconfig/fontconfig-2.10.91.tar.bz2/c795bb39fab3a656e5dff8bad6a199f6/fontconfig-2.10.91.tar.bz2
   tar xjf fontconfig-2.10.91.tar.bz2
   cd fontconfig-2.10.91
-  ./configure --prefix=$PREFIX --host=$ARCH --with-arch=arm #--enable-libxml2
+  ./configure --prefix=$PREFIX --host=$ARCH --with-arch=arm --enable-libxml2 --disable-docs
   make -j$JOBS
   make install
 fi
