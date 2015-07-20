@@ -222,7 +222,7 @@ then
 fi
 
 # creating directories
-OUT_PATH="$CIRCLE_ARTIFACTS/tomtom/sdcard"
+OUT_PATH="/tmp/tomtom/sdcard"
 rm -rf $OUT_PATH
 mkdir -p $OUT_PATH
 cd $OUT_PATH
@@ -355,3 +355,6 @@ echo "navit-wrapper rc=\$?" >> /mnt/sdcard/tomplayer/tomplayer.log
 echo "[`date`] end" >> /mnt/sdcard/tomplayer/tomplayer.log
 EOF
 chmod a+rx $OUT_PATH/tomplayer/tomplayergui.sh
+
+
+tar cvfz $CIRCLE_ARTIFACTS/tomtom_sdcard.zip $OUT_PATH
