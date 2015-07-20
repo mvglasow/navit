@@ -23,6 +23,7 @@ dependencies:
     - sudo apt-get install libfreetype6-dev
     - sudo apt-get install libdbus-glib-1-dev
     - sudo apt-get install g++
+    - sudo apt-get install autopoint
     - bash ci/build_tomtom.sh
 # For python testing with junit reporting
     - sudo pip install junit-xml
