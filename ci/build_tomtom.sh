@@ -222,7 +222,7 @@ then
 fi
 
 # creating directories
-OUT_PATH=/tmp/sdcard
+OUT_PATH="$CIRCLE_ARTIFACTS/tomtom/sdcard"
 rm -rf $OUT_PATH
 mkdir -p $OUT_PATH
 cd $OUT_PATH
@@ -304,7 +304,7 @@ chmod a+rx bin/navit-wrapper
 cp -r $PREFIX/lib/navit $OUT_PATH/navit/lib/
 
 # fonts
-cp -r /tmp/navit/navit/fonts $OUT_PATH/navit/share
+cp -r ~/navit/navit/fonts $OUT_PATH/navit/share
 cp $PREFIX/etc/fonts/fonts.conf $OUT_PATH/navit/share/fonts
 sed -i "s|/usr/share/fonts|/mnt/sdcard/navit/share/fonts|g" $OUT_PATH/navit/share/fonts/fonts.conf
 sed -i "s|$PREFIX/etc/fonts/conf.d|/mnt/sdcard/navit/share/fonts/conf.d|g" $OUT_PATH/navit/share/fonts/fonts.conf
