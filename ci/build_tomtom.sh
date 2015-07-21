@@ -213,14 +213,14 @@ if ! test -f "$PREFIX/bin/navit"
 then
   cd ~/navit
   sed -i "s|set ( TOMTOM_SDK_DIR /opt/tomtom-sdk )|set ( TOMTOM_SDK_DIR $TOMTOM_SDK_DIR )|g" /tmp/toolchain-$ARCH.cmake
-  mkdir -p tomtom-build
-  cd tomtom-build
-  cmake .. -DCMAKE_INSTALL_PREFIX=$PREFIX -DCMAKE_TOOLCHAIN_FILE=/tmp/toolchain-$ARCH.cmake -DDISABLE_QT=ON -DSHARED_LIBNAVIT=ON
-  # ./autogen.sh
-  # ./configure --prefix=$PREFIX --build=i686-gnu-linux --target=$ARCH --host=$ARCH --enable-cache-size=1048576 --disable-postgresql --disable-fontconfig --disable-graphics-opengl --with-included-gettext --disable-binding-python --disable-binding-dbus --disable-nls --disable-rpath --disable-graphics-gtk-drawing-area --disable-graphics-qt-qpainter --disable-gui-gtk --disable-speech-android --disable-speech-speech-dispatcher --disable-vehicle-android --disable-vehicle-gypsy --disable-vehicle-maemo --disable-vehicle-null --disable-vehicle-wince --disable-binding-dbus-use-system-bus --disable-hildon --disable-osso --disable-maptool --disable-samplemap --disable-gmodule --disable-garmin --disable-map-mg --disable-graphics-null --disable-vehicle-demo --enable-svg2png-scaling=16,32,48 --enable-svg2png-scaling-flag=16 --enable-svg2png-scaling-nav=48
+  # mkdir -p tomtom-build
+  # cd tomtom-build
+  # cmake .. -DCMAKE_INSTALL_PREFIX=$PREFIX -DCMAKE_TOOLCHAIN_FILE=/tmp/toolchain-$ARCH.cmake -DDISABLE_QT=ON -DSHARED_LIBNAVIT=ON
+  ./autogen.sh
+  ./configure --prefix=$PREFIX --build=i686-gnu-linux --target=$ARCH --host=$ARCH --enable-cache-size=1048576 --disable-postgresql --disable-fontconfig --disable-graphics-opengl --with-included-gettext --disable-binding-python --disable-binding-dbus --disable-nls --disable-rpath --disable-graphics-gtk-drawing-area --disable-graphics-qt-qpainter --disable-gui-gtk --disable-speech-android --disable-speech-speech-dispatcher --disable-vehicle-android --disable-vehicle-gypsy --disable-vehicle-maemo --disable-vehicle-null --disable-vehicle-wince --disable-binding-dbus-use-system-bus --disable-hildon --disable-osso --disable-maptool --disable-samplemap --disable-gmodule --disable-garmin --disable-map-mg --disable-graphics-null --disable-vehicle-demo --enable-svg2png-scaling=16,32,48 --enable-svg2png-scaling-flag=16 --enable-svg2png-scaling-nav=48
   make -j$JOBS
   make install
-  cp navit/libnavit_core.so $PREFIX/lib
+  # cp navit/libnavit_core.so $PREFIX/lib
 fi
 
 # creating directories
