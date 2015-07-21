@@ -217,7 +217,7 @@ then
   # cd tomtom-build
   # cmake .. -DCMAKE_INSTALL_PREFIX=$PREFIX -DCMAKE_TOOLCHAIN_FILE=/tmp/toolchain-$ARCH.cmake -DDISABLE_QT=ON -DSHARED_LIBNAVIT=ON
   ./autogen.sh
-  ./configure --prefix=$PREFIX --build=i686-gnu-linux --target=$ARCH --host=$ARCH --enable-cache-size=1048576 --disable-postgresql --disable-fontconfig --disable-graphics-opengl --with-included-gettext --disable-binding-python --disable-binding-dbus --disable-nls --disable-rpath --disable-graphics-gtk-drawing-area --disable-graphics-qt-qpainter --disable-gui-gtk --disable-speech-android --disable-speech-speech-dispatcher --disable-vehicle-android --disable-vehicle-gypsy --disable-vehicle-maemo --disable-vehicle-null --disable-vehicle-wince --disable-binding-dbus-use-system-bus --disable-hildon --disable-osso --disable-gmodule --disable-garmin --disable-map-mg --disable-graphics-null --disable-vehicle-demo --enable-svg2png-scaling=16,32,48 --enable-svg2png-scaling-flag=16 --enable-svg2png-scaling-nav=48
+  ./configure --prefix=$PREFIX --build=i686-gnu-linux --target=$ARCH --host=$ARCH --enable-cache-size=1048576 --disable-postgresql --disable-fontconfig --disable-graphics-opengl --with-included-gettext --disable-binding-python --disable-binding-dbus --disable-nls --disable-rpath --disable-graphics-gtk-drawing-area --disable-graphics-qt-qpainter --disable-gui-gtk --disable-speech-android --disable-speech-speech-dispatcher --disable-vehicle-android --disable-vehicle-gypsy --disable-vehicle-maemo --disable-vehicle-null --disable-vehicle-wince --disable-binding-dbus-use-system-bus --disable-hildon --disable-osso --disable-gmodule --disable-garmin --disable-map-mg --disable-graphics-null --disable-vehicle-demo --enable-svg2png-scaling=16,32,48 --enable-svg2png-scaling-flag=16 --enable-svg2png-scaling-nav=48 --disable-maptool --disable-samplemap
   make -j$JOBS
   make install
   # cp navit/libnavit_core.so $PREFIX/lib
@@ -338,7 +338,7 @@ EOF
 convert $PREFIX/share/icons/hicolor/128x128/apps/navit.png  -crop 100x100+12+28 -resize 48x48 $OUT_PATH/SDKRegistry/navit.bmp
 
 # get a map!
-cp ~/navit/tomtom-build/navit/maps/osm_bbox_11.3,47.9,11.7,48.2.bin $OUT_PATH/navit/share/maps/osm_sample.bin
+#cp ~/navit/tomtom-build/navit/maps/osm_bbox_11.3,47.9,11.7,48.2.bin $OUT_PATH/navit/share/maps/osm_sample.bin
 sed -i "s|xi:include href=\"\$NAVIT_SHAREDIR/maps/\*.xml\"/|map type=\"binfile\" enabled=\"yes\" data=\"/mnt/sdcard/navit/share/maps/osm_sample.bin\" /|g" $OUT_PATH/navit/share/navit.xml
 
 # configure navit
