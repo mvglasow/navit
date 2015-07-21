@@ -274,7 +274,6 @@ else(FREETYPE_FOUND)
    set_with_reason(graphics/gd "FreeType library not found" FALSE)
    set_with_reason(graphics/gtk_drawing_area "FreeType library not found" FALSE)
    set_with_reason(graphics/opengl "FreeType library not found" FALSE)
-   set_with_reason(graphics/sdl "FreeType library not found" FALSE)
 endif(FREETYPE_FOUND)
 
 if(FONTCONFIG_FOUND)
