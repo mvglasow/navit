@@ -233,8 +233,9 @@ cd navit
 mkdir -p bin lib share sdl ts
 
 # libraries
-cp $PREFIX/lib/libnavit_core.so lib
-cp $PREFIX/lib/libfreetype.so.6 lib
+ls -l $PREFIX/lib/*.so*
+# cp $PREFIX/lib/libnavit_core.so lib
+#cp $PREFIX/lib/libfreetype.so.6 lib
 cp $PREFIX/lib/libSDL-1.2.so.0 lib
 cp $PREFIX/lib/libSDL_image-1.2.so.0 lib
 cp $PREFIX/lib/libfontconfig.so.1 lib
