@@ -3751,6 +3751,7 @@ navigation_call_callbacks(struct navigation *this_, int force_speech)
 	}
 }
 
+// FIXME: make sure that upon recalculation we destroy only those items which are no longer needed
 static void
 navigation_update(struct navigation *this_, struct route *route, struct attr *attr)
 {
