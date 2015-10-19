@@ -35,6 +35,7 @@
 #include "projection.h"
 #include "map.h"
 #include "xmlconfig.h"
+#include "profile.h"
 
 /**
  * @brief A mapset
@@ -380,8 +381,11 @@ mapset_search_get_item(struct mapset_search *this_)
 		}
 		if (! this_->map)
 			break;
+		profile(0, "calling map_search_new()\n");
 		this_->ms=map_search_new(this_->map->data, this_->item, this_->search_attr, this_->partial);
+		profile(0, "done map_search_new()\n");
 	}
+
 	return ret;
 }
 

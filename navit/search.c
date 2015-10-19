@@ -35,6 +35,7 @@
 #include "geom.h"
 #include "util.h"
 #include "search_houseno_interpol.h"
+#include "profile.h"
 
 #ifdef HAVE_API_ANDROID
 #include "android.h"
@@ -852,12 +853,15 @@ search_list_get_result(struct search_list *this_)
 	struct attr attr2;
 	int has_street_name=0;
 
+	profile(0, "enter\n");
+
 	if (this_->use_address_results) {
 		struct search_list_result *ret=NULL;
 		if (this_->address_results_pos) {
 			ret=this_->address_results_pos->data;
 			this_->address_results_pos=g_list_next(this_->address_results_pos);
 		}
+		profile(0, "return ret\n");
 		return ret;
 	}
 
@@ -906,9 +910,11 @@ search_list_get_result(struct search_list *this_)
 		//dbg(lvl_debug,"le->search=%p\n", le->search);
 		if (!this_->item)
 		{
+			profile(0, "calling mapset_search_get_item()\n");
 			//dbg(lvl_debug,"sssss 1");
 			this_->item=mapset_search_get_item(le->search);
 			//dbg(lvl_debug,"sssss 1 %p\n",this_->item);
+			profile(0, "mapset_search_get_item() returned\n");
 		}
 		if (this_->item)
 		{
@@ -1019,6 +1025,7 @@ search_list_get_result(struct search_list *this_)
 				if (search_add_result(le, p))
 				{
 					this_->result.id++;
+					profile(0, "return &this_->result\n");
 					return &this_->result;
 				}
 				else
@@ -1034,6 +1041,7 @@ search_list_get_result(struct search_list *this_)
 				break;
 		}
 	}
+	profile(0, "return NULL\n");
 	return NULL;
 }
 

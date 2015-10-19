@@ -39,6 +39,7 @@
 #include "callback.h"
 #include "types.h"
 #include "geom.h"
+#include "profile.h"
 
 static int map_id;
 
@@ -1908,7 +1909,9 @@ binmap_search_street_by_place(struct map_priv *map, struct item *town, struct co
 	sel->u.c_rect.lu=*c;
 	sel->u.c_rect.rl=*c;
 	map_rec2=map_rect_new_binfile(map, sel);
+	profile (0, "enter while map_rect_get_item_binfile()\n");
 	while ((place=map_rect_get_item_binfile(map_rec2))) {
+		profile (0, "while map_rect_get_item_binfile()\n");
 		if (item_is_poly_place(*place) &&
 		    item_attr_get(place, attr_label, &poly_town_name) &&
 		    !strcmp(poly_town_name.u.str,town_name.u.str)) {
@@ -1928,6 +1931,7 @@ binmap_search_street_by_place(struct map_priv *map, struct item *town, struct co
 				*boundaries=g_list_prepend(*boundaries,bnd);
 		}
 	}
+	profile (0, "end while map_rect_get_item_binfile()\n");
 	map_rect_destroy_binfile(map_rec2);
 	if (found)
 		return map_rect_new_binfile(map, sel);
@@ -2052,6 +2056,8 @@ binmap_search_new(struct map_priv *map, struct item *item, struct attr *search, 
 	struct item *town;
 	int idx;
 
+	profile(0, "enter\n");
+
 	msp->search = *search;
 	msp->partial = partial;
 	if(ATTR_IS_STRING(msp->search.type))
@@ -2077,35 +2083,48 @@ binmap_search_new(struct map_priv *map, struct item *item, struct attr *search, 
 		case attr_town_postal:
 			break;
 		case attr_street_name:
+			profile(0, "case attr_street_name\n");
 			if (! item->map)
 				break;
 			if (!map_priv_is(item->map, map))
 				break;
 			map_rec = map_rect_new_binfile(map, NULL);
 			town = map_rect_get_item_byid_binfile(map_rec, item->id_hi, item->id_lo);
+			profile(0, "if (town)\n");
 			if (town) {
 				struct coord c;
 
+				profile(0, "if binmap_search_by_index()\n");
 				if (binmap_search_by_index(map, town, &msp->mr))
 					msp->mode = 1;
 				else {
+					profile(0, "else...\n");
 					map->last_searched_town_id_hi = town->id_hi;
 					map->last_searched_town_id_lo = town->id_lo;
+					profile(0, "if item_coord_get()\n");
 					if (item_coord_get(town, &c, 1)) {
+						profile(0, "if binmap_search_street_by_place()\n");
 						if ((msp->mr=binmap_search_street_by_place(map, town, &c, &msp->ms, &msp->boundaries)))
 							msp->mode = 2;
 						else {
+							profile(0, "else enter binmap_search_street_by_estimate()\n");
 							msp->mr=binmap_search_street_by_estimate(map, town, &c, &msp->ms);
+							profile(0, "done binmap_search_street_by_estimate()\n");
 							msp->mode = 3;
 						}
+						profile(0, "end if binmap_search_street_by_place()\n");
 					}
+					profile(0, "end if item_coord_get()\n");
 				}
+				profile(0, "end if binmap_search_by_index()\n");
 				map_rect_destroy_binfile(map_rec);
 				if (!msp->mr)
 					break;
+				profile(0, "return msp\n");
 				return msp;
 			}
 			map_rect_destroy_binfile(map_rec);
+			profile(0, "break (attr_street_name)\n");
 			break;
 		case attr_house_number:
 			dbg(lvl_debug,"case house_number");

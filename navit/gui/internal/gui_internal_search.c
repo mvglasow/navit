@@ -10,6 +10,7 @@
 #include "navit.h"
 #include "navit_nls.h"
 #include "event.h"
+#include "profile.h"
 #include "search.h"
 #include "country.h"
 #include "track.h"
@@ -56,6 +57,8 @@ gui_internal_search_house_number(struct gui_priv *this, struct widget *widget, v
 void
 gui_internal_search_idle_end(struct gui_priv *this)
 {
+	profile(0, "enter\n");
+
 	if (this->idle) {
 		event_remove_idle(this->idle);
 		this->idle=NULL;
@@ -323,7 +326,12 @@ gui_internal_search_idle(struct gui_priv *this, char *wm_name, struct widget *se
         struct widget *search_input=NULL;
 	struct widget *menu, *resultlist_row, *resultlist_entry;
 
+	profile(0, "enter\n");
+
 	res=search_list_get_result(this->sl);
+
+	profile(0, "search_list_get_result returned\n");
+
 	if (!res) {
 		gui_internal_search_idle_end(this);
 		gui_internal_highlight_possible_keys(this, possible_keys);
@@ -385,11 +393,15 @@ gui_internal_search_idle(struct gui_priv *this, char *wm_name, struct widget *se
 
 	g_free(result_main_label);
 	g_free(result_sublabel);
+
+	profile(0, "done\n");
 }
 
 static void
 gui_internal_search_idle_start(struct gui_priv *this, char *wm_name, struct widget *search_list, void *param)
 {
+	profile(0, "enter\n");
+
 	this->idle_cb=callback_new_4(callback_cast(gui_internal_search_idle), this, wm_name, search_list, param);
 	this->idle=event_add_idle(50,this->idle_cb);
 	callback_call_0(this->idle_cb);
@@ -402,6 +414,8 @@ gui_internal_search_changed(struct gui_priv *this, struct widget *wm, void *data
 	struct widget *search_list=gui_internal_menu_data(this)->search_list;
 	void *param=(void *)3;
 	int minlen=1;
+
+	profile(0, NULL);
 
 	gui_internal_widget_table_clear(this, search_list);
 
