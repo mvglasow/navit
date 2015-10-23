@@ -171,11 +171,18 @@ struct route_graph_segment {
 /**
  * @brief A traffic distortion
  *
- * This is distortion in the traffic where you can't drive as fast as usual or have to wait for some time
+ * Traffic distortions represent delays on the route, which can occur for a variety of reasons such
+ * as roadworks, accidents or heavy traffic. They are also used internally by Navit to avoid
+ * using a particular segment.
+ *
+ * A traffic distortion can limit the speed on a segment, or introduce a delay. If both are given,
+ * at the same time, they are cumulative.
  */
 struct route_traffic_distortion {
-	int maxspeed;					/**< Maximum speed possible in km/h */
-	int delay;					/**< Delay in tenths of seconds */
+	int maxspeed;					/**< Maximum speed possible in km/h. Use {@code INT_MAX} to
+									     leave the speed unchanged, or 0 to mark the segment as
+									     impassable. */
+	int delay;					/**< Delay in tenths of seconds (0 for no delay) */
 };
 
 /**
@@ -749,6 +756,16 @@ route_destination_reached(struct route *this)
 		return 2;
 }
 
+/**
+ * @brief Returns the position from which to route to the current destination of the route.
+ *
+ * This function examines the destination list of the route. If present, it returns the destination
+ * which precedes the one indicated by the {@code current_dst} member of the route. Failing that,
+ * the current position of the route is returned.
+ *
+ * @param this The route object
+ * @return The previous destination or current position, see description
+ */
 static struct route_info *
 route_previous_destination(struct route *this)
 {
@@ -761,12 +778,25 @@ route_previous_destination(struct route *this)
 	return l->data;
 }
 
+/**
+ * @brief Updates or recreates the route graph.
+ *
+ * This function is called after the route graph has been changed or rebuilt and flooding has
+ * completed. It then updates the route path to reflect these changes.
+ *
+ * If multiple destinations are set, this function will reset and re-flood the route graph for each
+ * destination, thus recursively calling itself for each destination.
+ *
+ * @param this The route object
+ * @param new_graph FIXME Whether the route graph has been rebuilt from scratch
+ */
+/* FIXME Should we rename this function to route_graph_update_done, in order to avoid confusion? */
 static void
 route_path_update_done(struct route *this, int new_graph)
 {
 	struct route_path *oldpath=this->path2;
 	struct attr route_status;
-	struct route_info *prev_dst;
+	struct route_info *prev_dst; /* previous destination or current position */
 	route_status.type=attr_route_status;
 	if (this->path2 && (this->path2->in_use>1)) {
 		this->path2->update_required=1+new_graph;
@@ -1913,14 +1943,28 @@ route_graph_destroy(struct route_graph *this)
 }
 
 /**
- * @brief Returns the estimated speed on a segment
+ * @brief Returns the estimated speed on a segment, or 0 for an impassable segment
  *
- * This function returns the estimated speed to be driven on a segment, 0=not passable
+ * This function returns the estimated speed to be driven on a segment, calculated as follows:
+ * <ul>
+ * <li>Initially the route weight of the vehicle profile for the given item type is used. If the
+ * item type does not have a route weight in the vehicle profile given, it is considered impassable
+ * and 0 is returned.</li>
+ * <li>If the {@code maxspeed} attribute of the segment's item is set, either it or the previous
+ * speed estimate for the segment is used, as governed by the vehicle profile's
+ * {@code maxspeed_handling} attribute.</li>
+ * <li>If a traffic distortion is present, its {@code maxspeed} is taken into account in a similar
+ * manner. Unlike the regular {@code maxspeed}, a {@code maxspeed} resulting from a traffic
+ * distortion is always considered if it limits the speed, regardless of {@code maxspeed_handling}.
+ * </li>
+ * <li>Access restrictions for dangerous goods, size or weight are evaluated, and 0 is returned if
+ * the given vehicle profile violates one of them.</li>
+ * </ul>
  *
  * @param profile The routing preferences
  * @param over The segment which is passed
- * @param dist A traffic distortion if applicable
- * @return The estimated speed
+ * @param dist A traffic distortion if applicable, or {@code NULL}
+ * @return The estimated speed in km/h, or 0 if the segment is impassable
  */
 static int
 route_seg_speed(struct vehicleprofile *profile, struct route_segment_data *over, struct route_traffic_distortion *dist)
@@ -1964,17 +2008,17 @@ route_seg_speed(struct vehicleprofile *profile, struct route_segment_data *over,
 }
 
 /**
- * @brief Returns the time needed to drive len on item
+ * @brief Returns the time needed to travel along a segment, or {@code INT_MAX} if the segment is impassable.
  *
- * This function returns the time needed to drive len meters on 
- * the item passed in item in tenth of seconds.
+ * This function returns the time needed to travel along the entire length of {@code over} in
+ * tenths of seconds. Restrictions for dangerous goods, weight or size are taken into account.
+ * Traffic distortions are also taken into account if a valid {@code dist} argument is given.
  *
- * @param profile The routing preferences
+ * @param profile The vehicle profile (routing preferences)
  * @param over The segment which is passed
- * @param dist A traffic distortion if applicable
- * @return The time needed to drive len on item in thenth of senconds
+ * @param dist A traffic distortion if applicable, or {@code NULL}
+ * @return The time needed in tenths of seconds
  */
-
 static int
 route_time_seg(struct vehicleprofile *profile, struct route_segment_data *over, struct route_traffic_distortion *dist)
 {
@@ -1984,6 +2028,14 @@ route_time_seg(struct vehicleprofile *profile, struct route_segment_data *over, 
 	return over->len*36/speed+(dist ? dist->delay : 0);
 }
 
+/**
+ * @brief Returns the traffic distortion for a segment.
+ *
+ * @param seg The segment for which the traffic distortion is to be returned
+ * @param ret Points to a {@code struct route_traffic_distortion}, whose members will be filled
+ *
+ * @return true if a traffic distortion was found, 0 if not
+ */
 static int
 route_get_traffic_distortion(struct route_graph_segment *seg, struct route_traffic_distortion *ret)
 {
@@ -2020,13 +2072,22 @@ route_through_traffic_allowed(struct vehicleprofile *profile, struct route_graph
 }
 
 /**
- * @brief Returns the "costs" of driving from point from over segment over in direction dir
+ * @brief Returns the "cost" of driving from point {@code from} along segment {@code over} in direction {@code dir}
+ *
+ * Cost is relative to time, indicated in tenths of seconds.
+ *
+ * This function considers traffic distortions as well as penalties. If the segment is impassable
+ * due to traffic distortions or restrictions, {@code INT_MAX} is returned in order to prevent use
+ * of this segment for routing.
  *
  * @param profile The routing preferences
  * @param from The point where we are starting
  * @param over The segment we are using
- * @param dir The direction of segment which we are driving
- * @return The "costs" needed to drive len on item
+ * @param dir The direction of segment which we are driving. Positive values indicate we are
+ * traveling in the direction of the segment, negative values indicate we are traveling against
+ * that direction. Values of +2 or -2 cause the function to ignore traffic distortions.
+ *
+ * @return The "cost" needed to travel along the segment
  */  
 
 static int
@@ -2066,6 +2127,15 @@ route_graph_segment_match(struct route_graph_segment *s1, struct route_graph_seg
 		s1->end->c.x == s2->end->c.x && s1->end->c.y == s2->end->c.y);
 }
 
+/**
+ * @brief Sets or clears a traffic distortion for a segment.
+ *
+ * This sets or clears a delay. It cannot be used to set speed.
+ *
+ * @param this The route graph
+ * @param seg The segment to which the traffic distortion applies
+ * @param delay Delay in tenths of a second
+ */
 static void
 route_graph_set_traffic_distortion(struct route_graph *this, struct route_graph_segment *seg, int delay)
 {
@@ -2295,6 +2365,16 @@ route_process_street_graph(struct route_graph *this, struct item *item, struct v
 	}
 }
 
+/**
+ * @brief Gets the next route_graph_segment belonging to the specified street
+ *
+ * @param graph The route graph in which to search
+ * @param sd The street to search for
+ * @param last The last route graph segment returned to iterate over multiple segments of the same
+ * item. If {@code NULL}, the first matching segment will be returned.
+ *
+ * @return The route graph segment, or {@code NULL} if none was found.
+ */
 static struct route_graph_segment *
 route_graph_get_segment(struct route_graph *graph, struct street_data *sd, struct route_graph_segment *last)
 {
@@ -2532,24 +2612,46 @@ route_get_coord_dist(struct route *this_, int dist)
  * @param preferences The routing preferences
  * @return The new route path
  */
+/* FIXME introduce const for dir instead of magic numbers (not only here) */
 static struct route_path *
 route_path_new(struct route_graph *this, struct route_path *oldpath, struct route_info *pos, struct route_info *dst, struct vehicleprofile *profile)
 {
-	struct route_graph_segment *s=NULL,*s1=NULL,*s2=NULL;
-	struct route_graph_point *start;
-	struct route_info *posinfo, *dstinfo;
-	int segs=0,dir;
-	int val1=INT_MAX,val2=INT_MAX;
+	struct route_graph_segment *s=NULL,*s1=NULL,*s2=NULL; /* candidate segments for cheapest path */
+	struct route_graph_point *start; /* point at which the next segment starts, i.e. up to which the path is complete */
+	struct route_info *posinfo, *dstinfo; /* same as pos and dst, but NULL if not part of current segment */
+	int segs=0,dir; /* number of segments added to graph, direction of first segment */
+	int val1=INT_MAX,val2=INT_MAX; /* total cost for s1 and s2, respectively */
 	int val,val1_new,val2_new;
 	struct route_path *ret;
+	int force=0; /* if true, force one or more initial segments and continue routing from there (because we can't get a route otherwise) */
+	int candidates; /* number of candidate segments examined */
+	int i;
+	struct coord_geo cgeo; /* Geo coordinates for debugging */
 
 	if (! pos->street || ! dst->street) {
 		dbg(lvl_error,"pos or dest not set\n");
 		return NULL;
 	}
 
+	/*
+	 * If
+	 * - we're in auto mode and both points are very close to each other or
+	 * - we're in offroad mode,
+	 * just return offroad path.
+	 */
 	if (profile->mode == 2 || (profile->mode == 0 && pos->lenextra + dst->lenextra > transform_distance(map_projection(pos->street->item.map), &pos->c, &dst->c)))
 		return route_path_new_offroad(this, pos, dst);
+
+	// FIXME debug level
+	transform_to_geo(projection_mg, &(pos->c), &cgeo);
+	dbg(lvl_error, "routing from 0x%x, 0x%x\n", pos->c.x, pos->c.y);
+	dbg(lvl_error, "http://www.openstreetmap.org/?mlat=%.6f&mlon=%.6f\n", cgeo.lat, cgeo.lng);
+	/*
+	 * find first segment: examine the segments containing the current position and find the
+	 * cheapest one, considering
+	 * - its partial cost (pos to end point rather than the whole segment)
+	 * - penalties for turning around
+	 */
 	while ((s=route_graph_get_segment(this, pos->street, s))) {
 		val=route_value_seg(profile, NULL, s, 2);
 		if (val != INT_MAX && s->end->value != INT_MAX) {
@@ -2581,13 +2683,56 @@ route_path_new(struct route_graph *this, struct route_path *oldpath, struct rout
 		}
 	}
 	if (val1 == INT_MAX && val2 == INT_MAX) {
-		dbg(lvl_error,"no route found, pos blocked\n");
-		return NULL;
+		/*
+		 * None of the segments is passable. This can happen if turn restrictions prevent us from
+		 * taking the direct route, specifically when they require us to pass the same point twice.
+		 * When the start of the route is a one-way street, we can try recovering from this by
+		 * forcing the start of the path to follow that road as long as we have no other choice
+		 * and only then starting to look for the least costly path.
+		 */
+		/*
+		 * TODO
+		 * can we relax criteria to use this fallback whenever there is just one passable segment
+		 * leading away from the current position?
+		 */
+		if ((pos->street) && (pos->street->flags & AF_ONEWAYMASK)) {
+			force = 1;
+			dir = (pos->street->flags & AF_ONEWAY) ? 2 : -2;
+			dbg(lvl_error, "one-way street detected (0x%x, dir %d) and no route found, forcing start of route\n", pos->street->flags, dir);
+			s = NULL;
+			while ((s = route_graph_get_segment(this, pos->street, s)) && (route_value_seg(profile, NULL, s, dir) == INT_MAX)) {
+				/* NOP */
+			}
+#if 0
+			while (1) {
+				s = route_graph_get_segment(this, pos->street, s);
+				int sval = route_value_seg(profile, NULL, s, dir);
+				dbg(lvl_error, "segment: 0x%x, value: %d\n", s, sval);
+				if ((!s) || (sval != INT_MAX))
+					break;
+			}
+#endif
+			if (s == NULL) {
+				dbg(lvl_error, "no route found (pos is on impassable segment), pos blocked\n");
+				return NULL;
+			}
+			/* set start to the first point of the segment (at pos or before it) */
+			if (pos->street->flags & AF_ONEWAY)
+				start = s->start;
+			else
+				start = s->end;
+		} else {
+			dbg(lvl_error, "no route found, pos blocked\n");
+			return NULL;
+		}
 	}
+
+	if (!force) {
 	if (val1 == val2) {
 		val1=s1->end->value;
 		val2=s2->start->value;
 	}
+	/* set start to the first point of the segment (at pos or before it) */
 	if (val1 < val2) {
 		start=s1->start;
 		s=s1;
@@ -2597,6 +2742,9 @@ route_path_new(struct route_graph *this, struct route_path *oldpath, struct rout
 		s=s2;
 		dir=-1;
 	}
+
+	/* if the selected segment requires turning around and a turn-around penalty applies, add the
+	 * penalty as a traffic distortion and re-flood the route graph */
 	if (pos->street_direction && dir != pos->street_direction && profile->turn_around_penalty) {
 		if (!route_graph_segment_match(this->avoid_seg,s)) {
 			dbg(lvl_debug,"avoid current segment\n");
@@ -2609,17 +2757,29 @@ route_path_new(struct route_graph *this, struct route_path *oldpath, struct rout
 			return route_path_new(this, oldpath, pos, dst, profile);
 		}
 	}
+	}
+
+	/* initialize the new route path */
 	ret=g_new0(struct route_path, 1);
 	ret->in_use=1;
 	ret->updated=1;
+
+	/* if current position is offroad, add offroad segment to nearest point on road */
 	if (pos->lenextra) 
 		route_path_add_line(ret, &pos->c, &pos->lp, pos->lenextra);
 	ret->path_hash=item_hash_new();
+
+	// FIXME decide whether to keep debug code here
+	transform_to_geo(projection_mg, &(start->c), &cgeo);
+	dbg(lvl_debug, "building route path, start = 0x%x, 0x%x\n", start->c.x, start->c.y);
+	dbg(lvl_debug, "http://www.openstreetmap.org/?mlat=%.6f&mlon=%.6f\n", cgeo.lat, cgeo.lng);
+	/* add segments (beginning with the first one) until destination is reached */
 	dstinfo=NULL;
 	posinfo=pos;
 	while (s && !dstinfo) { /* following start->seg, which indicates the least costly way to reach our destination */
 		segs++;
 #if 0
+		/* FIXME change to dbg() with an appropriate level, then drop conditionals */
 		printf("start->value=%d 0x%x,0x%x\n", start->value, start->c.x, start->c.y);
 #endif
 		if (s->start == start) {		
@@ -2636,10 +2796,94 @@ route_path_new(struct route_graph *this, struct route_path *oldpath, struct rout
 			start=s->start;
 		}
 		posinfo=NULL;
-		s=start->seg;
+		if (force) {
+			candidates = 0;
+			s1 = NULL;
+			/* FIXME: use dir instead of a loop iterator: for (dir == 2; dir >= -2; dir -= 4) */
+			for (i = 0; i <= 1; i++) {
+				s2 = (i == 0) ? start->start : start->end;
+				while (s2) {
+					// FIXME debug level
+					transform_to_geo(projection_mg,
+							(i == 0) ? &(s2->end->c) : &(s2->start->c),
+							&cgeo);
+					int s2val = route_value_seg(profile, NULL, s2, (i == 0) ? 2 : -2);
+					dbg(lvl_error, "\texamining segment: (%s 0x%x 0x%x), dir %d, cost: %d, to point:\n",
+							item_to_name(s2->data.item.type),
+							s2->data.item.id_hi,
+							s2->data.item.id_lo,
+							1 - 2 * i,
+							s2val);
+					dbg(lvl_error, "\thttp://www.openstreetmap.org/?mlat=%.6f&mlon=%.6f\n", cgeo.lat, cgeo.lng);
+
+					/*
+					 * Count possible segments away from this point:
+					 * - exclude the one from which we came
+					 * - avoid counting duplicates twice
+					 * - exclude impassable segments
+					 * Segments which are forbidden by turn restrictions will not be returned here.
+					 */
+					if ((!route_graph_segment_match(s2, s))
+							&& (!route_graph_segment_match(s2, s1))
+							&& (route_value_seg(profile, NULL, s2, (i == 0) ? 2 : -2) < INT_MAX)) {
+						candidates++;
+
+						//FIXME debug level
+						dbg(lvl_error, "\tcandidate found\n");
+
+						if (!s1) { // TODO or s2 is better than s1
+							s1 = s2;
+							// TODO store segment data
+						}
+					}
+					s2 = (i == 0) ? s2->start_next : s2->end_next;
+				}
+			}
+			// FIXME debug level
+			transform_to_geo(projection_mg, &(start->c), &cgeo);
+			dbg(lvl_error, "%d candidate segments at 0x%x, 0x%x\n", candidates, start->c.x, start->c.y);
+			dbg(lvl_error, "http://www.openstreetmap.org/?mlat=%.6f&mlon=%.6f\n", cgeo.lat, cgeo.lng);
+			if (candidates == 1) {
+				s = s1;
+			} else if (candidates > 1) {
+				force = 0;
+				if (start->seg && !route_graph_segment_match(start->seg, s)) {
+					s = start->seg;
+
+					// FIXME debug level
+					transform_to_geo(projection_mg,
+							(start == s->start) ? &(s->end->c) : &(s->start->c),
+							&cgeo);
+					dbg(lvl_error, "multiple candidates, following least costly path: (%s 0x%x 0x%x), to point:\n",
+							item_to_name(s->data.item.type),
+							s->data.item.id_hi,
+							s->data.item.id_lo);
+					dbg(lvl_error, "http://www.openstreetmap.org/?mlat=%.6f&mlon=%.6f\n", cgeo.lat, cgeo.lng);
+				} else {
+					/*
+					 * We have multiple options but the least costly segment (start->seg) is either
+					 * NULL or coincides with the last segment of the forced path.
+					 */
+					/* TODO maybe this error is recoverable:
+					 * add route distortion (maxspeed = 0 or delay = INT_MAX) to s
+					 * then recalculate route graph
+					 */
+					dbg(lvl_error, "no route found (no least-cost path beyond end of forced path), pos blocked\n");
+					return NULL;
+				}
+			} else {
+				dbg(lvl_error, "no route found (dead end path), pos blocked\n");
+				return NULL;
+			}
+		} else
+			/* follow least costly path */
+			s = start->seg;
 	}
+
+	/* if destination is offroad, add offroad segment from nearest point on road */
 	if (dst->lenextra) 
 		route_path_add_line(ret, &dst->lp, &dst->c, dst->lenextra);
+
 	dbg(lvl_debug, "%d segments\n", segs);
 	return ret;
 }
