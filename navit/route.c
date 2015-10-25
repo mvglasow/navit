@@ -2979,7 +2979,7 @@ route_path_new(struct route_graph *this, struct route_path *oldpath, struct rout
 
 					/* To avoid routing back through s, set a traffic distortion making s
 					 * impassable, then re-flood.
-					 * If is is the last segment if a dual-carriageway section and start is where
+					 * If s is the last segment of a dual-carriageway section and start is where
 					 * the two carriageways join, we need to avoid the opposite carriageway
 					 * instead. Usually there will be a turn restriction prohibiting the U turn,
 					 * hence the segment to avoid will not be referenced by start.
