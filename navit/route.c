@@ -171,18 +171,20 @@ struct route_graph_segment {
 /**
  * @brief A traffic distortion
  *
- * Traffic distortions represent delays on the route, which can occur for a variety of reasons such
- * as roadworks, accidents or heavy traffic. They are also used internally by Navit to avoid
- * using a particular segment.
+ * Traffic distortions represent delays or closures on the route, which can occur for a variety of
+ * reasons such as roadworks, accidents or heavy traffic. They are also used internally by Navit to
+ * avoid using a particular segment.
  *
- * A traffic distortion can limit the speed on a segment, or introduce a delay. If both are given,
- * at the same time, they are cumulative.
+ * A traffic distortion can limit the speed on a segment, or introduce a delay. If both are given
+ * at the same time, they are cumulative. Either member can mark the segment as impassable,
+ * overriding the value of the other.
  */
 struct route_traffic_distortion {
 	int maxspeed;					/**< Maximum speed possible in km/h. Use {@code INT_MAX} to
 									     leave the speed unchanged, or 0 to mark the segment as
 									     impassable. */
-	int delay;					/**< Delay in tenths of seconds (0 for no delay) */
+	int delay;					/**< Delay in tenths of seconds. Use 0 for no delay, or
+								     {@code INT_MAX} to mark the segment as impassable. */
 };
 
 /**
@@ -790,7 +792,7 @@ route_previous_destination(struct route *this)
  * @param this The route object
  * @param new_graph FIXME Whether the route graph has been rebuilt from scratch
  */
-/* FIXME Should we rename this function to route_graph_update_done, in order to avoid confusion? */
+/* FIXME Should we rename this function to route_graph_flood_done, in order to avoid confusion? */
 static void
 route_path_update_done(struct route *this, int new_graph)
 {
@@ -1366,11 +1368,12 @@ route_remove_waypoint(struct route *this)
 }
 
 /**
- * @brief Gets the route_graph_point with the specified coordinates
+ * @brief Gets the next route_graph_point with the specified coordinates
  *
  * @param this The route in which to search
  * @param c Coordinates to search for
- * @param last The last route graph point returned to iterate over multiple points with the same coordinates
+ * @param last The last route graph point returned to iterate over multiple points with the same coordinates,
+ * or {@code NULL} to return the first point
  * @return The point at the specified coordinates or NULL if not found
  */
 static struct route_graph_point *
@@ -1391,6 +1394,13 @@ route_graph_get_point_next(struct route_graph *this, struct coord *c, struct rou
 	return NULL;
 }
 
+/**
+ * @brief Gets the first route_graph_point with the specified coordinates
+ *
+ * @param this The route in which to search
+ * @param c Coordinates to search for
+ * @return The point at the specified coordinates or NULL if not found
+ */
 static struct route_graph_point *
 route_graph_get_point(struct route_graph *this, struct coord *c)
 {
@@ -1451,7 +1461,10 @@ route_graph_point_new(struct route_graph *this, struct coord *f)
  * This will insert a point into the route graph at the coordinates passed in f.
  * Note that the point is not yet linked to any segments.
  *
- * @param this The route to insert the point into
+ * If the route graph already contains a point at the specified coordinates, the existing point
+ * will be returned.
+ *
+ * @param this The route graph to insert the point into
  * @param f The coordinates at which the point should be inserted
  * @return The point inserted or NULL on failure
  */
@@ -1489,6 +1502,14 @@ route_graph_free_points(struct route_graph *this)
 
 /**
  * @brief Resets all nodes
+ *
+ * This iterates through all the points in the route graph, resetting them to their initial state.
+ * The {@code value} member of each point (cost to reach the destination) is reset to
+ * {@code INT_MAX}, the {@code seg} member (cheapest way to destination) is reset to {@code NULL}
+ * and the {@code el} member (pointer to element in Fibonacci heap) is also reset to {@code NULL}.
+ *
+ * References to elements of the route graph which were obtained prior to calling this function
+ * remain valid after it returns.
  *
  * @param this The route graph to reset
  */
@@ -2022,7 +2043,10 @@ route_seg_speed(struct vehicleprofile *profile, struct route_segment_data *over,
 static int
 route_time_seg(struct vehicleprofile *profile, struct route_segment_data *over, struct route_traffic_distortion *dist)
 {
-	int speed=route_seg_speed(profile, over, dist);
+	int speed;
+	if (dist && (dist->delay == INT_MAX))
+		return INT_MAX;
+	speed = route_seg_speed(profile, over, dist);
 	if (!speed)
 		return INT_MAX;
 	return over->len*36/speed+(dist ? dist->delay : 0);
@@ -2263,8 +2287,8 @@ route_process_street_graph(struct route_graph *this, struct item *item, struct v
 #endif
 	int segmented = 0;
 	struct roadprofile *roadp;
-	struct route_graph_point *s_pnt,*e_pnt;
-	struct coord c,l;
+	struct route_graph_point *s_pnt,*e_pnt; /* Start and end point */
+	struct coord c,l; /* Current and previous point */
 	struct attr attr;
 	struct route_graph_segment_data data;
 	data.flags=0;
@@ -2274,7 +2298,7 @@ route_process_street_graph(struct route_graph *this, struct item *item, struct v
 
 	roadp = vehicleprofile_get_roadprofile(profile, item->type);
 	if (!roadp) {
-		// Don't include any roads that don't have a road profile in our vehicle profile
+		/* Don't include any roads that don't have a road profile in our vehicle profile */
 		return;
 	}
 
@@ -2407,6 +2431,15 @@ route_graph_get_segment(struct route_graph *graph, struct street_data *sd, struc
  * 
  * This function uses Dijkstra's algorithm to do the routing. To understand it you should have a look
  * at this algorithm.
+ *
+ * References to elements of the route graph which were obtained prior to calling this function
+ * remain valid after it returns.
+ *
+ * @param this_ The route graph to flood
+ * @param dst The destination of the route
+ * @param profile The vehicle profile to use for routing. This determines which ways are passable
+ * and how their costs are calculated.
+ * @param cb The callback function to call when flooding is complete
  */
 static void
 route_graph_flood(struct route_graph *this, struct route_info *dst, struct vehicleprofile *profile, struct callback *cb)
@@ -2415,9 +2448,16 @@ route_graph_flood(struct route_graph *this, struct route_info *dst, struct vehic
 	struct route_graph_segment *s=NULL;
 	int min,new,val;
 	struct fibheap *heap; /* This heap will hold all points with "temporarily" calculated costs */
+	struct coord_geo cgeo; /* Coordinates for debugging */
 
 	heap = fh_makekeyheap();   
 
+	/*
+	 * Initialize opposite end point of each segment adjacent to the destination:
+	 * - set least costly segment to point to the segment
+	 * - set value
+	 * - add the point to the heap and set its el member
+	 */
 	while ((s=route_graph_get_segment(this, dst->street, s))) {
 		val=route_value_seg(profile, NULL, s, -1);
 		if (val != INT_MAX) {
@@ -2434,23 +2474,43 @@ route_graph_flood(struct route_graph *this, struct route_info *dst, struct vehic
 			s->start->el=fh_insertkey(heap, s->start->value, s->start);
 		}
 	}
+
+	/* Iterative part of Dijkstra algorithm */
 	for (;;) {
 		p_min=fh_extractmin(heap); /* Starting Dijkstra by selecting the point with the minimum costs on the heap */
 		if (! p_min) /* There are no more points with temporarily calculated costs, Dijkstra has finished */
 			break;
+#if 0
+		/* Enable to debug only points at the specified location */
+		debug_route = (p_min->c.x == 0x274851) && (p_min->c.y == 0x6b1570);
+#endif
 		min=p_min->value;
 		if (debug_route)
-			printf("extract p=%p free el=%p min=%d, 0x%x, 0x%x\n", p_min, p_min->el, min, p_min->c.x, p_min->c.y);
+			printf("extract p=%p free el=%p min=%d, (0x%x,0x%x)\n", p_min, p_min->el, min, p_min->c.x, p_min->c.y);
 		p_min->el=NULL; /* This point is permanently calculated now, we've taken it out of the heap */
 		s=p_min->start;
 		while (s) { /* Iterating all the segments leading away from our point to update the points at their ends */
+#if 0
+			/* Enable to debug only the specified segment */
+			debug_route = (s->data.item.id_hi == 0xb60b9) && (s->data.item.id_lo == 0x3d5f);
+#endif
 			val=route_value_seg(profile, p_min, s, -1);
+			if (debug_route) {
+				transform_to_geo(projection_mg,
+						&(p_min->c),
+						&cgeo);
+				printf("p=%p free el=%p min=%d, (0x%x,0x%x)\n", p_min, p_min->el, min, p_min->c.x, p_min->c.y);
+				printf("http://www.openstreetmap.org/?mlat=%.6f&mlon=%.6f\n", cgeo.lat, cgeo.lng);
+				printf("seg (0x%x,0x%x) end p=%p val=%d ",s->data.item.id_hi,s->data.item.id_lo,s->end,val);
+			}
 			if (val != INT_MAX && item_is_equal(s->data.item,p_min->seg->data.item)) {
 				if (profile->turn_around_penalty2)
 					val+=profile->turn_around_penalty2;
 				else
 					val=INT_MAX;
 			}
+			if (debug_route)
+				printf("(%d after turnaround penalty) \n",val);
 			if (val != INT_MAX) {
 				new=min+val;
 				if (debug_route)
@@ -2470,25 +2530,40 @@ route_graph_flood(struct route_graph *this, struct route_info *dst, struct vehic
 							printf("replace_end p=%p el=%p val=%d\n", s->end, s->end->el, s->end->value);
 						fh_replacekey(heap, s->end->el, new);
 					}
-				}
-				if (debug_route)
-					printf("\n");
+				} else if (debug_route)
+					printf("cheaper link exists, no change\n");
 			}
+			if (debug_route)
+				printf("\n");
 			s=s->start_next;
 		}
 		s=p_min->end;
 		while (s) { /* Doing the same as above with the segments leading towards our point */
+#if 0
+			/* Enable to debug only the specified segment */
+			debug_route = (s->data.item.id_hi == 0xb60b9) && (s->data.item.id_lo == 0x3d5f);
+#endif
 			val=route_value_seg(profile, p_min, s, 1);
+			if (debug_route) {
+				transform_to_geo(projection_mg,
+						&(p_min->c),
+						&cgeo);
+				printf("p=%p free el=%p min=%d, (0x%x,0x%x)\n", p_min, p_min->el, min, p_min->c.x, p_min->c.y);
+				printf("http://www.openstreetmap.org/?mlat=%.6f&mlon=%.6f\n", cgeo.lat, cgeo.lng);
+				printf("seg (0x%x,0x%x) start p=%p val=%d ",s->data.item.id_hi,s->data.item.id_lo,s->start,val);
+			}
 			if (val != INT_MAX && item_is_equal(s->data.item,p_min->seg->data.item)) {
 				if (profile->turn_around_penalty2)
 					val+=profile->turn_around_penalty2;
 				else
 					val=INT_MAX;
 			}
+			if (debug_route)
+				printf("(%d after turnaround penalty) \n",val);
 			if (val != INT_MAX) {
 				new=min+val;
 				if (debug_route)
-					printf("end %d len %d vs %d (0x%x,0x%x)\n",new,val,s->start->value,s->start->c.x, s->start->c.y);
+					printf("end %d seg (0x%x,0x%x) len %d vs %d (0x%x,0x%x)\n",new,s->data.item.id_hi,s->data.item.id_lo,val,s->start->value,s->start->c.x, s->start->c.y);
 				if (new < s->start->value) {
 					s->start->value=new;
 					s->start->seg=s;
@@ -2504,10 +2579,11 @@ route_graph_flood(struct route_graph *this, struct route_info *dst, struct vehic
 							printf("replace_start p=%p el=%p val=%d\n", s->start, s->start->el, s->start->value);
 						fh_replacekey(heap, s->start->el, new);
 					}
-				}
-				if (debug_route)
-					printf("\n");
+				} else if (debug_route)
+					printf("cheaper link exists, no change\n");
 			}
+			if (debug_route)
+				printf("\n");
 			s=s->end_next;
 		}
 	}
@@ -2613,6 +2689,7 @@ route_get_coord_dist(struct route *this_, int dist)
  * @return The new route path
  */
 /* FIXME introduce const for dir instead of magic numbers (not only here) */
+/* FIXME decide whether to keep the debug code involving transform_to_geo */
 static struct route_path *
 route_path_new(struct route_graph *this, struct route_path *oldpath, struct route_info *pos, struct route_info *dst, struct vehicleprofile *profile)
 {
@@ -2625,8 +2702,7 @@ route_path_new(struct route_graph *this, struct route_path *oldpath, struct rout
 	struct route_path *ret;
 	int force=0; /* if true, force one or more initial segments and continue routing from there (because we can't get a route otherwise) */
 	int candidates; /* number of candidate segments examined */
-	int i;
-	struct coord_geo cgeo; /* Geo coordinates for debugging */
+	struct coord_geo cgeo; /* Geo coordinates for debug output */
 
 	if (! pos->street || ! dst->street) {
 		dbg(lvl_error,"pos or dest not set\n");
@@ -2642,10 +2718,10 @@ route_path_new(struct route_graph *this, struct route_path *oldpath, struct rout
 	if (profile->mode == 2 || (profile->mode == 0 && pos->lenextra + dst->lenextra > transform_distance(map_projection(pos->street->item.map), &pos->c, &dst->c)))
 		return route_path_new_offroad(this, pos, dst);
 
-	// FIXME debug level
 	transform_to_geo(projection_mg, &(pos->c), &cgeo);
-	dbg(lvl_error, "routing from 0x%x, 0x%x\n", pos->c.x, pos->c.y);
-	dbg(lvl_error, "http://www.openstreetmap.org/?mlat=%.6f&mlon=%.6f\n", cgeo.lat, cgeo.lng);
+	dbg(lvl_debug, "routing from 0x%x, 0x%x\n", pos->c.x, pos->c.y);
+	dbg(lvl_debug, "http://www.openstreetmap.org/?mlat=%.6f&mlon=%.6f\n", cgeo.lat, cgeo.lng);
+
 	/*
 	 * find first segment: examine the segments containing the current position and find the
 	 * cheapest one, considering
@@ -2698,20 +2774,11 @@ route_path_new(struct route_graph *this, struct route_path *oldpath, struct rout
 		if ((pos->street) && (pos->street->flags & AF_ONEWAYMASK)) {
 			force = 1;
 			dir = (pos->street->flags & AF_ONEWAY) ? 2 : -2;
-			dbg(lvl_error, "one-way street detected (0x%x, dir %d) and no route found, forcing start of route\n", pos->street->flags, dir);
+			dbg(lvl_debug, "one-way street detected (0x%x, dir %d) and no route found, forcing start of route\n", pos->street->flags, dir);
 			s = NULL;
 			while ((s = route_graph_get_segment(this, pos->street, s)) && (route_value_seg(profile, NULL, s, dir) == INT_MAX)) {
 				/* NOP */
 			}
-#if 0
-			while (1) {
-				s = route_graph_get_segment(this, pos->street, s);
-				int sval = route_value_seg(profile, NULL, s, dir);
-				dbg(lvl_error, "segment: 0x%x, value: %d\n", s, sval);
-				if ((!s) || (sval != INT_MAX))
-					break;
-			}
-#endif
 			if (s == NULL) {
 				dbg(lvl_error, "no route found (pos is on impassable segment), pos blocked\n");
 				return NULL;
@@ -2769,10 +2836,10 @@ route_path_new(struct route_graph *this, struct route_path *oldpath, struct rout
 		route_path_add_line(ret, &pos->c, &pos->lp, pos->lenextra);
 	ret->path_hash=item_hash_new();
 
-	// FIXME decide whether to keep debug code here
 	transform_to_geo(projection_mg, &(start->c), &cgeo);
 	dbg(lvl_debug, "building route path, start = 0x%x, 0x%x\n", start->c.x, start->c.y);
 	dbg(lvl_debug, "http://www.openstreetmap.org/?mlat=%.6f&mlon=%.6f\n", cgeo.lat, cgeo.lng);
+
 	/* add segments (beginning with the first one) until destination is reached */
 	dstinfo=NULL;
 	posinfo=pos;
@@ -2799,22 +2866,23 @@ route_path_new(struct route_graph *this, struct route_path *oldpath, struct rout
 		if (force) {
 			candidates = 0;
 			s1 = NULL;
-			/* FIXME: use dir instead of a loop iterator: for (dir == 2; dir >= -2; dir -= 4) */
-			for (i = 0; i <= 1; i++) {
-				s2 = (i == 0) ? start->start : start->end;
+			/* for each dir in {2,-2} do */
+			for (dir = 2; dir >= -2; dir -= 4) {
+				s2 = (dir > 0) ? start->start : start->end;
 				while (s2) {
-					// FIXME debug level
+#if 0
 					transform_to_geo(projection_mg,
-							(i == 0) ? &(s2->end->c) : &(s2->start->c),
+							(dir > 0) ? &(s2->end->c) : &(s2->start->c),
 							&cgeo);
-					int s2val = route_value_seg(profile, NULL, s2, (i == 0) ? 2 : -2);
-					dbg(lvl_error, "\texamining segment: (%s 0x%x 0x%x), dir %d, cost: %d, to point:\n",
+					int s2val = route_value_seg(profile, NULL, s2, dir);
+					dbg(lvl_debug, "\texamining segment: (%s 0x%x 0x%x), dir %d, cost: %d, to point:\n",
 							item_to_name(s2->data.item.type),
 							s2->data.item.id_hi,
 							s2->data.item.id_lo,
-							1 - 2 * i,
+							dir / 2,
 							s2val);
-					dbg(lvl_error, "\thttp://www.openstreetmap.org/?mlat=%.6f&mlon=%.6f\n", cgeo.lat, cgeo.lng);
+					dbg(lvl_debug, "\thttp://www.openstreetmap.org/?mlat=%.6f&mlon=%.6f\n", cgeo.lat, cgeo.lng);
+#endif
 
 					/*
 					 * Count possible segments away from this point:
@@ -2825,24 +2893,24 @@ route_path_new(struct route_graph *this, struct route_path *oldpath, struct rout
 					 */
 					if ((!route_graph_segment_match(s2, s))
 							&& (!route_graph_segment_match(s2, s1))
-							&& (route_value_seg(profile, NULL, s2, (i == 0) ? 2 : -2) < INT_MAX)) {
+							&& (route_value_seg(profile, NULL, s2, dir) < INT_MAX)) {
 						candidates++;
 
-						//FIXME debug level
-						dbg(lvl_error, "\tcandidate found\n");
+						dbg(lvl_debug, "\tcandidate found\n");
 
 						if (!s1) { // TODO or s2 is better than s1
 							s1 = s2;
 							// TODO store segment data
 						}
 					}
-					s2 = (i == 0) ? s2->start_next : s2->end_next;
+					s2 = (dir > 0) ? s2->start_next : s2->end_next;
 				}
 			}
-			// FIXME debug level
+
 			transform_to_geo(projection_mg, &(start->c), &cgeo);
-			dbg(lvl_error, "%d candidate segments at 0x%x, 0x%x\n", candidates, start->c.x, start->c.y);
-			dbg(lvl_error, "http://www.openstreetmap.org/?mlat=%.6f&mlon=%.6f\n", cgeo.lat, cgeo.lng);
+			dbg(lvl_debug, "%d candidate segments at 0x%x, 0x%x\n", candidates, start->c.x, start->c.y);
+			dbg(lvl_debug, "http://www.openstreetmap.org/?mlat=%.6f&mlon=%.6f\n", cgeo.lat, cgeo.lng);
+
 			if (candidates == 1) {
 				s = s1;
 			} else if (candidates > 1) {
@@ -2850,26 +2918,186 @@ route_path_new(struct route_graph *this, struct route_path *oldpath, struct rout
 				if (start->seg && !route_graph_segment_match(start->seg, s)) {
 					s = start->seg;
 
-					// FIXME debug level
 					transform_to_geo(projection_mg,
 							(start == s->start) ? &(s->end->c) : &(s->start->c),
 							&cgeo);
-					dbg(lvl_error, "multiple candidates, following least costly path: (%s 0x%x 0x%x), to point:\n",
+					dbg(lvl_debug, "multiple candidates, following least costly path: (%s 0x%x 0x%x), to point:\n",
 							item_to_name(s->data.item.type),
 							s->data.item.id_hi,
 							s->data.item.id_lo);
-					dbg(lvl_error, "http://www.openstreetmap.org/?mlat=%.6f&mlon=%.6f\n", cgeo.lat, cgeo.lng);
+					dbg(lvl_debug, "http://www.openstreetmap.org/?mlat=%.6f&mlon=%.6f\n", cgeo.lat, cgeo.lng);
 				} else {
 					/*
 					 * We have multiple options but the least costly segment (start->seg) is either
 					 * NULL or coincides with the last segment of the forced path.
 					 */
-					/* TODO maybe this error is recoverable:
-					 * add route distortion (maxspeed = 0 or delay = INT_MAX) to s
-					 * then recalculate route graph
+					/* TODO maybe there is an easier recovery:
+					 * if start->seg is non-null:
+					 * - cycle through all segments at start, for each
+					 * - if it is passable and its opposite end is reachable (i.e. cost < INT_MAX):
+					 *   - calculate sum of both costs
+					 *   - if it is less than what was found in an earlier pass:
+					 *     - store segment and sum
+					 * - if a suitable segment was found, use it
+					 * failing that, re-flood the route graph as below
 					 */
-					dbg(lvl_error, "no route found (no least-cost path beyond end of forced path), pos blocked\n");
-					return NULL;
+
+#if 0
+					if (start->seg) {
+						dbg(lvl_debug, "least-cost path goes back on forced path (value=%d), re-flooding\n", start->value);
+					} else {
+						dbg(lvl_debug, "destination is unreachable from end of forced path (%p value=%d), re-flooding\n", start, start->value);
+						for (dir = 2; dir >= -2; dir -= 4) {
+							s2 = (dir > 0) ? start->start : start->end;
+							while (s2) {
+								transform_to_geo(projection_mg,
+										(dir > 0) ? &(s2->end->c) : &(s2->start->c),
+										&cgeo);
+								int s2val = route_value_seg(profile, NULL, s2, dir);
+								dbg(lvl_debug, "\tsegment: (%s 0x%x 0x%x), dir %d, cost: %d, endpoint value %d at %p:\n",
+										item_to_name(s2->data.item.type),
+										s2->data.item.id_hi,
+										s2->data.item.id_lo,
+										dir / 2,
+										s2val,
+										(dir > 0) ? &(s2->end->value) : &(s2->start->value),
+										(dir > 0) ? &(s2->end) : &(s2->start));
+								dbg(lvl_debug, "\thttp://www.openstreetmap.org/?mlat=%.6f&mlon=%.6f\n", cgeo.lat, cgeo.lng);
+
+								if (route_graph_segment_match(s2, s)) {
+									dbg(lvl_debug, "\tSegment is NOT a candidate (matches s).\n");
+								} else if (route_value_seg(profile, NULL, s2, dir) == INT_MAX) {
+									dbg(lvl_debug, "\tSegment is NOT a candidate (impassable).\n");
+								} else {
+									dbg(lvl_debug, "\tSegment is a candidate.\n");
+								}
+								s2 = (dir > 0) ? s2->start_next : s2->end_next;
+							}
+						}
+					}
+#endif
+
+					/* To avoid routing back through s, set a traffic distortion making s
+					 * impassable, then re-flood.
+					 * If is is the last segment if a dual-carriageway section and start is where
+					 * the two carriageways join, we need to avoid the opposite carriageway
+					 * instead. Usually there will be a turn restriction prohibiting the U turn,
+					 * hence the segment to avoid will not be referenced by start.
+					 * FIXME does that assumption always hold true?
+					 */
+					if (this->avoid_seg)
+						route_graph_set_traffic_distortion(this, this->avoid_seg, 0);
+					if (s->data.flags & AF_ONEWAYMASK) {
+						this->avoid_seg = NULL;
+
+						dbg(lvl_debug, "Points coinciding with start (%p):\n", start);
+						struct route_graph_point *p = NULL;
+						while ((p = route_graph_get_point_next(this, &(start->c), p))) {
+							dbg(lvl_debug, "\tp=%p, value=%d, seg=%p\n", p, p->value, p->seg);
+							if ((p == start) || (p->value == INT_MAX))
+								continue;
+							if (p->seg) {
+								/*
+								 * Each p has a different seg, but since traffic distortions work
+								 * based on coordinates, we can use any seg as long as they
+								 * coincide (which they do unless seg is unreachable from some
+								 * segments due to turn restrictions).
+								 */
+								this->avoid_seg = p->seg;
+								/* FIXME:
+								 * - some extra checks before selecting this as a candidate:
+								 *   - check if it is really the opposite carriageway of s (item
+								 *     type, names, flags)
+								 *   - if this item is not reachable from s due to a turn restriction,
+								 *     it is not in the list of points reachable from start; verify that
+								 * - what if we have segs which do not coincide?
+								 */
+								break;
+							}
+						}
+					} else {
+						this->avoid_seg = s;
+					}
+					if (this->avoid_seg) {
+						dbg(lvl_debug, "re-flooding...\n");
+						route_graph_set_traffic_distortion(this, this->avoid_seg, INT_MAX);
+						route_graph_reset(this);
+						route_graph_flood(this, dst, profile, NULL);
+					}
+
+					/* Check if we have a least costly way out of s now */
+					if (start->seg && !route_graph_segment_match(start->seg, s))
+						s = start->seg;
+					else {
+#if 0
+						if (start->seg) {
+							dbg(lvl_debug, "wtf? least-cost path still goes back on forced path!\n");
+						} else {
+							dbg(lvl_debug, "after re-flooding:\n");
+							for (dir = 2; dir >= -2; dir -= 4) {
+								s2 = (dir > 0) ? start->start : start->end;
+								while (s2) {
+									transform_to_geo(projection_mg,
+											(dir > 0) ? &(s2->end->c) : &(s2->start->c),
+											&cgeo);
+									int s2val = route_value_seg(profile, NULL, s2, dir);
+									dbg(lvl_debug, "\tsegment: (%s 0x%x 0x%x), dir %d, cost: %d, endpoint value %d at:\n",
+											item_to_name(s2->data.item.type),
+											s2->data.item.id_hi,
+											s2->data.item.id_lo,
+											dir / 2,
+											s2val,
+											(dir > 0) ? &(s2->end->value) : &(s2->start->value));
+									dbg(lvl_debug, "\thttp://www.openstreetmap.org/?mlat=%.6f&mlon=%.6f\n", cgeo.lat, cgeo.lng);
+
+									if (route_graph_segment_match(s2, s)) {
+										dbg(lvl_debug, "\tSegment is NOT a candidate (matches s).\n");
+									} else if (route_value_seg(profile, NULL, s2, dir) == INT_MAX) {
+										dbg(lvl_debug, "\tSegment is NOT a candidate (impassable).\n");
+									} else {
+										dbg(lvl_debug, "\tSegment is a candidate.\n");
+									}
+									s2 = (dir > 0) ? s2->start_next : s2->end_next;
+								}
+							}
+						}
+						if (s->data.flags & AF_ONEWAYMASK) {
+							dbg(lvl_debug, "Points coinciding with start (%p):\n", start);
+							struct route_graph_point *p = NULL;
+							s1 = NULL;
+							while (p = route_graph_get_point_next(this, &(start->c), p)) {
+								dbg(lvl_debug, "\tp=%p, value=%d, seg=%p\n", p, p->value, p->seg);
+								if ((p == start) || (p->value == INT_MAX))
+									continue;
+								for (dir = 2; dir >= -2; dir -= 4) {
+									s2 = (dir > 0) ? p->start : p->end;
+									while (s2) {
+										if ((((dir > 0) && (s2->end->value < INT_MAX)) || ((dir < 0) && (s2->start->value < INT_MAX)))
+											&& route_value_seg(profile, NULL, s2, dir) < INT_MAX) {
+											transform_to_geo(projection_mg,
+													(dir > 0) ? &(s2->end->c) : &(s2->start->c),
+													&cgeo);
+											int s2val = route_value_seg(profile, NULL, s2, dir);
+											dbg(lvl_debug, "\t\tsegment %p (%s 0x%x 0x%x), dir %d, cost: %d, endpoint value %d at:\n",
+													s2,
+													item_to_name(s2->data.item.type),
+													s2->data.item.id_hi,
+													s2->data.item.id_lo,
+													dir / 2,
+													s2val,
+													(dir > 0) ? &(s2->end->value) : &(s2->start->value));
+											dbg(lvl_debug, "\t\thttp://www.openstreetmap.org/?mlat=%.6f&mlon=%.6f\n", cgeo.lat, cgeo.lng);
+										}
+										s2 = (dir > 0) ? s2->start_next : s2->end_next;
+									}
+								}
+							}
+						}
+#endif
+
+						dbg(lvl_error, "no route found (no least-cost path beyond end of forced path), pos blocked\n");
+						return NULL;
+					}
 				}
 			} else {
 				dbg(lvl_error, "no route found (dead end path), pos blocked\n");
