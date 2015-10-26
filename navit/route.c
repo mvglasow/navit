@@ -195,9 +195,10 @@ struct route_traffic_distortion {
 struct route_path_segment {
 	struct route_path_segment *next;	/**< Pointer to the next segment in the path */
 	struct route_segment_data *data;	/**< The segment data */
-	int direction;						/**< Order in which the coordinates are ordered. >0 means "First
-										 *  coordinate of the segment is the first coordinate of the item", <=0 
-										 *  means reverse. */
+	int direction;						/**< Order in which the coordinates are ordered.
+										 *  {@code dir_forward} means "First coordinate of the
+										 *  segment is the first coordinate of the item",
+										 *  {@code dir_backward} means reverse. */
 	unsigned ncoords;					/**< How many coordinates does this segment have? */
 	struct coord c[0];					/**< Pointer to the ncoords coordinates of this segment */
 	/* WARNING: There will be coordinates following here, so do not create new fields after c! */
@@ -217,8 +218,8 @@ struct route_info {
 	int lenextra;			 /**< Distance between lp and c */
 	int percent;			 /**< ratio of lenneg to lenght of whole street in percent */
 	struct street_data *street; /**< The street lp is on */
-	int street_direction;	/**< Direction of vehicle on street -1 = Negative direction, 1 = Positive direction, 0 = Unknown */
-	int dir;		/**< Direction to take when following the route -1 = Negative direction, 1 = Positive direction */
+	int street_direction;	/**< Direction of vehicle on street ({@code dir_backward}, {@code dir_forward} or {@code dir_none} for unknown) */
+	int dir;		/**< Direction to take when following the route ({@code dir_backward} or {@code dir_forward}) */
 };
 
 /**
@@ -526,12 +527,12 @@ route_dup(struct route *orig)
  *
  * @param seg The segment to be checked
  * @param level How deep to scan the route graph
- * @param direction Set this to 1 if we're entering the segment through its end, to 0 otherwise
+ * @param backward Set this to 1 if we're entering the segment through its end, to 0 otherwise
  * @param origin Used internally, set to NULL
  * @return 1 If a roundabout was detected, 0 otherwise
  */
 static int
-route_check_roundabout(struct route_graph_segment *seg, int level, int direction, struct route_graph_segment *origin)
+route_check_roundabout(struct route_graph_segment *seg, int level, int backward, struct route_graph_segment *origin)
 {
 	struct route_graph_point_iterator it,it2;
 	struct route_graph_segment *cur;
@@ -540,10 +541,10 @@ route_check_roundabout(struct route_graph_segment *seg, int level, int direction
 	if (!level) {
 		return 0;
 	}
-	if (!direction && !(seg->data.flags & AF_ONEWAY)) {
+	if (!backward && !(seg->data.flags & AF_ONEWAY)) {
 		return 0;
 	}
-	if (direction && !(seg->data.flags & AF_ONEWAYREV)) {
+	if (backward && !(seg->data.flags & AF_ONEWAYREV)) {
 		return 0;
 	}
 	if (seg->data.flags & AF_ROUNDABOUT_VALID)
@@ -553,7 +554,7 @@ route_check_roundabout(struct route_graph_segment *seg, int level, int direction
 		origin = seg;
 	}
 
-	if (!direction) {
+	if (!backward) {
 		it = rp_iterator_new(seg->end);
 	} else {
 		it = rp_iterator_new(seg->start);
@@ -950,7 +951,7 @@ route_set_position_flags(struct route *this, struct pcoord *pos, enum route_path
 	// If there is no nearest street, bail out.
 	if (!this->pos) return 0;
 
-	this->pos->street_direction=0;
+	this->pos->street_direction = dir_none;
 	dbg(lvl_debug,"this->pos=%p\n", this->pos);
 	route_info_distances(this->pos, pos->pro);
 	route_path_update_flags(this, flags);
@@ -1787,7 +1788,7 @@ route_path_add_line(struct route_path *this, struct coord *start, struct coord *
         segment=g_malloc0(seg_size + seg_dat_size);
         segment->data=(struct route_segment_data *)((char *)segment+seg_size);
 	segment->ncoords=ccnt;
-	segment->direction=0;
+	segment->direction = dir_none;
 	segment->c[0]=*start;
 	segment->c[1]=*end;
 	segment->data->len=len;
@@ -1844,12 +1845,12 @@ route_path_add_item_from_graph(struct route_path *this, struct route_path *oldpa
 		if (dst) {
 			extra=2;
 			if (dst->lenneg >= pos->lenneg) {
-				dir=1;
+				dir = dir_forward;
 				ccnt=dst->pos-pos->pos;
 				c=pos->street->c+pos->pos+1;
 				len=dst->lenneg-pos->lenneg;
 			} else {
-				dir=-1;
+				dir = dir_backward;
 				ccnt=pos->pos-dst->pos;
 				c=pos->street->c+dst->pos+1;
 				len=pos->lenneg-dst->lenneg;
@@ -1913,7 +1914,7 @@ route_path_add_item_from_graph(struct route_path *this, struct route_path *oldpa
 	/* We check if the route graph segment is part of a roundabout here, because this
 	 * only matters for route graph segments which form parts of the route path */
 	if (!(rgs->data.flags & AF_ROUNDABOUT)) { // We identified this roundabout earlier
-		route_check_roundabout(rgs, 13, (dir < 1), NULL);
+		route_check_roundabout(rgs, 13, (dir < dir_forward), NULL);
 	}
 
 	memcpy(segment->data, &rgs->data, seg_dat_size);
@@ -2107,13 +2108,13 @@ route_through_traffic_allowed(struct vehicleprofile *profile, struct route_graph
  * @param profile The routing preferences
  * @param from The point where we are starting
  * @param over The segment we are using
- * @param dir The direction of segment which we are driving. Positive values indicate we are
- * traveling in the direction of the segment, negative values indicate we are traveling against
- * that direction. Values of +2 or -2 cause the function to ignore traffic distortions.
+ * @param dir The direction in which we are traveling, relative to the direction of the segment.
+ * Can be any value of {@code enum direction} other than {@code dir_none}. Values of
+ * {@code dir_forward_notraffic} or {@code dir_backward_notraffic} cause the function to ignore
+ * traffic distortions.
  *
  * @return The "cost" needed to travel along the segment
  */  
-
 static int
 route_value_seg(struct vehicleprofile *profile, struct route_graph_point *from, struct route_graph_segment *over, int dir)
 {
@@ -2131,7 +2132,7 @@ route_value_seg(struct vehicleprofile *profile, struct route_graph_point *from, 
 	if (from && from->seg == over)
 		return INT_MAX;
 	if ((over->start->flags & RP_TRAFFIC_DISTORTION) && (over->end->flags & RP_TRAFFIC_DISTORTION) && 
-		route_get_traffic_distortion(over, &dist) && dir != 2 && dir != -2) {
+		route_get_traffic_distortion(over, &dist) && dir != dir_forward_notraffic && dir != dir_backward_notraffic) {
 			distp=&dist;
 	}
 	ret=route_time_seg(profile, &over->data, distp);
@@ -2601,7 +2602,6 @@ route_graph_flood(struct route_graph *this, struct route_info *dst, struct vehic
  * @param this Not used
  * @param pos The starting position for the new path
  * @param dst The destination of the new path
- * @param dir Not used
  * @return The new path
  */
 static struct route_path *
@@ -2688,7 +2688,6 @@ route_get_coord_dist(struct route *this_, int dist)
  * @param preferences The routing preferences
  * @return The new route path
  */
-/* FIXME introduce const for dir instead of magic numbers (not only here) */
 /* FIXME decide whether to keep the debug code involving transform_to_geo */
 static struct route_path *
 route_path_new(struct route_graph *this, struct route_path *oldpath, struct route_info *pos, struct route_info *dst, struct vehicleprofile *profile)
@@ -2773,7 +2772,7 @@ route_path_new(struct route_graph *this, struct route_path *oldpath, struct rout
 		 */
 		if ((pos->street) && (pos->street->flags & AF_ONEWAYMASK)) {
 			force = 1;
-			dir = (pos->street->flags & AF_ONEWAY) ? 2 : -2;
+			dir = (pos->street->flags & AF_ONEWAY) ? dir_forward_notraffic : dir_backward_notraffic;
 			dbg(lvl_debug, "one-way street detected (0x%x, dir %d) and no route found, forcing start of route\n", pos->street->flags, dir);
 			s = NULL;
 			while ((s = route_graph_get_segment(this, pos->street, s)) && (route_value_seg(profile, NULL, s, dir) == INT_MAX)) {
@@ -2803,11 +2802,11 @@ route_path_new(struct route_graph *this, struct route_path *oldpath, struct rout
 	if (val1 < val2) {
 		start=s1->start;
 		s=s1;
-		dir=1;
+		dir = dir_forward;
 	} else {
 		start=s2->end;
 		s=s2;
-		dir=-1;
+		dir = dir_backward;
 	}
 
 	/* if the selected segment requires turning around and a turn-around penalty applies, add the
@@ -2866,7 +2865,7 @@ route_path_new(struct route_graph *this, struct route_path *oldpath, struct rout
 		if (force) {
 			candidates = 0;
 			s1 = NULL;
-			/* for each dir in {2,-2} do */
+			/* for each dir in {dir_forward_notraffic, dir_backward_notraffic} do */
 			for (dir = 2; dir >= -2; dir -= 4) {
 				s2 = (dir > 0) ? start->start : start->end;
 				while (s2) {
@@ -3967,9 +3966,9 @@ rp_coord_get(void *priv_data, struct coord *c, int count)
 		} else {
 			if (mr->last_coord >= 2)
 				break;
-			dir=0;
+			dir = dir_none;
 			if (seg->end->seg == seg)
-				dir=1;
+				dir = dir_forward;
 			if (mr->last_coord)
 				dir=1-dir;
 			if (dir) {

@@ -31,6 +31,14 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+enum direction {
+	dir_backward_notraffic = -2,	/*!< Against direction of segment, ignoring any traffic distortions */
+	dir_backward = -1,				/*!< Against direction of segment */
+	dir_none = 0,					/*!< No direction information (also used for operations that apply to both directions) */
+	dir_forward = 1,				/*!< In direction of segment */
+	dir_forward_notraffic = 2,		/*!< In direction of segment, ignoring any traffic distortions */
+};
+
 enum route_status {
 	route_status_no_destination=0,
 	route_status_destination_set=1,
