@@ -686,7 +686,7 @@ graphics_android_init(struct graphics_priv *ret, struct graphics_priv *parent, s
 }
 
 static jclass NavitClass;
-static jmethodID Navit_disableSuspend, Navit_exit, Navit_fullscreen, Navit_runOptionsItem;
+static jmethodID Navit_disableSuspend, Navit_exit, Navit_fullscreen, Navit_runOptionsItem, Navit_showMenu;
 
 static int
 graphics_android_fullscreen(struct window *win, int on)
@@ -702,6 +702,17 @@ graphics_android_disable_suspend(struct window *win)
 	(*jnienv)->CallVoidMethod(jnienv, android_activity, Navit_disableSuspend);
 }
 
+/**
+ * @brief Runs an item from the Android menu.
+ *
+ * This is a callback function which implements multiple API functions.
+ *
+ * @param this The {@code graohics_prov} structure
+ * @param function The API function which was called
+ * @param in Parameters to pass to the API function
+ * @param out Points to a buffer which will receive a pointer to the output of the command
+ * @param valid
+ */
 static void
 graphics_android_cmd_runMenuItem(struct graphics_priv *this, char *function, struct attr **in, struct attr ***out, int *valid)
 {
@@ -717,10 +728,33 @@ graphics_android_cmd_runMenuItem(struct graphics_priv *this, char *function, str
 	(*jnienv)->CallVoidMethod(jnienv, android_activity, Navit_runOptionsItem, ncmd);
 }
 
+/**
+ * @brief Shows the Android menu.
+ *
+ * This is the callback function associated with the {@code menu()} API function.
+ *
+ * @param this The {@code graohics_prov} structure
+ * @param function The API function which was called
+ * @param in Parameters to pass to the API function
+ * @param out Points to a buffer which will receive a pointer to the output of the command
+ * @param valid
+ */
+static void
+graphics_android_cmd_menu(struct graphics_priv *this, char *function, struct attr **in, struct attr ***out, int *valid)
+{
+	dbg(lvl_debug, "enter\n");
+	(*jnienv)->CallVoidMethod(jnienv, android_activity, Navit_showMenu);
+}
+
+/**
+ * The command table. Each entry consists of an API function name and the callback function which implements
+ * this command.
+ */
 static struct command_table commands[] = {
 	{"map_download_dialog",command_cast(graphics_android_cmd_runMenuItem)},
 	{"set_map_location",command_cast(graphics_android_cmd_runMenuItem)},
 	{"backup_restore_dialog",command_cast(graphics_android_cmd_runMenuItem)},
+	{"menu", command_cast(graphics_android_cmd_menu)},
 };
 
 static struct graphics_priv *
@@ -971,6 +1005,9 @@ event_android_new(struct event_methods *meth)
 	Navit_runOptionsItem = (*jnienv)->GetMethodID(jnienv, NavitClass, "runOptionsItem", "(I)V");
 	if (Navit_runOptionsItem == NULL) 
 		return NULL; 
+	Navit_showMenu = (*jnienv)->GetMethodID(jnienv, NavitClass, "showMenu", "()V");
+	if (Navit_showMenu == NULL)
+		return NULL;
 
 	dbg(lvl_debug,"ok\n");
         *meth=event_android_methods;
