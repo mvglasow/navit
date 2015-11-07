@@ -3674,12 +3674,18 @@ struct android_menu {
  * @param nav The navit instance
  */
 static void osd_android_menu_draw(struct osd_priv_common *opc, struct navit *nav) {
-	struct android_menu *this = (struct android_menu *)opc->data;
+	struct android_menu *this = (struct android_menu *) opc->data;
 	struct point p;
+	struct attr attr;
 
 	/* FIXME: Do we need this check? (Same as for osd_button) */
 	if(navit_get_blocked(nav)&1)
 		return;
+
+	/* Do not render the OSD if a physical menu button is present. */
+	if (navit_object_get_attr(nav, attr_has_menu_button, &attr, NULL))
+		if (attr.u.num)
+			return;
 
 	if (this->use_overlay) {
 		struct graphics_image *img;
