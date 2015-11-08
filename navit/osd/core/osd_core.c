@@ -1512,11 +1512,11 @@ osd_button_init(struct osd_priv_common *opc, struct navit *nav)
 }
 
 static char *
-osd_button_icon_path(struct osd_button *this_, char *src)
+osd_get_icon_path(char *src_dir, char *src)
 {
-	if (!this_->src_dir)
+	if (!src_dir)
 		return graphics_icon_path(src);
-	return g_strdup_printf("%s%s%s",this_->src_dir, G_DIR_SEPARATOR_S, src);
+	return g_strdup_printf("%s%s%s", src_dir, G_DIR_SEPARATOR_S, src);
 }
  
 int
@@ -1534,7 +1534,7 @@ osd_button_set_attr(struct osd_priv_common *opc, struct attr* attr)
 			g_free(this_->src);
 		}
 		if(attr->u.str) {
-			this_->src = osd_button_icon_path(this_, attr->u.str);
+			this_->src = osd_get_icon_path(this_->src_dir, attr->u.str);
 		}
 		nav = opc->osd_item.navit;
 		gra = navit_get_graphics(nav);
@@ -1594,7 +1594,7 @@ osd_button_new(struct navit *nav, struct osd_methods *meth,
 		goto error;
 	}
 
-	this->src = osd_button_icon_path(this, attr->u.str);
+	this->src = osd_get_icon_path(this->src_dir, attr->u.str);
 
 	navit_add_callback(nav, this->navit_init_cb = callback_new_attr_1(callback_cast (osd_button_init), attr_graphics_ready, opc));
 
@@ -3651,7 +3651,7 @@ osd_auxmap_new(struct navit *nav, struct osd_methods *meth, struct attr **attrs)
 }
 
 
-//#ifdef HAVE_API_ANDROID
+#ifdef HAVE_API_ANDROID
 /**
  * Internal data for {@code android_menu} OSD.
  *
@@ -3741,6 +3741,7 @@ static void osd_android_menu_init(struct osd_priv_common *opc, struct navit *nav
 		dbg(lvl_warning, "failed to load '%s'\n", this->src);
 		return;
 	}
+	/* FIXME if android_menu is to use this method, the name is misleading */
 	osd_button_adjust_sizes(opc, this->img);
 	if (this->use_overlay) {
 		struct graphics_image *img;
@@ -3787,15 +3788,14 @@ static struct osd_priv *osd_android_menu_new(struct navit *nav, struct osd_metho
 
 	// FIXME review dimensions (top-right)
 	opc->data = (void*)this;
-	opc->osd_item.rel_w = 48;
-	opc->osd_item.rel_h = 48;
-	opc->osd_item.rel_x = -64;
-	opc->osd_item.rel_y = 76;
+	opc->osd_item.rel_x = -60;
+	opc->osd_item.rel_y = 96;
+	/*Value of 0% is stored in relative attributes as ATTR_REL_RELSHIFT, we use this value as "width/height unset" flag */
+	opc->osd_item.rel_w = ATTR_REL_RELSHIFT;
+	opc->osd_item.rel_h = ATTR_REL_RELSHIFT;
 	opc->osd_item.navit = nav;
-	opc->osd_item.meth.draw = osd_draw_cast(osd_nav_toggle_announcer_draw);
+	opc->osd_item.meth.draw = osd_draw_cast(osd_android_menu_draw);
 	meth->set_attr = set_std_osd_attr;
-
-	osd_set_std_attr(attrs, &opc->osd_item, 0);
 
 	this->icon_w = -1;
 	this->icon_h = -1;
@@ -3812,7 +3812,7 @@ static struct osd_priv *osd_android_menu_new(struct navit *nav, struct osd_metho
 		this->src_dir=NULL;
 	attr = attr_search(attrs, NULL, attr_src);
 	if (attr) {
-		this->src = osd_button_icon_path(this, attr->u.str);
+		this->src = osd_get_icon_path(this->src_dir, attr->u.str);
 	} else {
 		dbg(lvl_error, "no src\n");
 		this->src = graphics_icon_path("android_menu_32.xpm"); // FIXME default icon
@@ -3823,7 +3823,7 @@ static struct osd_priv *osd_android_menu_new(struct navit *nav, struct osd_metho
 	navit_add_callback(nav, callback_new_attr_1(callback_cast(osd_android_menu_init), attr_graphics_ready, opc));
 	return (struct osd_priv *) opc;
 }
-//#endif
+#endif
 
 
 void
