@@ -2,15 +2,48 @@
 
     <!--
         Base application theme for API 21+. This theme completely replaces
-        AppBaseTheme from BOTH res/values/styles.xml and
+        NavitMainBaseTheme from BOTH res/values/styles.xml and
         res/values-v.../styles.xml on API 21+ devices.
     -->
-    <style name="NavitBaseTheme" parent="android:Theme.Material">
+    <style name="NavitMainBaseTheme" parent="android:Theme.Material.NoActionBar">
 
         <!-- API 21 theme customizations can go here. -->
         
         <!-- Main theme colors -->
         <!-- your app branding color for the app bar -->
+        <!--
+            The main reason for having this here is to change the color of
+            Navit in the task switcher. ActionBars will also use this color
+            but we are using it only for individual activities.
+        -->
+        <item name="android:colorPrimary">@color/navitYellow500</item>
+        <!-- darker variant for the status bar and contextual app bars -->
+        <!--
+            Since we're not showing the action bar, there's no need to have
+            the status bar display in a matching color (this would be too
+            distracting), hence we're sticking with black.
+        -->
+        <item name="android:colorPrimaryDark">@android:color/black</item>
+        <!-- theme UI controls like checkboxes and text fields -->
+        <item name="android:colorAccent">@color/navitBlue500</item>
+    </style>
+
+    <!--
+        Base application theme for API 21+. This theme completely replaces
+        NavitAuxBaseTheme from BOTH res/values/styles.xml and
+        res/values-v.../styles.xml on API 21+ devices.
+    -->
+    <style name="NavitAuxBaseTheme" parent="android:Theme.Material">
+
+        <!-- API 21 theme customizations can go here. -->
+        
+        <!-- Main theme colors -->
+        <!-- your app branding color for the app bar -->
+        <!--
+            The main reason for having this here is to change the color of
+            Navit in the task switcher. ActionBars will also use this color
+            but we are using it only for individual activities.
+        -->
         <item name="android:colorPrimary">@color/navitYellow500</item>
         <!-- darker variant for the status bar and contextual app bars -->
         <item name="android:colorPrimaryDark">@color/navitYellow700</item>

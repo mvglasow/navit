@@ -18,7 +18,7 @@
     <application android:label="@string/app_name"
                  android:icon="@drawable/icon"
                  android:name=".NavitAppConfig"
-                 android:theme="@style/NavitTheme">
+                 android:theme="@style/NavitMainTheme">
         <activity android:name="Navit"
                   android:label="@string/app_name"
                   android:configChanges="locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|fontScale|screenSize">
@@ -32,9 +32,9 @@
                 <data android:scheme="google.navigation" /> 
             </intent-filter>
         </activity>
-        <activity android:name=".NavitAddressSearchActivity"></activity>
-        <activity android:name=".NavitDownloadSelectMapActivity"></activity>
-        <activity android:name=".NavitAddressResultListActivity"></activity>
-        <activity android:name=".FileBrowserActivity"></activity>
+        <activity android:name=".NavitAddressSearchActivity" android:theme="@style/NavitAuxTheme"></activity>
+        <activity android:name=".NavitDownloadSelectMapActivity" android:theme="@style/NavitAuxTheme"></activity>
+        <activity android:name=".NavitAddressResultListActivity" android:theme="@style/NavitAuxTheme"></activity>
+        <activity android:name=".FileBrowserActivity" android:theme="@style/NavitAuxTheme"></activity>
     </application>
 </manifest> 

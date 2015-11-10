@@ -2,9 +2,9 @@
 
     <!--
         Base application theme, dependent on API level. This theme is replaced
-        by AppBaseTheme from res/values-vXX/styles.xml on newer devices.
+        by NavitMainBaseTheme from res/values-vXX/styles.xml on newer devices.
     -->
-    <style name="NavitBaseTheme" parent="android:Theme.Holo">
+    <style name="NavitMainBaseTheme" parent="android:Theme.Holo.NoActionBar">
         <!--
             Theme customizations available in newer API levels can go in
             res/values-vXX/styles.xml, while customizations related to
@@ -12,19 +12,27 @@
         -->
     </style>
 
-    <!-- Application theme. -->
-    <style name="NavitTheme" parent="NavitBaseTheme">
+    <!-- Theme for the main application window. -->
+    <style name="NavitMainTheme" parent="NavitMainBaseTheme">
         <!-- All customizations that are NOT specific to a particular API-level can go here. -->
     </style>
 
-    <!-- TODO complete list of shades for both colors -->
     <!--
-			 Primary color is derived average of icon colors (500 in Android parlance):
-			 213 164  19  #d5a411  hsl  45    92    84
-			 
-			 Primary color is normally the 600 color (i.e. slightly darker than 500)
-			 209 155  19  #d19b13  hsl  43    91    82
+        Base application theme, dependent on API level. This theme is replaced
+        by NavitAuxBaseTheme from res/values-vXX/styles.xml on newer devices.
     -->
+    <style name="NavitAuxBaseTheme" parent="android:Theme.Holo">
+        <!--
+            Theme customizations available in newer API levels can go in
+            res/values-vXX/styles.xml, while customizations related to
+            backward-compatibility can go here.
+        -->
+    </style>
+
+    <!-- Theme for Activities apart from the main one. -->
+    <style name="NavitAuxTheme" parent="NavitAuxBaseTheme">
+        <!-- All customizations that are NOT specific to a particular API-level can go here. -->
+    </style>
 
     <!-- Yellow from Navit icon background (300 and 700 are the extremes of the gradient, 500 is the average, 900 is the line color) -->
     <color name="navitYellow300">#e9cb14</color>
