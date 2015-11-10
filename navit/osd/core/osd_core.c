@@ -1414,12 +1414,29 @@ osd_compass_new(struct navit *nav, struct osd_methods *meth,
 
 struct osd_button {
 	int use_overlay;
+	/* FIXME: do we need navit_init_cb? It is set in two places but never read.
+	 * osd_button_new sets it to osd_button_init (init callback), and
+	 * osd_button_init sets it to osd_std_click (click callback). */
 	struct callback *draw_cb,*navit_init_cb;
 	struct graphics_image *img;
 	char *src_dir,*src;
 };
 
 
+/**
+ * @brief Adjusts width and height of an OSD item to fit the image it displays.
+ *
+ * A width or height of 0%, stored in relative attributes as {@code ATTR_REL_RELSHIFT}, is used as a flag
+ * indicating that the respective dimension is unset, i.e. determined by the dimensions of its image.
+ *
+ * If this is the case for height and/or width, the respective dimension will be updated to fit the image.
+ *
+ * Note that this method is used by several OSD items, notably {@code osd_image}, {@code osd_button} and
+ * {@code osd_android_menu}.
+ *
+ * @param opc The OSD item
+ * @param img The image displayed by the item
+ */
 static void 
 osd_button_adjust_sizes(struct osd_priv_common *opc, struct graphics_image *img)
 {
@@ -1509,11 +1526,11 @@ osd_button_init(struct osd_priv_common *opc, struct navit *nav)
 }
 
 static char *
-osd_button_icon_path(struct osd_button *this_, char *src)
+osd_get_icon_path(char *src_dir, char *src)
 {
-	if (!this_->src_dir)
+	if (!src_dir)
 		return graphics_icon_path(src);
-	return g_strdup_printf("%s%s%s",this_->src_dir, G_DIR_SEPARATOR_S, src);
+	return g_strdup_printf("%s%s%s", src_dir, G_DIR_SEPARATOR_S, src);
 }
  
 int
@@ -1531,7 +1548,7 @@ osd_button_set_attr(struct osd_priv_common *opc, struct attr* attr)
 			g_free(this_->src);
 		}
 		if(attr->u.str) {
-			this_->src = osd_button_icon_path(this_, attr->u.str);
+			this_->src = osd_get_icon_path(this_->src_dir, attr->u.str);
 		}
 		nav = opc->osd_item.navit;
 		gra = navit_get_graphics(nav);
@@ -1591,7 +1608,7 @@ osd_button_new(struct navit *nav, struct osd_methods *meth,
 		goto error;
 	}
 
-	this->src = osd_button_icon_path(this, attr->u.str);
+	this->src = osd_get_icon_path(this->src_dir, attr->u.str);
 
 	navit_add_callback(nav, this->navit_init_cb = callback_new_attr_1(callback_cast (osd_button_init), attr_graphics_ready, opc));
 
@@ -1836,6 +1853,7 @@ osd_nav_next_turn_new(struct navit *nav, struct osd_methods *meth,
 struct nav_toggle_announcer
 {
 	int w,h;
+	/* FIXME this is actually the click callback, which is set once but never read. Do we need this? */
 	struct callback *navit_init_cb;
 	char *icon_src;
 	int icon_h, icon_w, active, last_state;
@@ -3647,6 +3665,181 @@ osd_auxmap_new(struct navit *nav, struct osd_methods *meth, struct attr **attrs)
 }
 
 
+#ifdef HAVE_API_ANDROID
+/**
+ * Internal data for {@code android_menu} OSD.
+ *
+ */
+struct android_menu {
+	int use_overlay;
+	int w, h; // FIXME do we need this?
+	struct callback *draw_cb,*navit_init_cb;
+	struct graphics_image *img;
+	char *src_dir,*src;
+	int icon_h, icon_w;
+	int active, last_state; // FIXME do we need this?
+};
+
+
+/**
+ * @brief Draws a {@code android_menu} OSD.
+ *
+ * @param opc The OSD to initialize
+ * @param nav The navit instance
+ */
+static void osd_android_menu_draw(struct osd_priv_common *opc, struct navit *nav) {
+	struct android_menu *this = (struct android_menu *) opc->data;
+	struct point p;
+	struct attr attr;
+
+	/* FIXME: Do we need this check? (Same as for osd_button) */
+	if(navit_get_blocked(nav)&1)
+		return;
+
+	/* Do not render the OSD if a physical menu button is present. */
+	if (navit_object_get_attr(nav, attr_has_menu_button, &attr, NULL))
+		if (attr.u.num)
+			return;
+
+	if (this->use_overlay) {
+		struct graphics_image *img;
+		img=graphics_image_new(opc->osd_item.gr, this->src);
+		osd_button_adjust_sizes(opc, img);
+		p.x=(opc->osd_item.w-img->width)/2;
+		p.y=(opc->osd_item.h-img->height)/2;
+		osd_fill_with_bgcolor(&opc->osd_item);
+		graphics_draw_image(opc->osd_item.gr, opc->osd_item.graphic_bg, &p, img);
+		graphics_image_free(opc->osd_item.gr, img);
+	} else {
+		struct graphics *gra;
+		gra = navit_get_graphics(nav);
+		this->img = graphics_image_new(gra, this->src);
+
+		if (!this->img) {
+			dbg(lvl_warning, "failed to load '%s'\n", this->src);
+			return;
+		}
+
+		osd_std_calculate_sizes(&opc->osd_item, navit_get_width(nav), navit_get_height(nav));
+		osd_button_adjust_sizes(opc, this->img);
+
+		p = opc->osd_item.p;
+		p.x+=(opc->osd_item.w-this->img->width)/2;
+		p.y+=(opc->osd_item.h-this->img->height)/2;
+
+		if (!opc->osd_item.configured)
+			return;
+
+		graphics_draw_image(opc->osd_item.gr, opc->osd_item.graphic_bg, &p, this->img);
+	}
+}
+
+
+/**
+ * @brief Initializes a new {@code android_menu} OSD.
+ *
+ * This function is registered as a callback function in {@link osd_android_menu_new(struct navit *, struct osd_methods *, struct attr **)}.
+ * It is called after graphics initialization has finished and can be used for any initialization
+ * tasks which rely on a functional graphics system.
+ *
+ * @param opc The OSD to initialize
+ * @param nav The navit instance
+ */
+static void osd_android_menu_init(struct osd_priv_common *opc, struct navit *nav) {
+	struct android_menu *this = (struct android_menu *)opc->data;
+	struct graphics *gra = navit_get_graphics(nav);
+
+	dbg(lvl_debug, "enter\n");
+	this->img = graphics_image_new(gra, this->src);
+	if (!this->img) {
+		dbg(lvl_warning, "failed to load '%s'\n", this->src);
+		return;
+	}
+	/* FIXME if android_menu is to use this method, the name is misleading */
+	osd_button_adjust_sizes(opc, this->img);
+	if (this->use_overlay) {
+		struct graphics_image *img;
+		struct point p;
+		osd_set_std_graphic(nav, &opc->osd_item, (struct osd_priv *)opc);
+		img=graphics_image_new(opc->osd_item.gr, this->src);
+		p.x=(opc->osd_item.w-this->img->width)/2;
+		p.y=(opc->osd_item.h-this->img->height)/2;
+		osd_fill_with_bgcolor(&opc->osd_item);
+		graphics_draw_image(opc->osd_item.gr, opc->osd_item.graphic_bg, &p, img);
+		graphics_draw_mode(opc->osd_item.gr, draw_mode_end);
+		graphics_image_free(opc->osd_item.gr, img);
+	} else {
+		osd_set_std_config(nav, &opc->osd_item);
+		osd_set_keypress(nav, &opc->osd_item);
+		opc->osd_item.gr=gra;
+		opc->osd_item.graphic_bg=graphics_gc_new(opc->osd_item.gr);
+		graphics_add_callback(gra, this->draw_cb=callback_new_attr_2(callback_cast(osd_android_menu_draw), attr_postdraw, opc, nav));
+	}
+    navit_add_callback(nav, this->navit_init_cb = callback_new_attr_1(callback_cast(osd_std_click), attr_button, &opc->osd_item)); // FIXME handler?
+	osd_android_menu_draw(opc, nav);
+}
+
+
+/**
+ * @brief Creates a new {@code android_menu} OSD.
+ *
+ * This initializes the data structures and registers {@link osd_android_menu_init(struct osd_priv_common *, struct navit *)}
+ * as a callback.
+ *
+ * Note that this function runs before the graphics system has been initialized. Therefore, code
+ * that requires a functional graphics system must be placed in
+ * {@link osd_android_menu_init(struct osd_priv_common *, struct navit *)}.
+ *
+ * @param nav The navit instance
+ * @param meth The methods for the new OSD
+ * @param attrs The attributes for the new OSD
+ */
+static struct osd_priv *osd_android_menu_new(struct navit *nav, struct osd_methods *meth, struct attr **attrs) {
+	struct android_menu *this = g_new0(struct android_menu, 1);
+	struct osd_priv_common *opc = g_new0(struct osd_priv_common, 1);
+	struct attr *attr;
+	char *command = "graphics.menu()";
+
+	// FIXME review dimensions (top-right)
+	opc->data = (void*)this;
+	opc->osd_item.rel_x = -60;
+	opc->osd_item.rel_y = 96;
+	/*Value of 0% is stored in relative attributes as ATTR_REL_RELSHIFT, we use this value as "width/height unset" flag */
+	opc->osd_item.rel_w = ATTR_REL_RELSHIFT;
+	opc->osd_item.rel_h = ATTR_REL_RELSHIFT;
+	opc->osd_item.navit = nav;
+	opc->osd_item.meth.draw = osd_draw_cast(osd_android_menu_draw);
+	meth->set_attr = set_std_osd_attr;
+
+	this->icon_w = -1;
+	this->icon_h = -1;
+
+	attr=attr_search(attrs, NULL, attr_use_overlay);
+	if (attr)
+		this->use_overlay=attr->u.num;
+	osd_set_std_attr(attrs, &opc->osd_item, this->use_overlay ? 1:(1|16));
+
+	attr = attr_search(attrs, NULL, attr_src_dir);
+	if (attr)
+		this->src_dir=graphics_icon_path(attr->u.str);
+	else
+		this->src_dir=NULL;
+	attr = attr_search(attrs, NULL, attr_src);
+	if (attr) {
+		this->src = osd_get_icon_path(this->src_dir, attr->u.str);
+	} else {
+		dbg(lvl_error, "no src\n");
+		this->src = graphics_icon_path("android_menu_32.xpm"); // FIXME default icon
+	}
+
+	opc->osd_item.command = g_strdup(command);
+
+	navit_add_callback(nav, callback_new_attr_1(callback_cast(osd_android_menu_init), attr_graphics_ready, opc));
+	return (struct osd_priv *) opc;
+}
+#endif
+
+
 void
 plugin_init(void)
 {
@@ -3666,4 +3859,5 @@ plugin_init(void)
 	plugin_register_osd_type("auxmap", osd_auxmap_new);
 	plugin_register_osd_type("cmd_interface", osd_cmd_interface_new);
 	plugin_register_osd_type("route_guard", osd_route_guard_new);
+	plugin_register_osd_type("android_menu", osd_android_menu_new);
 }
