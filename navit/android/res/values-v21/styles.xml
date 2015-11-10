@@ -5,7 +5,7 @@
         AppBaseTheme from BOTH res/values/styles.xml and
         res/values-v.../styles.xml on API 21+ devices.
     -->
-    <style name="NavitBaseTheme" parent="android:Theme.Material">
+    <style name="NavitBaseTheme" parent="android:Theme.Material.NoActionBar.TranslucentDecor">
 
         <!-- API 21 theme customizations can go here. -->
         
