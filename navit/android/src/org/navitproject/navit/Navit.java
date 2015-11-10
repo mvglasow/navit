@@ -387,20 +387,6 @@ public class Navit extends Activity
 	{
 		super.onResume();
 		Log.d("Navit", "OnResume");
-		if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-			Bitmap icon = BitmapFactory.decodeResource(getResources(), R.drawable.icon);
-			String label = getString(R.string.app_name);
-			/*
-			 * Primary color is derived average of icon colors (500 in Android parlance):
-			 * 213 164  19  #d5a411  hsl  45    92    84
-			 * 
-			 * Primary color is normally the 600 color (i.e. slightly darker than 500)
-			 * 209 155  19  #d19b13  hsl  43    91    82
-			 */
-			int colorPrimary = Color.argb(255, 209, 155, 19);
-			TaskDescription taskDescription = new TaskDescription(label, icon, colorPrimary);
-			((Activity)this).setTaskDescription(taskDescription);
-		}
 		//InputMethodManager mgr = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
 		// DEBUG
 		// intent_data = "google.navigation:q=Wien Burggasse 27";
