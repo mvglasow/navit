@@ -44,6 +44,7 @@ import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.media.AudioManager;
 import android.net.Uri;
@@ -51,6 +52,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Message;
 import android.os.PowerManager;
+import android.os.ResultReceiver;
 import android.text.SpannableString;
 import android.text.method.LinkMovementMethod;
 import android.text.util.Linkify;
@@ -97,7 +99,37 @@ public class Navit extends Activity
 	static final String              NAVIT_DATA_SHARE_DIR           = NAVIT_DATA_DIR + "/share";
 	static final String              FIRST_STARTUP_FILE             = NAVIT_DATA_SHARE_DIR + "/has_run_once.txt";
 	public static final String       NAVIT_PREFS                    = "NavitPrefs";
-
+	
+	private class ImeResultReceiver extends ResultReceiver {
+	     private int result = -1;
+	     
+	     public ImeResultReceiver() {
+	    	 super(null);
+	     }
+	     
+	     @Override 
+	     public void onReceiveResult(int r, Bundle data) {
+	         result = r;
+	    	 Log.d(TAG, String.format("ImeResultReceiver.onReceiveResult(%d)", r));
+	     }
+	     
+	     // poll result value for up to 500 milliseconds
+	     public int getResult() {
+	         try {
+	             int sleep = 0;
+	             while (result == -1 && sleep < 500) {
+	                 Thread.sleep(100);
+	                 sleep += 100;
+	             }
+	             Log.d(TAG, String.format("ImeResultReceiver: waited for %d ms, result %d", sleep, result));
+	         } catch (InterruptedException e) {
+	             Log.e(TAG, e.getMessage());
+	         }
+	         return result;
+	     }
+	};
+	
+	
 	public void removeFileIfExists(String source) {
 		File file = new File(source);
 
@@ -402,6 +434,21 @@ public class Navit extends Activity
 				Log.e("Navit", "timestamp for navigate_to expired! not using data");
 			}
 		}
+		Log.d(TAG, "onResume");
+		/* FIXME this doesn't work */
+		if (show_soft_keyboard_now_showing)
+			this.showNativeKeyboard();
+	}
+	
+	@Override
+	public void onPause() {
+		super.onPause();
+		Log.d(TAG, "onPause");
+		if (show_soft_keyboard_now_showing) {
+			Log.d(TAG, "onPause:hiding soft input");
+			this.hideNativeKeyboard();
+			show_soft_keyboard_now_showing = true;
+		}
 	}
 
 	private void parseNavigationURI(String schemeSpecificPart) {
@@ -597,10 +644,49 @@ public class Navit extends Activity
 	 * 
 	 * @return {@code true} if an input method is going to be displayed, {@code false} if not
 	 */
-	public boolean showNativeKeyboard() {
-		// TODO determine if we need on-screen input
-		mgr.showSoftInput(getCurrentFocus(), InputMethodManager.SHOW_IMPLICIT);
-		return true;
+	public int showNativeKeyboard() {
+		/*
+		 * Apologies for the huge mess that this function is, but Android's soft input API is a big
+		 * nightmare. Its devs have mercifully given us an option to show or hide the keyboard, but
+		 * there is no way to figure out if it is actually showing, let alone how much of the screen it
+		 * occupies, so our best bet is guesswork.
+		 */
+		Configuration config = getResources().getConfiguration();
+		if ((config.keyboard == Configuration.KEYBOARD_QWERTY) && (config.hardKeyboardHidden == Configuration.HARDKEYBOARDHIDDEN_NO))
+			/* physical keyboard present, exit */
+			return 0;
+		
+		ImeResultReceiver receiver = new ImeResultReceiver();
+		
+		/* Use SHOW_FORCED here, else keyboard won't show in landscape mode */
+		mgr.showSoftInput(getCurrentFocus(), InputMethodManager.SHOW_FORCED, receiver);
+		show_soft_keyboard_now_showing = true;
+
+		/* 
+		 * Crude way to estimate the height occupied by the keyboard: for AOSP on KitKat and Lollipop it
+		 * is about 62-63% of available screen width (in portrait mode) but no more than slightly above
+		 * 46% of height (in landscape mode).
+		 */
+		Display display_ = getWindowManager().getDefaultDisplay();
+		int width_ = display_.getWidth();
+		int height_ = display_.getHeight();
+		int maxHeight = height_ * 47 / 100;
+		int inputHeight = width_ * 63 / 100;
+		if (inputHeight > (maxHeight))
+			inputHeight = maxHeight;
+
+		/* the receiver isn't going to fire before the UI thread becomes idle, well after this method returns */
+		Log.d(TAG, "showNativeKeyboard:return (assuming true)");
+		return inputHeight;
+		
+		/*
+		int imeResult = receiver.getResult();
+		boolean result = imeResult != InputMethodManager.RESULT_UNCHANGED_HIDDEN;
+		
+		Log.d(TAG, String.format("return %s (%d)", (result ? "true" : "false"), imeResult));
+		
+		return (result);
+		*/
 	}
 	
 	
@@ -608,7 +694,28 @@ public class Navit extends Activity
 	 * @brief Hides the native keyboard or other input method.
 	 */
 	public void hideNativeKeyboard() {
-		mgr.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), InputMethodManager.HIDE_IMPLICIT_ONLY);
+		ImeResultReceiver receiver = new ImeResultReceiver();
+
+		mgr.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0, receiver);
+		show_soft_keyboard_now_showing = false;
+		
+		/* FIXME the receiver won't ever get a result if the keyboard was already hidden (Back key) */
+		int imeResult = receiver.getResult();
+		boolean result = imeResult != InputMethodManager.RESULT_UNCHANGED_SHOWN;
+		
+		Log.d(TAG, String.format("Result: %s (%d)", (result ? "Success" : "Failure"), imeResult));
+	}
+	
+	
+	public void onConfigurationChanged(Configuration newConfig) {
+		Log.d(TAG, "onConfigurationChanged:enter");
+		Log.d(TAG, "newConfig: " + newConfig.toString());
+		Log.d(TAG, String.format("hardKeyboardHidden=%d, keyboard=%d, keyboardHidden=%d, screenHeightDp=%d", 
+				newConfig.hardKeyboardHidden, 
+				newConfig.keyboard,
+				newConfig.keyboardHidden,
+				newConfig.screenHeightDp));
+		super.onConfigurationChanged(newConfig);
 	}
 	
 

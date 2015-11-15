@@ -1081,9 +1081,12 @@ graphics_background_gc(struct graphics *this_, struct graphics_gc *gc)
  * supported by the plugin
  */
 int graphics_show_native_keyboard (struct graphics *this_, struct graphics_keyboard *kbd) {
+	int ret;
 	if (!this_->meth.show_native_keyboard)
 		return -1;
-	return this_->meth.show_native_keyboard(kbd);
+	ret = this_->meth.show_native_keyboard(kbd);
+	dbg(lvl_error, "return\n");
+	return ret;
 }
 
 

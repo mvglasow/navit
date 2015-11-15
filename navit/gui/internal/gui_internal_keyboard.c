@@ -514,11 +514,19 @@ struct widget * gui_internal_keyboard_show_native(struct gui_priv *this, struct 
 	md->keyboard = ret;
 	md->keyboard_mode=mode;
 	ret->wfree = gui_internal_keyboard_hide_native;
-	/* TODO
-	 * set ret dimensions
-	 */
+	if (kbd->h < 0) {
+		ret->h = w->h;
+		ret->hmin = w->hmin;
+	} else
+		ret->h = kbd->h;
+	if (kbd->w < 0) {
+		ret->w = w->w;
+		ret->wmin = w->wmin;
+	} else
+		ret->w = kbd->w;
+	dbg(lvl_error, "ret->w=%d, ret->h=%d\n", ret->w, ret->h);
 	ret->data = (void *) kbd;
 	gui_internal_widget_append(w, ret);
-	/* FIXME do we need to render anything? */
+	dbg(lvl_error, "return\n");
 	return ret;
 }
