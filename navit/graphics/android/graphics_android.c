@@ -979,7 +979,7 @@ event_android_new(struct event_methods *meth)
 	Navit_runOptionsItem = (*jnienv)->GetMethodID(jnienv, NavitClass, "runOptionsItem", "(I)V");
 	if (Navit_runOptionsItem == NULL) 
 		return NULL; 
-	Navit_showNativeKeyboard = (*jnienv)->GetMethodID(jnienv, NavitClass, "showNativeKeyboard", "()Z");
+	Navit_showNativeKeyboard = (*jnienv)->GetMethodID(jnienv, NavitClass, "showNativeKeyboard", "()I");
 	Navit_hideNativeKeyboard = (*jnienv)->GetMethodID(jnienv, NavitClass, "hideNativeKeyboard", "()V");
 
 	dbg(lvl_debug,"ok\n");
@@ -1002,11 +1002,16 @@ event_android_new(struct event_methods *meth)
  */
 int show_native_keyboard (struct graphics_keyboard *kbd) {
 	// TODO populate kbd with values
+	kbd->w = -1;
 	if (Navit_showNativeKeyboard == NULL) {
 		dbg(lvl_error, "method Navit.showNativeKeyboard() not found, cannot display keyboard\n");
 		return 0;
 	}
-	return (*jnienv)->CallBooleanMethod(jnienv, android_activity, Navit_showNativeKeyboard);
+	kbd->h = (*jnienv)->CallIntMethod(jnienv, android_activity, Navit_showNativeKeyboard);
+	dbg(lvl_error, "keyboard size is %d x %d px\n", kbd->w, kbd->h);
+	dbg(lvl_error, "return\n");
+	/* zero height means we're not showing a keyboard, therefore normalize height to boolean */
+	return !!(kbd->h);
 }
 
 
