@@ -706,6 +706,7 @@ public class NavitGraphics
 			relativelayout.addView(view);
 
 			activity.setContentView(relativelayout);
+			
 			view.requestFocus();
 		}
 		else
