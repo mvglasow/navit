@@ -57,7 +57,6 @@ coordinates_geo(const struct coord_geo *gc, char sep)
 	int lat_deg,lat_min,lat_sec;
 	int lng_deg,lng_min,lng_sec;
 	struct coord_geo g=*gc;
-	char *ret;
 
 	if (g.lat < 0) {
 		g.lat=-g.lat;
@@ -74,21 +73,7 @@ coordinates_geo(const struct coord_geo *gc, char sep)
 	lng_min=fmod(g.lng*60-lng_sec/60.0+0.5,60);
 	lng_deg=g.lng-lng_min/60.0-lng_sec/3600.0+0.5;;
 
-	/* Don't use g_strdup_printf for the full string because it has issues with extended ANSI characters
-	 * (notably the degree sign, 0xb0) on Android Lollipop.
-	 */
-	ret = g_strjoin(NULL,
-			g_strdup_printf("%d", lat_deg), "°",
-			g_strdup_printf("%d", lat_min), "'",
-			g_strdup_printf("%d", lat_sec), "\" ",
-			g_strnfill(1, latc),
-			g_strnfill(1, sep),
-			g_strdup_printf("%d", lng_deg), "°",
-			g_strdup_printf("%d", lng_min), "'",
-			g_strdup_printf("%d", lng_sec), "\" ",
-			g_strnfill(1, lngc),
-			NULL);
-	return ret;
+	return g_strdup_printf("%d°%d'%d\" %c%c%d°%d'%d\" %c",lat_deg,lat_min,lat_sec,latc,sep,lng_deg,lng_min,lng_sec,lngc);
 }
 
 /**
@@ -308,8 +293,8 @@ gui_internal_cmd_enter_coord(struct gui_priv *this, char *function, struct attr 
 	gui_internal_widget_append(wr,row);
 
 	if (this->keyboard)
-                gui_internal_widget_append(w, gui_internal_keyboard(this,56));
-       gui_internal_menu_render(this);
+		gui_internal_widget_append(w, gui_internal_keyboard(this, VKBD_DEGREE));
+	gui_internal_menu_render(this);
 }
 
 static void
@@ -874,7 +859,7 @@ gui_internal_cmd_log(struct gui_priv *this)
 	wl=gui_internal_box_new(this, gravity_left_top|orientation_vertical|flags_expand|flags_fill);
 	gui_internal_widget_append(w, wl);
 	if (this->keyboard)
-		gui_internal_widget_append(w, gui_internal_keyboard(this,2+gui_internal_keyboard_init_mode(getenv("LANG"))));
+		gui_internal_widget_append(w, gui_internal_keyboard(this, VKBD_FLAG_2 | gui_internal_keyboard_init_mode(getenv("LANG"))));
 	gui_internal_menu_render(this);
 	gui_internal_leave(this);
 }
