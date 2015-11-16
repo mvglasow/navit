@@ -67,6 +67,7 @@ import android.util.Log;
 import android.view.Display;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.Window;
 import android.view.WindowManager;
@@ -451,9 +452,14 @@ public class Navit extends Activity
 			}
 		}
 		Log.d(TAG, "onResume");
-		/* FIXME this doesn't work */
-		if (show_soft_keyboard_now_showing)
-			this.showNativeKeyboard();
+		if (show_soft_keyboard_now_showing) {
+			/* Calling showNativeKeyboard() directly won't work here, we need to use the message queue */
+			View cf = getCurrentFocus();
+			if (cf == null)
+				Log.e(TAG, "no view in focus, can't get a handler");
+			else
+				cf.getHandler().post(new SoftInputRestorer());
+		}
 	}
 	
 	@Override
