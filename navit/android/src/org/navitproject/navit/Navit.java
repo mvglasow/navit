@@ -661,14 +661,15 @@ public class Navit extends Activity
 		/*
 		 * Apologies for the huge mess that this function is, but Android's soft input API is a big
 		 * nightmare. Its devs have mercifully given us an option to show or hide the keyboard, but
-		 * there is no way to figure out if it is actually showing, let alone how much of the screen it
-		 * occupies, so our best bet is guesswork.
+		 * there is no reliable way to figure out if it is actually showing, let alone how much of the
+		 * screen it occupies, so our best bet is guesswork.
 		 */
 		Configuration config = getResources().getConfiguration();
 		if ((config.keyboard == Configuration.KEYBOARD_QWERTY) && (config.hardKeyboardHidden == Configuration.HARDKEYBOARDHIDDEN_NO))
 			/* physical keyboard present, exit */
 			return 0;
 		
+		/* FIXME the ResultReceiver probably isn't too useful */
 		ImeResultReceiver receiver = new ImeResultReceiver();
 		
 		/* Use SHOW_FORCED here, else keyboard won't show in landscape mode */
