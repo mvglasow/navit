@@ -68,6 +68,7 @@ struct graphics_keyboard {
 	// TODO complete
 	int w;										/**< The width of the area obscured by the keyboard (-1 for full width) */
 	int h;										/**< The height of the area obscured by the keyboard (-1 for full height) */
+	int mode;									/**< Mode flags for the keyboard */ /* FIXME review this */
 	char *lang;									/**< The preferred language for text input, may be {@code NULL}. */
 	void *gui_priv;								/**< Private data determined by the GUI */
 	struct graphics_keyboard_priv *gra_priv;	/**< Private data determined by the graphics plugin */
