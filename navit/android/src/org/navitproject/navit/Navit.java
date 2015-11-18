@@ -101,36 +101,12 @@ public class Navit extends Activity
 	static final String              FIRST_STARTUP_FILE             = NAVIT_DATA_SHARE_DIR + "/has_run_once.txt";
 	public static final String       NAVIT_PREFS                    = "NavitPrefs";
 	
-	private class ImeResultReceiver extends ResultReceiver {
-	     private int result = -1;
-	     
-	     public ImeResultReceiver() {
-	    	 super(null);
-	     }
-	     
-	     @Override 
-	     public void onReceiveResult(int r, Bundle data) {
-	         result = r;
-	    	 Log.d(TAG, String.format("ImeResultReceiver.onReceiveResult(%d)", r));
-	     }
-	     
-	     // poll result value for up to 500 milliseconds
-	     public int getResult() {
-	         try {
-	             int sleep = 0;
-	             while (result == -1 && sleep < 500) {
-	                 Thread.sleep(100);
-	                 sleep += 100;
-	             }
-	             Log.d(TAG, String.format("ImeResultReceiver: waited for %d ms, result %d", sleep, result));
-	         } catch (InterruptedException e) {
-	             Log.e(TAG, e.getMessage());
-	         }
-	         return result;
-	     }
-	};
-	
-	
+	/**
+	 * @brief A Runnable to restore soft input when the user returns to the activity.
+	 * 
+	 * An instance of this class can be passed to the main message queue in the Activity's
+	 * {@code onRestore()} method.
+	 */
 	private class SoftInputRestorer implements Runnable {
 		public void run() {
 			Navit.this.showNativeKeyboard();
@@ -669,11 +645,8 @@ public class Navit extends Activity
 			/* physical keyboard present, exit */
 			return 0;
 		
-		/* FIXME the ResultReceiver probably isn't too useful */
-		ImeResultReceiver receiver = new ImeResultReceiver();
-		
 		/* Use SHOW_FORCED here, else keyboard won't show in landscape mode */
-		mgr.showSoftInput(getCurrentFocus(), InputMethodManager.SHOW_FORCED, receiver);
+		mgr.showSoftInput(getCurrentFocus(), InputMethodManager.SHOW_FORCED);
 		show_soft_keyboard_now_showing = true;
 
 		/* 
@@ -692,15 +665,6 @@ public class Navit extends Activity
 		/* the receiver isn't going to fire before the UI thread becomes idle, well after this method returns */
 		Log.d(TAG, "showNativeKeyboard:return (assuming true)");
 		return inputHeight;
-		
-		/*
-		int imeResult = receiver.getResult();
-		boolean result = imeResult != InputMethodManager.RESULT_UNCHANGED_HIDDEN;
-		
-		Log.d(TAG, String.format("return %s (%d)", (result ? "true" : "false"), imeResult));
-		
-		return (result);
-		*/
 	}
 	
 	
@@ -708,31 +672,11 @@ public class Navit extends Activity
 	 * @brief Hides the native keyboard or other input method.
 	 */
 	public void hideNativeKeyboard() {
-		ImeResultReceiver receiver = new ImeResultReceiver();
-
-		mgr.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0, receiver);
+		mgr.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
 		show_soft_keyboard_now_showing = false;
-		
-		/* FIXME the receiver won't ever get a result if the keyboard was already hidden (Back key) */
-		int imeResult = receiver.getResult();
-		boolean result = imeResult != InputMethodManager.RESULT_UNCHANGED_SHOWN;
-		
-		Log.d(TAG, String.format("Result: %s (%d)", (result ? "Success" : "Failure"), imeResult));
 	}
 	
 	
-	public void onConfigurationChanged(Configuration newConfig) {
-		Log.d(TAG, "onConfigurationChanged:enter");
-		Log.d(TAG, "newConfig: " + newConfig.toString());
-		Log.d(TAG, String.format("hardKeyboardHidden=%d, keyboard=%d, keyboardHidden=%d, screenHeightDp=%d", 
-				newConfig.hardKeyboardHidden, 
-				newConfig.keyboard,
-				newConfig.keyboardHidden,
-				newConfig.screenHeightDp));
-		super.onConfigurationChanged(newConfig);
-	}
-	
-
 	void setDestination(float latitude, float longitude, String address) {
 		Toast.makeText( getApplicationContext(),getString(R.string.address_search_set_destination) + "\n" + address, Toast.LENGTH_LONG).show(); //TRANS
 

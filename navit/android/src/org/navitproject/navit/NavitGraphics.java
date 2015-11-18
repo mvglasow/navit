@@ -41,7 +41,6 @@ import android.view.KeyEvent;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.RelativeLayout;
 
@@ -706,20 +705,6 @@ public class NavitGraphics
 			relativelayout.addView(view);
 
 			activity.setContentView(relativelayout);
-			
-			/* listen for resize events */
-			view.getViewTreeObserver().addOnGlobalLayoutListener(new OnGlobalLayoutListener() {
-			    @Override
-			    public void onGlobalLayout() {
-			    	Log.d("NavitGraphics", String.format("height changed to %d, root view height %d", view.getHeight(), view.getRootView().getHeight()));
-			        /*
-			        int heightDiff = view.getRootView().getHeight() - view.getHeight();
-			        if (heightDiff > 100) { // if more than 100 pixels, its probably a keyboard...
-			            ... do something here
-			        }
-			        */
-			     }
-			});
 			
 			view.requestFocus();
 		}
