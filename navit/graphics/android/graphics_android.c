@@ -995,13 +995,18 @@ event_android_new(struct event_methods *meth)
  * displayed. A typical case in which there is no need for an on-screen input method is if a hardware
  * keyboard is present.
  *
+ * Note that the Android platform lacks reliable means of determining whether an on-screen input method
+ * is going to be displayed or how much screen space it is going to occupy. Therefore this method tries
+ * to guess these values. They have been tested and found to work correctly with the AOSP keyboard, and
+ * are thus expected to be compatible with most on-screen keyboards found on the market, but results may
+ * be unexpected with other input methods.
+ *
  * @param kbd A {@code struct graphics_keyboard} which describes the requirements for the input method
  * and will be populated with the data of the input method before the function returns.
  *
- * @return True if the input method is displayed, false if not.
+ * @return True if the input method is going to be displayed, false if not.
  */
 int show_native_keyboard (struct graphics_keyboard *kbd) {
-	// TODO populate kbd with values
 	kbd->w = -1;
 	if (Navit_showNativeKeyboard == NULL) {
 		dbg(lvl_error, "method Navit.showNativeKeyboard() not found, cannot display keyboard\n");
