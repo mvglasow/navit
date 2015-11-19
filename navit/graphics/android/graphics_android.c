@@ -793,7 +793,7 @@ graphics_android_new(struct navit *nav, struct graphics_methods *meth, struct at
 	int use_camera=0;
 	jmethodID cid;
 
-	dbg(lvl_error, "enter\n");
+	dbg(lvl_debug, "enter\n");
 	if (!event_request_system("android","graphics_android"))
 		return NULL;
 	ret=g_new0(struct graphics_priv, 1);
