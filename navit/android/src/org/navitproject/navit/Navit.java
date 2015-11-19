@@ -52,7 +52,6 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Message;
 import android.os.PowerManager;
-import android.os.ResultReceiver;
 import android.text.SpannableString;
 import android.text.method.LinkMovementMethod;
 import android.text.util.Linkify;
