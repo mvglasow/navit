@@ -35,19 +35,32 @@
 #include "android.h"
 #include "vehicle.h"
 
-struct vehicle_priv {
-	struct callback_list *cbl;
-	struct coord_geo geo;      /**< The last known position of the vehicle **/
+/**
+ * Describes a location.
+ *
+ * A location contains data describing the movement of the vehicle, along with associated metadata.
+ * It may have been obtained directly from one of the operating system's location providers (such as GPS
+ * or network) or calculated by various means.
+ */
+struct location {
+	struct coord_geo geo;      /**< The position of the vehicle **/
 	double speed;              /**< Speed in km/h **/
 	double direction;          /**< Bearing in degrees **/
 	double height;             /**< Elevation in meters **/
 	double radius;             /**< Position accuracy in meters **/
 	int fix_type;              /**< Type of last fix (1 = valid, 0 = invalid) **/
-	time_t fix_time;           /**< Timestamp of last fix (not used) **/
 	char fixiso8601[128];      /**< Timestamp of last fix in ISO 8601 format **/
 	int sats;                  /**< Number of satellites in view **/
 	int sats_used;             /**< Number of satellites used in fix **/
 	int valid;                 /**< Whether the vehicle coordinates in {@code geo} are valid **/
+};
+
+struct vehicle_priv {
+	struct callback_list *cbl;
+	struct location location;  /**< The location of the vehicle.
+	                                This is what Navit assumes to be the current location. It can be the
+	                                last position obtained from any location provider, or an estimate
+	                                based on previous positions, time elapsed and other factors. **/
 	struct attr ** attrs;
 	struct callback *pcb;      /**< The callback function for position updates **/
 	struct callback *scb;      /**< The callback function for status updates **/
@@ -86,36 +99,36 @@ vehicle_android_position_attr_get(struct vehicle_priv *priv,
 	dbg(lvl_debug,"enter %s\n",attr_to_name(type));
 	switch (type) {
 	case attr_position_fix_type:
-		attr->u.num = priv->fix_type;
+		attr->u.num = priv->location.fix_type;
 		break;
 	case attr_position_height:
-		attr->u.numd = &priv->height;
+		attr->u.numd = &priv->location.height;
 		break;
 	case attr_position_speed:
-		attr->u.numd = &priv->speed;
+		attr->u.numd = &priv->location.speed;
 		break;
 	case attr_position_direction:
-		attr->u.numd = &priv->direction;
+		attr->u.numd = &priv->location.direction;
 		break;
 	case attr_position_radius:
-		attr->u.numd = &priv->radius;
+		attr->u.numd = &priv->location.radius;
 		break;
 	case attr_position_qual:
-		attr->u.num = priv->sats;
+		attr->u.num = priv->location.sats;
 		break;
 	case attr_position_sats_used:
-		attr->u.num = priv->sats_used;
+		attr->u.num = priv->location.sats_used;
 		break;
 	case attr_position_coord_geo:
-		attr->u.coord_geo = &priv->geo;
-		if (priv->valid == attr_position_valid_invalid)
+		attr->u.coord_geo = &priv->location.geo;
+		if (priv->location.valid == attr_position_valid_invalid)
 			return 0;
 		break;
 	case attr_position_time_iso8601:
-		attr->u.str=priv->fixiso8601;
+		attr->u.str=priv->location.fixiso8601;
 		break;
 	case attr_position_valid:
-		attr->u.num = priv->valid;
+		attr->u.num = priv->location.valid;
 		break;
 	default:
 		return 0;
@@ -144,18 +157,18 @@ vehicle_android_position_callback(struct vehicle_priv *v, jobject location) {
 	struct tm *tm;
 	dbg(lvl_debug,"enter\n");
 
-	v->geo.lat = (*jnienv)->CallDoubleMethod(jnienv, location, v->Location_getLatitude);
-	v->geo.lng = (*jnienv)->CallDoubleMethod(jnienv, location, v->Location_getLongitude);
-	v->speed = (*jnienv)->CallFloatMethod(jnienv, location, v->Location_getSpeed)*3.6;
-	v->direction = (*jnienv)->CallFloatMethod(jnienv, location, v->Location_getBearing);
-	v->height = (*jnienv)->CallDoubleMethod(jnienv, location, v->Location_getAltitude);
-	v->radius = (*jnienv)->CallFloatMethod(jnienv, location, v->Location_getAccuracy);
+	v->location.geo.lat = (*jnienv)->CallDoubleMethod(jnienv, location, v->Location_getLatitude);
+	v->location.geo.lng = (*jnienv)->CallDoubleMethod(jnienv, location, v->Location_getLongitude);
+	v->location.speed = (*jnienv)->CallFloatMethod(jnienv, location, v->Location_getSpeed)*3.6;
+	v->location.direction = (*jnienv)->CallFloatMethod(jnienv, location, v->Location_getBearing);
+	v->location.height = (*jnienv)->CallDoubleMethod(jnienv, location, v->Location_getAltitude);
+	v->location.radius = (*jnienv)->CallFloatMethod(jnienv, location, v->Location_getAccuracy);
 	tnow=(*jnienv)->CallLongMethod(jnienv, location, v->Location_getTime)/1000;
 	tm = gmtime(&tnow);
-	strftime(v->fixiso8601, sizeof(v->fixiso8601), "%Y-%m-%dT%TZ", tm);
-	dbg(lvl_debug,"lat %f lon %f time %s\n",v->geo.lat,v->geo.lng,v->fixiso8601);
-	if (v->valid != attr_position_valid_valid) {
-		v->valid = attr_position_valid_valid;
+	strftime(v->location.fixiso8601, sizeof(v->location.fixiso8601), "%Y-%m-%dT%TZ", tm);
+	dbg(lvl_debug,"lat %f lon %f time %s\n",v->location.geo.lat,v->location.geo.lng,v->location.fixiso8601);
+	if (v->location.valid != attr_position_valid_valid) {
+		v->location.valid = attr_position_valid_valid;
 		callback_list_call_attr_0(v->cbl, attr_position_valid);
 	}
 	callback_list_call_attr_0(v->cbl, attr_position_coord_geo);
@@ -177,12 +190,12 @@ vehicle_android_position_callback(struct vehicle_priv *v, jobject location) {
  */
 static void
 vehicle_android_status_callback(struct vehicle_priv *v, int sats_in_view, int sats_used) {
-	if (v->sats != sats_in_view) {
-		v->sats = sats_in_view;
+	if (v->location.sats != sats_in_view) {
+		v->location.sats = sats_in_view;
 		callback_list_call_attr_0(v->cbl, attr_position_qual);
 	}
-	if (v->sats_used != sats_used) {
-		v->sats_used = sats_used;
+	if (v->location.sats_used != sats_used) {
+		v->location.sats_used = sats_used;
 		callback_list_call_attr_0(v->cbl, attr_position_sats_used);
 	}
 }
@@ -197,11 +210,11 @@ vehicle_android_status_callback(struct vehicle_priv *v, int sats_in_view, int sa
  */
 static void
 vehicle_android_fix_callback(struct vehicle_priv *v, int fix_type) {
-	if (v->fix_type != fix_type) {
-		v->fix_type = fix_type;
+	if (v->location.fix_type != fix_type) {
+		v->location.fix_type = fix_type;
 		callback_list_call_attr_0(v->cbl, attr_position_fix_type);
-		if (!fix_type && (v->valid == attr_position_valid_valid)) {
-			v->valid = attr_position_valid_extrapolated_time;
+		if (!fix_type && (v->location.valid == attr_position_valid_valid)) {
+			v->location.valid = attr_position_valid_extrapolated_time;
 			callback_list_call_attr_0(v->cbl, attr_position_valid);
 		}
 	}
@@ -274,9 +287,9 @@ vehicle_android_new_android(struct vehicle_methods *meth,
 	ret->pcb = callback_new_1(callback_cast(vehicle_android_position_callback), ret);
 	ret->scb = callback_new_1(callback_cast(vehicle_android_status_callback), ret);
 	ret->fcb = callback_new_1(callback_cast(vehicle_android_fix_callback), ret);
-	ret->valid = attr_position_valid_invalid;
-	ret->sats = 0;
-	ret->sats_used = 0;
+	ret->location.valid = attr_position_valid_invalid;
+	ret->location.sats = 0;
+	ret->location.sats_used = 0;
 	*meth = vehicle_android_methods;
 	vehicle_android_init(ret);
 	dbg(lvl_debug, "return\n");
