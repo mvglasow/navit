@@ -48,7 +48,7 @@ struct location {
 	double direction;          /**< Bearing in degrees **/
 	double height;             /**< Elevation in meters **/
 	double radius;             /**< Position accuracy in meters **/
-	int fix_type;              /**< Type of last fix (1 = valid, 0 = invalid) **/
+	int fix_type;              /**< Type of last fix (see {@code enum attr_position_valid}) **/
 	char fixiso8601[128];      /**< Timestamp of last fix in ISO 8601 format **/
 	int sats;                  /**< Number of satellites in view **/
 	int sats_used;             /**< Number of satellites used in fix **/
@@ -72,10 +72,13 @@ struct vehicle_priv {
 };
 
 /**
- * @brief Free the android_vehicle
+ * @brief Destroys the vehicle_android instance
+ *
+ * This methods releases the memory used by the struct itself, but none of the referenced data. It is
+ * the caller's responsibility to ensure that either a copy of these pointers remains available or that
+ * the memory referenced by them is freed prior to calling this method.
  * 
- * @param priv vehicle_priv structure for the vehicle
- * @returns nothing
+ * @param priv The instance to destroy.
  */
 static void
 vehicle_android_destroy(struct vehicle_priv *priv)
@@ -206,7 +209,7 @@ vehicle_android_status_callback(struct vehicle_priv *v, int sats_in_view, int sa
  * This function is called by {@code NavitLocationListener} upon receiving a new {@code android.location.GPS_FIX_CHANGE} broadcast.
  *
  * @param v The {@code struct_vehicle_priv} for the vehicle
- * @param fix_type The fix type (1 = valid, 0 = invalid)
+ * @param fix_type The fix type (see {@code enum attr_position_valid})
  */
 static void
 vehicle_android_fix_callback(struct vehicle_priv *v, int fix_type) {
@@ -267,12 +270,12 @@ vehicle_android_init(struct vehicle_priv *ret)
 }
 
 /**
- * @brief Create android_vehicle
+ * @brief Creates a new vehicle_android instance.
  * 
- * @param meth
- * @param cbl
- * @param attrs
- * @returns vehicle_priv
+ * @param meth The methods for the vehicle. This structure must be filled in prior to calling this method.
+ * @param cbl The callback list for the new instance.
+ * @param attrs List of attributes for the new instance
+ * @return The new vehicle_android instance
  */
 static struct vehicle_priv *
 vehicle_android_new_android(struct vehicle_methods *meth,
@@ -297,9 +300,7 @@ vehicle_android_new_android(struct vehicle_methods *meth,
 }
 
 /**
- * @brief register vehicle_android
- * 
- * @returns nothing
+ * @brief Registers the vehicle_android plugin
  */
 void
 plugin_init(void)
