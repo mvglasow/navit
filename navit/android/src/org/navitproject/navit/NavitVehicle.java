@@ -60,6 +60,7 @@ public class NavitVehicle {
 		public void onLocationChanged(Location location) {
 			lastLocation = location;
 			// Disable the fast provider if still active
+			/* TODO keep fast provider for interpolation */
 			if (precise && fastProvider != null) {
 				sLocationManager.removeUpdates(fastLocationListener);
 				fastProvider = null;
