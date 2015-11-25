@@ -71,6 +71,8 @@ enum location_flags {
  * It may have been obtained directly from one of the operating system's location providers (such as GPS
  * or network) or calculated by various means.
  */
+/* TODO accuracy for speed, bearing (with flags) */
+/* TODO preference level for locations (fusion will use only the highest available preference level) */
 struct location {
 	struct coord_geo geo;      /**< The position of the vehicle **/
 	double speed;              /**< Speed in km/h **/
@@ -103,7 +105,8 @@ struct vehicle_priv {
 	                                This is what Navit assumes to be the current location. It can be the
 	                                last position obtained from any location provider, or an estimate
 	                                based on previous positions, time elapsed and other factors. **/
-	struct location * raw_loc; /**< Raw locations used to calculate {@code location} **/
+	struct location **raw_loc; /**< Raw locations used to calculate {@code location}.
+	                            *   This is a NULL-terminated pointer array. **/
 	struct attr ** attrs;
 	struct callback *pcb;      /**< The callback function for position updates **/
 	struct callback *scb;      /**< The callback function for status updates **/
@@ -128,7 +131,10 @@ struct vehicle_priv {
 static void
 vehicle_android_destroy(struct vehicle_priv *priv)
 {
+	int i;
 	dbg(lvl_debug,"enter\n");
+	for (i = 0; priv->raw_loc[i]; i++)
+		g_free(priv->raw_loc[i]);
 	g_free(priv->raw_loc);
 	g_free(priv);
 }
@@ -200,60 +206,70 @@ struct vehicle_methods vehicle_android_methods = {
  * position callback but may be extended in the future to be called by other triggers (events or timers)
  * to extrapolate the current vehicle position.
  *
+ * This method will fill the struct passed as {@code out} with the newly calculated location data and
+ * trigger callbacks from the list passed as {@code cbl} when one of the respective attributes changes.
+ * The decision whether to trigger a callback is made by comparing old and new values of {@code out}. In
+ * order for this to work correctly, {@code out} must hold the last location of the vehicle when this
+ * method is called, or zeroed out if no previous location is known.
+ *
  * For now, this method simply takes the most recent valid fix we received.
  *
  * @param v The {@code struct_vehicle_priv} for the vehicle
+ * @param in Raw locations (NULL-terminated pointer array)
+ * @param out The last calculated location of the vehicle; this struct will receive the updated location
+ * @param cbl Callback list of the vehicle; callbacks from this list will be triggered when one of the
+ * respective attributes changes
  */
 /* TODO: in the long run, this should become a generic function which other vehicles can use as well */
 static void
-vehicle_android_update_position(struct vehicle_priv *v) {
+vehicle_android_update_position(struct location ** in, struct location * out, struct callback_list * cbl) {
 	int index = 0;
 	int i;
 	int validity_changed = 0;	/* Whether position validity has changed. */
 
-	/* the loop is currently somewhat pointless but having it allows for easy extension of the array */
-	for (i = 1; i < RAW_LOCATIONS; i++)
-		if ((v->raw_loc[i].valid = attr_position_valid_valid)
-				&& ((v->raw_loc[i].fix_time.tv_sec > v->raw_loc[index].fix_time.tv_sec)
-						|| ((v->raw_loc[i].fix_time.tv_sec == v->raw_loc[index].fix_time.tv_sec) && (v->raw_loc[i].fix_time.tv_usec > v->raw_loc[index].fix_time.tv_usec))))
+	/* having the loop allows for easy extension of the array beyond 2 elements */
+	for (i = 1; in[i]; i++)
+		if ((in[i]->valid = attr_position_valid_valid)
+				&& ((in[i]->fix_time.tv_sec > in[index]->fix_time.tv_sec)
+						|| ((in[i]->fix_time.tv_sec == in[index]->fix_time.tv_sec) && (in[i]->fix_time.tv_usec > in[index]->fix_time.tv_usec))))
 			index = i;
 	dbg(lvl_debug, "index=%d\n", index);
 	/* TODO revise validity logic when we introduce extrapolated positions */
-	validity_changed = (v->location.valid != v->raw_loc[index].valid);
-	v->location.valid = v->raw_loc[index].valid;
-	if (v->raw_loc[index].valid == attr_position_valid_invalid) {
+	validity_changed = (out->valid != in[index]->valid);
+	out->valid = in[index]->valid;
+	if (in[index]->valid == attr_position_valid_invalid) {
 		if (validity_changed)
-			callback_list_call_attr_0(v->cbl, attr_position_valid);
+			callback_list_call_attr_0(cbl, attr_position_valid);
 		return;
 	}
-	v->location.geo.lat = v->raw_loc[index].geo.lat;
-	v->location.geo.lng = v->raw_loc[index].geo.lng;
-	v->location.speed = v->raw_loc[index].speed;
-	v->location.direction = v->raw_loc[index].direction;
-	v->location.height = v->raw_loc[index].height;
-	v->location.radius = v->raw_loc[index].radius;
-	if (v->location.fix_type != v->raw_loc[index].fix_type) {
-		v->location.fix_type = v->raw_loc[index].fix_type;
-		callback_list_call_attr_0(v->cbl, attr_position_fix_type);
+	out->geo.lat = in[index]->geo.lat;
+	out->geo.lng = in[index]->geo.lng;
+	out->speed = in[index]->speed;
+	out->direction = in[index]->direction;
+	out->height = in[index]->height;
+	out->radius = in[index]->radius;
+	if (out->fix_type != in[index]->fix_type) {
+		out->fix_type = in[index]->fix_type;
+		callback_list_call_attr_0(cbl, attr_position_fix_type);
 	}
-	v->location.fix_time.tv_sec = v->raw_loc[index].fix_time.tv_sec;
-	v->location.fix_time.tv_usec = v->raw_loc[index].fix_time.tv_usec;
-	memcpy(v->location.fixiso8601, v->raw_loc[index].fixiso8601, sizeof(v->location.fixiso8601));
-	if (v->location.sats != v->raw_loc[index].sats) {
-		v->location.sats = v->raw_loc[index].sats;
-		callback_list_call_attr_0(v->cbl, attr_position_qual);
+	out->fix_time.tv_sec = in[index]->fix_time.tv_sec;
+	out->fix_time.tv_usec = in[index]->fix_time.tv_usec;
+	memcpy(out->fixiso8601, in[index]->fixiso8601, sizeof(out->fixiso8601));
+	if (out->sats != in[index]->sats) {
+		out->sats = in[index]->sats;
+		callback_list_call_attr_0(cbl, attr_position_qual);
 	}
-	if (v->location.sats_used != v->raw_loc[index].sats_used) {
-		v->location.sats_used = v->raw_loc[index].sats_used;
-		callback_list_call_attr_0(v->cbl, attr_position_sats_used);
+	if (out->sats_used != in[index]->sats_used) {
+		out->sats_used = in[index]->sats_used;
+		callback_list_call_attr_0(cbl, attr_position_sats_used);
 	}
-	v->location.flags = v->raw_loc[index].flags;
-	dbg(lvl_debug, "lat %f lon %f time %s\n", v->location.geo.lat, v->location.geo.lng, v->location.fixiso8601);
+	out->flags = in[index]->flags;
+	dbg(lvl_debug, "lat %f lon %f time %s\n", out->geo.lat, out->geo.lng, out->fixiso8601);
 
 	if (validity_changed)
-		callback_list_call_attr_0(v->cbl, attr_position_valid);
+		callback_list_call_attr_0(cbl, attr_position_valid);
 	/* TODO find out if the position actuially has changed before triggering the callback */
-	callback_list_call_attr_0(v->cbl, attr_position_coord_geo);
+	callback_list_call_attr_0(cbl, attr_position_coord_geo);
 }
 
 
@@ -282,37 +298,37 @@ vehicle_android_position_callback(struct vehicle_priv *v, jobject location) {
 	if (!strcmp(provider_chars, gps)) {
 		index = raw_index_gps;
 		/* For a GPS location, use system time in order to make fix_time comparable */
-		gettimeofday(&(v->raw_loc[index].fix_time), NULL);
+		gettimeofday(&(v->raw_loc[index]->fix_time), NULL);
 	} else {
 		index = raw_index_network;
-		v->raw_loc[index].fix_time.tv_sec = (*jnienv)->CallLongMethod(jnienv, location, v->Location_getTime) / 1000;
-		v->raw_loc[index].fix_time.tv_usec = ((*jnienv)->CallLongMethod(jnienv, location, v->Location_getTime) % 1000) * 1000;
+		v->raw_loc[index]->fix_time.tv_sec = (*jnienv)->CallLongMethod(jnienv, location, v->Location_getTime) / 1000;
+		v->raw_loc[index]->fix_time.tv_usec = ((*jnienv)->CallLongMethod(jnienv, location, v->Location_getTime) % 1000) * 1000;
 	}
 	index = strcmp(provider_chars, gps) ? raw_index_network : raw_index_gps;
 	(*jnienv)->ReleaseStringUTFChars(jnienv, provider, provider_chars);
 
-	v->raw_loc[index].flags = location_flag_has_geo;
+	v->raw_loc[index]->flags = location_flag_has_geo;
 	if ((*jnienv)->CallBooleanMethod(jnienv, location, v->Location_hasSpeed))
-		v->raw_loc[index].flags |= location_flag_has_speed;
+		v->raw_loc[index]->flags |= location_flag_has_speed;
 	if ((*jnienv)->CallBooleanMethod(jnienv, location, v->Location_hasBearing))
-		v->raw_loc[index].flags |= location_flag_has_direction;
+		v->raw_loc[index]->flags |= location_flag_has_direction;
 	if ((*jnienv)->CallBooleanMethod(jnienv, location, v->Location_hasAltitude))
-		v->raw_loc[index].flags |= location_flag_has_height;
+		v->raw_loc[index]->flags |= location_flag_has_height;
 	if ((*jnienv)->CallBooleanMethod(jnienv, location, v->Location_hasAccuracy))
-		v->raw_loc[index].flags |= location_flag_has_radius;
-	v->raw_loc[index].geo.lat = (*jnienv)->CallDoubleMethod(jnienv, location, v->Location_getLatitude);
-	v->raw_loc[index].geo.lng = (*jnienv)->CallDoubleMethod(jnienv, location, v->Location_getLongitude);
-	v->raw_loc[index].speed = (*jnienv)->CallFloatMethod(jnienv, location, v->Location_getSpeed) * 3.6;
-	v->raw_loc[index].direction = (*jnienv)->CallFloatMethod(jnienv, location, v->Location_getBearing);
-	v->raw_loc[index].height = (*jnienv)->CallDoubleMethod(jnienv, location, v->Location_getAltitude);
-	v->raw_loc[index].radius = (*jnienv)->CallFloatMethod(jnienv, location, v->Location_getAccuracy);
-	tnow = v->raw_loc[index].fix_time.tv_sec;
+		v->raw_loc[index]->flags |= location_flag_has_radius;
+	v->raw_loc[index]->geo.lat = (*jnienv)->CallDoubleMethod(jnienv, location, v->Location_getLatitude);
+	v->raw_loc[index]->geo.lng = (*jnienv)->CallDoubleMethod(jnienv, location, v->Location_getLongitude);
+	v->raw_loc[index]->speed = (*jnienv)->CallFloatMethod(jnienv, location, v->Location_getSpeed) * 3.6;
+	v->raw_loc[index]->direction = (*jnienv)->CallFloatMethod(jnienv, location, v->Location_getBearing);
+	v->raw_loc[index]->height = (*jnienv)->CallDoubleMethod(jnienv, location, v->Location_getAltitude);
+	v->raw_loc[index]->radius = (*jnienv)->CallFloatMethod(jnienv, location, v->Location_getAccuracy);
+	tnow = v->raw_loc[index]->fix_time.tv_sec;
 	tm = gmtime(&tnow);
-	strftime(v->raw_loc[index].fixiso8601, sizeof(v->raw_loc[index].fixiso8601), "%Y-%m-%dT%TZ", tm);
-	v->raw_loc[index].valid = attr_position_valid_valid;
-	dbg(lvl_debug,"lat %f lon %f time %s\n", v->raw_loc[index].geo.lat, v->raw_loc[index].geo.lng, v->raw_loc[index].fixiso8601);
+	strftime(v->raw_loc[index]->fixiso8601, sizeof(v->raw_loc[index]->fixiso8601), "%Y-%m-%dT%TZ", tm);
+	v->raw_loc[index]->valid = attr_position_valid_valid;
+	dbg(lvl_debug,"lat %f lon %f time %s\n", v->raw_loc[index]->geo.lat, v->raw_loc[index]->geo.lng, v->raw_loc[index]->fixiso8601);
 
-	vehicle_android_update_position(v);
+	vehicle_android_update_position(v->raw_loc, &(v->location), v->cbl);
 }
 
 
@@ -332,21 +348,21 @@ vehicle_android_position_callback(struct vehicle_priv *v, jobject location) {
  */
 static void
 vehicle_android_status_callback(struct vehicle_priv *v, int sats_in_view, int sats_used) {
-	if (v->raw_loc[raw_index_gps].sats != sats_in_view) {
-		v->raw_loc[raw_index_gps].sats = sats_in_view;
+	if (v->raw_loc[raw_index_gps]->sats != sats_in_view) {
+		v->raw_loc[raw_index_gps]->sats = sats_in_view;
 #if 0
 		/* Don't trigger callbacks before data is reflected in v->location */
 		callback_list_call_attr_0(v->cbl, attr_position_qual);
 #endif
 	}
-	if (v->raw_loc[raw_index_gps].sats_used != sats_used) {
-		v->raw_loc[raw_index_gps].sats_used = sats_used;
+	if (v->raw_loc[raw_index_gps]->sats_used != sats_used) {
+		v->raw_loc[raw_index_gps]->sats_used = sats_used;
 #if 0
 		/* Don't trigger callbacks before data is reflected in v->location */
 		callback_list_call_attr_0(v->cbl, attr_position_sats_used);
 #endif
 	}
-	v->raw_loc[raw_index_gps].flags |= location_flag_has_sat_data;
+	v->raw_loc[raw_index_gps]->flags |= location_flag_has_sat_data;
 	/* TODO should we update after this?
 	 * If we do, we'd fully recalculate the location despite results turning out the same.
 	 * If we don't, callbacks related to sat status would be delayed until the location changes. */
@@ -365,14 +381,14 @@ vehicle_android_status_callback(struct vehicle_priv *v, int sats_in_view, int sa
  */
 static void
 vehicle_android_fix_callback(struct vehicle_priv *v, int fix_type) {
-	if (v->raw_loc[raw_index_gps].fix_type != fix_type) {
-		v->raw_loc[raw_index_gps].fix_type = fix_type;
+	if (v->raw_loc[raw_index_gps]->fix_type != fix_type) {
+		v->raw_loc[raw_index_gps]->fix_type = fix_type;
 #if 0
 		/* Don't trigger callbacks before data is reflected in v->location */
 		callback_list_call_attr_0(v->cbl, attr_position_fix_type);
 #endif
-		if (!fix_type && (v->raw_loc[raw_index_gps].valid == attr_position_valid_valid)) {
-			v->raw_loc[raw_index_gps].valid = attr_position_valid_extrapolated_time;
+		if (!fix_type && (v->raw_loc[raw_index_gps]->valid == attr_position_valid_valid)) {
+			v->raw_loc[raw_index_gps]->valid = attr_position_valid_extrapolated_time;
 #if 0
 			/* Don't trigger callbacks before data is reflected in v->location */
 			callback_list_call_attr_0(v->cbl, attr_position_valid);
@@ -454,6 +470,7 @@ vehicle_android_new_android(struct vehicle_methods *meth,
 		       	struct attr **attrs)
 {
 	struct vehicle_priv *ret;
+	int i;
 
 	dbg(lvl_debug, "enter\n");
 	ret = g_new0(struct vehicle_priv, 1);
@@ -464,7 +481,9 @@ vehicle_android_new_android(struct vehicle_methods *meth,
 	ret->location.valid = attr_position_valid_invalid;
 	ret->location.sats = 0;
 	ret->location.sats_used = 0;
-	ret->raw_loc = g_new0(struct location, RAW_LOCATIONS);
+	ret->raw_loc = g_new0(struct location *, RAW_LOCATIONS + 1);
+	for (i = 0; i <= RAW_LOCATIONS; i++)
+		ret->raw_loc[i] = g_new0(struct location, 1);
 	*meth = vehicle_android_methods;
 	vehicle_android_init(ret);
 	dbg(lvl_debug, "return\n");
