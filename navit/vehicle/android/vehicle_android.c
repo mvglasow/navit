@@ -35,6 +35,35 @@
 #include "android.h"
 #include "vehicle.h"
 
+#define RAW_LOCATIONS 2
+
+/**
+ * Indices for raw locations in {@code vehicle_priv.raw_loc}
+ */
+enum raw_index {
+	raw_index_gps = 0,
+	raw_index_network = 1,
+};
+
+
+/**
+ * Flags to describe which members of a {@code struct location} contain valid data.
+ */
+enum location_flags {
+	location_flag_has_geo = 0x1,		/*!< The location supplies coordinates.
+										 *   Locations without coordinates may be used for inertial
+										 *   navigation or to supplement another location with extra
+										 *   data or supplied by the other location. */
+	location_flag_has_speed = 0x2,		/*!< The location supplies speed data. */
+	location_flag_has_direction = 0x4,	/*!< The location supplies bearing data. */
+	location_flag_has_height = 0x8,		/*!< The location supplies altitude data. */
+	location_flag_has_radius = 0x10,	/*!< The location supplies accuracy data for its coordinates. */
+	location_flag_has_sat_data = 0x20,	/*!< The location supplies satellite data,
+										 *   i.e. the number of satellites in view and the number of
+										 *   satellites used for position measurement. */
+};
+
+
 /**
  * Describes a location.
  *
@@ -46,13 +75,26 @@ struct location {
 	struct coord_geo geo;      /**< The position of the vehicle **/
 	double speed;              /**< Speed in km/h **/
 	double direction;          /**< Bearing in degrees **/
-	double height;             /**< Elevation in meters **/
+	double height;             /**< Altitude in meters **/
 	double radius;             /**< Position accuracy in meters **/
-	int fix_type;              /**< Type of last fix (see {@code enum attr_position_valid}) **/
+	int fix_type;              /**< Type of last fix.
+	                            *   On Android, this is either 1 for a fix or 0 if the fix has been lost. **/
+	struct timeval fix_time;   /**< Timestamp of last fix.
+	                            *   All location sources must use the same reference time (usually
+	                            *   system time) to allow comparison and extrapolation.	**/
 	char fixiso8601[128];      /**< Timestamp of last fix in ISO 8601 format **/
 	int sats;                  /**< Number of satellites in view **/
 	int sats_used;             /**< Number of satellites used in fix **/
-	int valid;                 /**< Whether the vehicle coordinates in {@code geo} are valid **/
+	int valid;                 /**< Whether the data in this location is valid, and how it was obtained
+	                            *   (e.g. through measurement or extrapolation). See
+	                            *   {@code enum attr_position_valid} for possible values. Examine
+	                            *   {@code flags} to find out what data this location supplies. **/
+	int flags;                 /**< Describes the information supplied by this location.
+	                            *   Members whose the corresponding flag is not set should be ignored.
+	                            *   The flags do not supply any information on how the location data was
+	                            *   obtained, or if it is valid. This can be determined by examining
+	                            *   {@code valid}, which should always be used in conjunction with the
+	                            *   flags. **/
 };
 
 struct vehicle_priv {
@@ -61,6 +103,7 @@ struct vehicle_priv {
 	                                This is what Navit assumes to be the current location. It can be the
 	                                last position obtained from any location provider, or an estimate
 	                                based on previous positions, time elapsed and other factors. **/
+	struct location * raw_loc; /**< Raw locations used to calculate {@code location} **/
 	struct attr ** attrs;
 	struct callback *pcb;      /**< The callback function for position updates **/
 	struct callback *scb;      /**< The callback function for status updates **/
@@ -68,15 +111,17 @@ struct vehicle_priv {
 	jclass NavitVehicleClass;  /**< The {@code NavitVehicle} class **/
 	jobject NavitVehicle;      /**< An instance of {@code NavitVehicle} **/
 	jclass LocationClass;      /**< Android's {@code Location} class **/
-	jmethodID Location_getLatitude, Location_getLongitude, Location_getSpeed, Location_getBearing, Location_getAltitude, Location_getTime, Location_getAccuracy;
+	jmethodID Location_getLatitude, Location_getLongitude, Location_getSpeed, Location_getBearing, Location_getAltitude, Location_getTime, Location_getAccuracy, Location_getProvider,
+	Location_hasSpeed, Location_hasBearing, Location_hasAltitude, Location_hasAccuracy;
 };
 
 /**
  * @brief Destroys the vehicle_android instance
  *
- * This methods releases the memory used by the struct itself, but none of the referenced data. It is
- * the caller's responsibility to ensure that either a copy of these pointers remains available or that
- * the memory referenced by them is freed prior to calling this method.
+ * This methods releases the memory used by the struct itself, as well as the memory referenced by
+ * {@code raw_loc}, but not the memory referenced by {@code cbl} and {@code attr}. It is the caller's
+ * responsibility to ensure that either a copy of these pointers remains available or to free the memory
+ * referenced by them prior to calling this method.
  * 
  * @param priv The instance to destroy.
  */
@@ -84,6 +129,7 @@ static void
 vehicle_android_destroy(struct vehicle_priv *priv)
 {
 	dbg(lvl_debug,"enter\n");
+	g_free(priv->raw_loc);
 	g_free(priv);
 }
 
@@ -146,6 +192,71 @@ struct vehicle_methods vehicle_android_methods = {
 	vehicle_android_position_attr_get,
 };
 
+
+/**
+ * @brief Updates the vehicle position.
+ *
+ * This method recalculates the position and sets its members accordingly. It is called from the
+ * position callback but may be extended in the future to be called by other triggers (events or timers)
+ * to extrapolate the current vehicle position.
+ *
+ * For now, this method simply takes the most recent valid fix we received.
+ *
+ * @param v The {@code struct_vehicle_priv} for the vehicle
+ */
+/* TODO: in the long run, this should become a generic function which other vehicles can use as well */
+static void
+vehicle_android_update_position(struct vehicle_priv *v) {
+	int index = 0;
+	int i;
+	int validity_changed = 0;	/* Whether position validity has changed. */
+
+	/* the loop is currently somewhat pointless but having it allows for easy extension of the array */
+	for (i = 1; i < RAW_LOCATIONS; i++)
+		if ((v->raw_loc[i].valid = attr_position_valid_valid)
+				&& ((v->raw_loc[i].fix_time.tv_sec > v->raw_loc[index].fix_time.tv_sec)
+						|| ((v->raw_loc[i].fix_time.tv_sec == v->raw_loc[index].fix_time.tv_sec) && (v->raw_loc[i].fix_time.tv_usec > v->raw_loc[index].fix_time.tv_usec))))
+			index = i;
+	dbg(lvl_debug, "index=%d\n", index);
+	/* TODO revise validity logic when we introduce extrapolated positions */
+	validity_changed = (v->location.valid != v->raw_loc[index].valid);
+	v->location.valid = v->raw_loc[index].valid;
+	if (v->raw_loc[index].valid == attr_position_valid_invalid) {
+		if (validity_changed)
+			callback_list_call_attr_0(v->cbl, attr_position_valid);
+		return;
+	}
+	v->location.geo.lat = v->raw_loc[index].geo.lat;
+	v->location.geo.lng = v->raw_loc[index].geo.lng;
+	v->location.speed = v->raw_loc[index].speed;
+	v->location.direction = v->raw_loc[index].direction;
+	v->location.height = v->raw_loc[index].height;
+	v->location.radius = v->raw_loc[index].radius;
+	if (v->location.fix_type != v->raw_loc[index].fix_type) {
+		v->location.fix_type = v->raw_loc[index].fix_type;
+		callback_list_call_attr_0(v->cbl, attr_position_fix_type);
+	}
+	v->location.fix_time.tv_sec = v->raw_loc[index].fix_time.tv_sec;
+	v->location.fix_time.tv_usec = v->raw_loc[index].fix_time.tv_usec;
+	memcpy(v->location.fixiso8601, v->raw_loc[index].fixiso8601, sizeof(v->location.fixiso8601));
+	if (v->location.sats != v->raw_loc[index].sats) {
+		v->location.sats = v->raw_loc[index].sats;
+		callback_list_call_attr_0(v->cbl, attr_position_qual);
+	}
+	if (v->location.sats_used != v->raw_loc[index].sats_used) {
+		v->location.sats_used = v->raw_loc[index].sats_used;
+		callback_list_call_attr_0(v->cbl, attr_position_sats_used);
+	}
+	v->location.flags = v->raw_loc[index].flags;
+	dbg(lvl_debug, "lat %f lon %f time %s\n", v->location.geo.lat, v->location.geo.lng, v->location.fixiso8601);
+
+	if (validity_changed)
+		callback_list_call_attr_0(v->cbl, attr_position_valid);
+	/* TODO find out if the position actuially has changed before triggering the callback */
+	callback_list_call_attr_0(v->cbl, attr_position_coord_geo);
+}
+
+
 /**
  * @brief Called when a new position has been reported
  *
@@ -158,24 +269,52 @@ static void
 vehicle_android_position_callback(struct vehicle_priv *v, jobject location) {
 	time_t tnow;
 	struct tm *tm;
+	jobject provider;		/* The location provider as a Java String */
+	char * provider_chars;	/* The location provider as a C string */
+	char * gps = "gps";		/* The string used for the GPS location provider */
+	int index;				/* Index into raw_loc where the location will be stored */
+
 	dbg(lvl_debug,"enter\n");
 
-	v->location.geo.lat = (*jnienv)->CallDoubleMethod(jnienv, location, v->Location_getLatitude);
-	v->location.geo.lng = (*jnienv)->CallDoubleMethod(jnienv, location, v->Location_getLongitude);
-	v->location.speed = (*jnienv)->CallFloatMethod(jnienv, location, v->Location_getSpeed)*3.6;
-	v->location.direction = (*jnienv)->CallFloatMethod(jnienv, location, v->Location_getBearing);
-	v->location.height = (*jnienv)->CallDoubleMethod(jnienv, location, v->Location_getAltitude);
-	v->location.radius = (*jnienv)->CallFloatMethod(jnienv, location, v->Location_getAccuracy);
-	tnow=(*jnienv)->CallLongMethod(jnienv, location, v->Location_getTime)/1000;
-	tm = gmtime(&tnow);
-	strftime(v->location.fixiso8601, sizeof(v->location.fixiso8601), "%Y-%m-%dT%TZ", tm);
-	dbg(lvl_debug,"lat %f lon %f time %s\n",v->location.geo.lat,v->location.geo.lng,v->location.fixiso8601);
-	if (v->location.valid != attr_position_valid_valid) {
-		v->location.valid = attr_position_valid_valid;
-		callback_list_call_attr_0(v->cbl, attr_position_valid);
+	provider = (*jnienv)->CallObjectMethod(jnienv, location, v->Location_getProvider);
+	provider_chars = (*jnienv)->GetStringUTFChars(jnienv, provider, NULL);
+	dbg(lvl_debug, "provider=%s\n", provider_chars);
+	if (!strcmp(provider_chars, gps)) {
+		index = raw_index_gps;
+		/* For a GPS location, use system time in order to make fix_time comparable */
+		gettimeofday(&(v->raw_loc[index].fix_time), NULL);
+	} else {
+		index = raw_index_network;
+		v->raw_loc[index].fix_time.tv_sec = (*jnienv)->CallLongMethod(jnienv, location, v->Location_getTime) / 1000;
+		v->raw_loc[index].fix_time.tv_usec = ((*jnienv)->CallLongMethod(jnienv, location, v->Location_getTime) % 1000) * 1000;
 	}
-	callback_list_call_attr_0(v->cbl, attr_position_coord_geo);
+	index = strcmp(provider_chars, gps) ? raw_index_network : raw_index_gps;
+	(*jnienv)->ReleaseStringUTFChars(jnienv, provider, provider_chars);
+
+	v->raw_loc[index].flags = location_flag_has_geo;
+	if ((*jnienv)->CallBooleanMethod(jnienv, location, v->Location_hasSpeed))
+		v->raw_loc[index].flags |= location_flag_has_speed;
+	if ((*jnienv)->CallBooleanMethod(jnienv, location, v->Location_hasBearing))
+		v->raw_loc[index].flags |= location_flag_has_direction;
+	if ((*jnienv)->CallBooleanMethod(jnienv, location, v->Location_hasAltitude))
+		v->raw_loc[index].flags |= location_flag_has_height;
+	if ((*jnienv)->CallBooleanMethod(jnienv, location, v->Location_hasAccuracy))
+		v->raw_loc[index].flags |= location_flag_has_radius;
+	v->raw_loc[index].geo.lat = (*jnienv)->CallDoubleMethod(jnienv, location, v->Location_getLatitude);
+	v->raw_loc[index].geo.lng = (*jnienv)->CallDoubleMethod(jnienv, location, v->Location_getLongitude);
+	v->raw_loc[index].speed = (*jnienv)->CallFloatMethod(jnienv, location, v->Location_getSpeed) * 3.6;
+	v->raw_loc[index].direction = (*jnienv)->CallFloatMethod(jnienv, location, v->Location_getBearing);
+	v->raw_loc[index].height = (*jnienv)->CallDoubleMethod(jnienv, location, v->Location_getAltitude);
+	v->raw_loc[index].radius = (*jnienv)->CallFloatMethod(jnienv, location, v->Location_getAccuracy);
+	tnow = v->raw_loc[index].fix_time.tv_sec;
+	tm = gmtime(&tnow);
+	strftime(v->raw_loc[index].fixiso8601, sizeof(v->raw_loc[index].fixiso8601), "%Y-%m-%dT%TZ", tm);
+	v->raw_loc[index].valid = attr_position_valid_valid;
+	dbg(lvl_debug,"lat %f lon %f time %s\n", v->raw_loc[index].geo.lat, v->raw_loc[index].geo.lng, v->raw_loc[index].fixiso8601);
+
+	vehicle_android_update_position(v);
 }
+
 
 /**
  * @brief Called when a new GPS status has been reported
@@ -193,14 +332,24 @@ vehicle_android_position_callback(struct vehicle_priv *v, jobject location) {
  */
 static void
 vehicle_android_status_callback(struct vehicle_priv *v, int sats_in_view, int sats_used) {
-	if (v->location.sats != sats_in_view) {
-		v->location.sats = sats_in_view;
+	if (v->raw_loc[raw_index_gps].sats != sats_in_view) {
+		v->raw_loc[raw_index_gps].sats = sats_in_view;
+#if 0
+		/* Don't trigger callbacks before data is reflected in v->location */
 		callback_list_call_attr_0(v->cbl, attr_position_qual);
+#endif
 	}
-	if (v->location.sats_used != sats_used) {
-		v->location.sats_used = sats_used;
+	if (v->raw_loc[raw_index_gps].sats_used != sats_used) {
+		v->raw_loc[raw_index_gps].sats_used = sats_used;
+#if 0
+		/* Don't trigger callbacks before data is reflected in v->location */
 		callback_list_call_attr_0(v->cbl, attr_position_sats_used);
+#endif
 	}
+	v->raw_loc[raw_index_gps].flags |= location_flag_has_sat_data;
+	/* TODO should we update after this?
+	 * If we do, we'd fully recalculate the location despite results turning out the same.
+	 * If we don't, callbacks related to sat status would be delayed until the location changes. */
 }
 
 /**
@@ -208,18 +357,30 @@ vehicle_android_status_callback(struct vehicle_priv *v, int sats_in_view, int sa
  *
  * This function is called by {@code NavitLocationListener} upon receiving a new {@code android.location.GPS_FIX_CHANGE} broadcast.
  *
+ * It is also called whenever a fix is received from any location provider, but note that loss of fix is
+ * only reported for GPS.
+ *
  * @param v The {@code struct_vehicle_priv} for the vehicle
- * @param fix_type The fix type (see {@code enum attr_position_valid})
+ * @param fix_type The fix type (1 = fix acquired, 0 = fix lost)
  */
 static void
 vehicle_android_fix_callback(struct vehicle_priv *v, int fix_type) {
-	if (v->location.fix_type != fix_type) {
-		v->location.fix_type = fix_type;
+	if (v->raw_loc[raw_index_gps].fix_type != fix_type) {
+		v->raw_loc[raw_index_gps].fix_type = fix_type;
+#if 0
+		/* Don't trigger callbacks before data is reflected in v->location */
 		callback_list_call_attr_0(v->cbl, attr_position_fix_type);
-		if (!fix_type && (v->location.valid == attr_position_valid_valid)) {
-			v->location.valid = attr_position_valid_extrapolated_time;
+#endif
+		if (!fix_type && (v->raw_loc[raw_index_gps].valid == attr_position_valid_valid)) {
+			v->raw_loc[raw_index_gps].valid = attr_position_valid_extrapolated_time;
+#if 0
+			/* Don't trigger callbacks before data is reflected in v->location */
 			callback_list_call_attr_0(v->cbl, attr_position_valid);
+#endif
 		}
+		/* TODO should we update after this?
+		 * If we do, we'd fully recalculate the location despite results turning out the same.
+		 * If we don't, fix type/position validity callbacks would be delayed until the location changes. */
 	}
 }
 
@@ -248,6 +409,16 @@ vehicle_android_init(struct vehicle_priv *ret)
 	if (!android_find_method(ret->LocationClass, "getTime", "()J", &ret->Location_getTime))
                 return 0;
 	if (!android_find_method(ret->LocationClass, "getAccuracy", "()F", &ret->Location_getAccuracy))
+                return 0;
+	if (!android_find_method(ret->LocationClass, "getProvider", "()Ljava/lang/String;", &ret->Location_getProvider))
+                return 0;
+	if (!android_find_method(ret->LocationClass, "hasSpeed", "()Z", &ret->Location_hasSpeed))
+                return 0;
+	if (!android_find_method(ret->LocationClass, "hasBearing", "()Z", &ret->Location_hasBearing))
+                return 0;
+	if (!android_find_method(ret->LocationClass, "hasAltitude", "()Z", &ret->Location_hasAltitude))
+                return 0;
+	if (!android_find_method(ret->LocationClass, "hasAccuracy", "()Z", &ret->Location_hasAccuracy))
                 return 0;
 	if (!android_find_class_global("org/navitproject/navit/NavitVehicle", &ret->NavitVehicleClass))
                 return 0;
@@ -293,6 +464,7 @@ vehicle_android_new_android(struct vehicle_methods *meth,
 	ret->location.valid = attr_position_valid_invalid;
 	ret->location.sats = 0;
 	ret->location.sats_used = 0;
+	ret->raw_loc = g_new0(struct location, RAW_LOCATIONS);
 	*meth = vehicle_android_methods;
 	vehicle_android_init(ret);
 	dbg(lvl_debug, "return\n");
