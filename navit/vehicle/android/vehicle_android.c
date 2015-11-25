@@ -46,59 +46,6 @@ enum raw_index {
 };
 
 
-/**
- * Flags to describe which members of a {@code struct location} contain valid data.
- */
-enum location_flags {
-	location_flag_has_geo = 0x1,		/*!< The location supplies coordinates.
-										 *   Locations without coordinates may be used for inertial
-										 *   navigation or to supplement another location with extra
-										 *   data or supplied by the other location. */
-	location_flag_has_speed = 0x2,		/*!< The location supplies speed data. */
-	location_flag_has_direction = 0x4,	/*!< The location supplies bearing data. */
-	location_flag_has_height = 0x8,		/*!< The location supplies altitude data. */
-	location_flag_has_radius = 0x10,	/*!< The location supplies accuracy data for its coordinates. */
-	location_flag_has_sat_data = 0x20,	/*!< The location supplies satellite data,
-										 *   i.e. the number of satellites in view and the number of
-										 *   satellites used for position measurement. */
-};
-
-
-/**
- * Describes a location.
- *
- * A location contains data describing the movement of the vehicle, along with associated metadata.
- * It may have been obtained directly from one of the operating system's location providers (such as GPS
- * or network) or calculated by various means.
- */
-/* TODO accuracy for speed, bearing (with flags) */
-/* TODO preference level for locations (fusion will use only the highest available preference level) */
-struct location {
-	struct coord_geo geo;      /**< The position of the vehicle **/
-	double speed;              /**< Speed in km/h **/
-	double direction;          /**< Bearing in degrees **/
-	double height;             /**< Altitude in meters **/
-	double radius;             /**< Position accuracy in meters **/
-	int fix_type;              /**< Type of last fix.
-	                            *   On Android, this is either 1 for a fix or 0 if the fix has been lost. **/
-	struct timeval fix_time;   /**< Timestamp of last fix.
-	                            *   All location sources must use the same reference time (usually
-	                            *   system time) to allow comparison and extrapolation.	**/
-	char fixiso8601[128];      /**< Timestamp of last fix in ISO 8601 format **/
-	int sats;                  /**< Number of satellites in view **/
-	int sats_used;             /**< Number of satellites used in fix **/
-	int valid;                 /**< Whether the data in this location is valid, and how it was obtained
-	                            *   (e.g. through measurement or extrapolation). See
-	                            *   {@code enum attr_position_valid} for possible values. Examine
-	                            *   {@code flags} to find out what data this location supplies. **/
-	int flags;                 /**< Describes the information supplied by this location.
-	                            *   Members whose the corresponding flag is not set should be ignored.
-	                            *   The flags do not supply any information on how the location data was
-	                            *   obtained, or if it is valid. This can be determined by examining
-	                            *   {@code valid}, which should always be used in conjunction with the
-	                            *   flags. **/
-};
-
 struct vehicle_priv {
 	struct callback_list *cbl;
 	struct location location;  /**< The location of the vehicle.
@@ -200,80 +147,6 @@ struct vehicle_methods vehicle_android_methods = {
 
 
 /**
- * @brief Updates the vehicle position.
- *
- * This method recalculates the position and sets its members accordingly. It is called from the
- * position callback but may be extended in the future to be called by other triggers (events or timers)
- * to extrapolate the current vehicle position.
- *
- * This method will fill the struct passed as {@code out} with the newly calculated location data and
- * trigger callbacks from the list passed as {@code cbl} when one of the respective attributes changes.
- * The decision whether to trigger a callback is made by comparing old and new values of {@code out}. In
- * order for this to work correctly, {@code out} must hold the last location of the vehicle when this
- * method is called, or zeroed out if no previous location is known.
- *
- * For now, this method simply takes the most recent valid fix we received.
- *
- * @param v The {@code struct_vehicle_priv} for the vehicle
- * @param in Raw locations (NULL-terminated pointer array)
- * @param out The last calculated location of the vehicle; this struct will receive the updated location
- * @param cbl Callback list of the vehicle; callbacks from this list will be triggered when one of the
- * respective attributes changes
- */
-/* TODO: in the long run, this should become a generic function which other vehicles can use as well */
-static void
-vehicle_android_update_position(struct location ** in, struct location * out, struct callback_list * cbl) {
-	int index = 0;
-	int i;
-	int validity_changed = 0;	/* Whether position validity has changed. */
-
-	/* having the loop allows for easy extension of the array beyond 2 elements */
-	for (i = 1; in[i]; i++)
-		if ((in[i]->valid = attr_position_valid_valid)
-				&& ((in[i]->fix_time.tv_sec > in[index]->fix_time.tv_sec)
-						|| ((in[i]->fix_time.tv_sec == in[index]->fix_time.tv_sec) && (in[i]->fix_time.tv_usec > in[index]->fix_time.tv_usec))))
-			index = i;
-	dbg(lvl_debug, "index=%d\n", index);
-	/* TODO revise validity logic when we introduce extrapolated positions */
-	validity_changed = (out->valid != in[index]->valid);
-	out->valid = in[index]->valid;
-	if (in[index]->valid == attr_position_valid_invalid) {
-		if (validity_changed)
-			callback_list_call_attr_0(cbl, attr_position_valid);
-		return;
-	}
-	out->geo.lat = in[index]->geo.lat;
-	out->geo.lng = in[index]->geo.lng;
-	out->speed = in[index]->speed;
-	out->direction = in[index]->direction;
-	out->height = in[index]->height;
-	out->radius = in[index]->radius;
-	if (out->fix_type != in[index]->fix_type) {
-		out->fix_type = in[index]->fix_type;
-		callback_list_call_attr_0(cbl, attr_position_fix_type);
-	}
-	out->fix_time.tv_sec = in[index]->fix_time.tv_sec;
-	out->fix_time.tv_usec = in[index]->fix_time.tv_usec;
-	memcpy(out->fixiso8601, in[index]->fixiso8601, sizeof(out->fixiso8601));
-	if (out->sats != in[index]->sats) {
-		out->sats = in[index]->sats;
-		callback_list_call_attr_0(cbl, attr_position_qual);
-	}
-	if (out->sats_used != in[index]->sats_used) {
-		out->sats_used = in[index]->sats_used;
-		callback_list_call_attr_0(cbl, attr_position_sats_used);
-	}
-	out->flags = in[index]->flags;
-	dbg(lvl_debug, "lat %f lon %f time %s\n", out->geo.lat, out->geo.lng, out->fixiso8601);
-
-	if (validity_changed)
-		callback_list_call_attr_0(cbl, attr_position_valid);
-	/* TODO find out if the position actuially has changed before triggering the callback */
-	callback_list_call_attr_0(cbl, attr_position_coord_geo);
-}
-
-
-/**
  * @brief Called when a new position has been reported
  *
  * This function is called by {@code NavitLocationListener} upon receiving a new {@code Location}.
@@ -328,7 +201,7 @@ vehicle_android_position_callback(struct vehicle_priv *v, jobject location) {
 	v->raw_loc[index]->valid = attr_position_valid_valid;
 	dbg(lvl_debug,"lat %f lon %f time %s\n", v->raw_loc[index]->geo.lat, v->raw_loc[index]->geo.lng, v->raw_loc[index]->fixiso8601);
 
-	vehicle_android_update_position(v->raw_loc, &(v->location), v->cbl);
+	vehicle_update_position(v->raw_loc, &(v->location), v->cbl);
 }
 
 

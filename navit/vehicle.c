@@ -733,6 +733,81 @@ vehicle_add_log(struct vehicle *this_, struct log *log)
 	return 1;
 }
 
+
+/**
+ * @brief Updates the vehicle position.
+ *
+ * This method recalculates the position and sets its members accordingly. It is called from the
+ * position callback but may be extended in the future to be called by other triggers (events or timers)
+ * to extrapolate the current vehicle position.
+ *
+ * This method will fill the struct passed as {@code out} with the newly calculated location data and
+ * trigger callbacks from the list passed as {@code cbl} when one of the respective attributes changes.
+ * The decision whether to trigger a callback is made by comparing old and new values of {@code out}. In
+ * order for this to work correctly, {@code out} must hold the last location of the vehicle when this
+ * method is called, or zeroed out if no previous location is known.
+ *
+ * For now, this method simply takes the most recent valid fix we received.
+ *
+ * @param v The {@code struct_vehicle_priv} for the vehicle
+ * @param in Raw locations (NULL-terminated pointer array)
+ * @param out The last calculated location of the vehicle; this struct will receive the updated location
+ * @param cbl Callback list of the vehicle; callbacks from this list will be triggered when one of the
+ * respective attributes changes
+ */
+/* TODO: in the long run, this should become a generic function which other vehicles can use as well */
+void
+vehicle_update_position(struct location ** in, struct location * out, struct callback_list * cbl) {
+	int index = 0;
+	int i;
+	int validity_changed = 0;	/* Whether position validity has changed. */
+
+	/* having the loop allows for easy extension of the array beyond 2 elements */
+	for (i = 1; in[i]; i++)
+		if ((in[i]->valid = attr_position_valid_valid)
+				&& ((in[i]->fix_time.tv_sec > in[index]->fix_time.tv_sec)
+						|| ((in[i]->fix_time.tv_sec == in[index]->fix_time.tv_sec) && (in[i]->fix_time.tv_usec > in[index]->fix_time.tv_usec))))
+			index = i;
+	dbg(lvl_debug, "index=%d\n", index);
+	/* TODO revise validity logic when we introduce extrapolated positions */
+	validity_changed = (out->valid != in[index]->valid);
+	out->valid = in[index]->valid;
+	if (in[index]->valid == attr_position_valid_invalid) {
+		if (validity_changed)
+			callback_list_call_attr_0(cbl, attr_position_valid);
+		return;
+	}
+	out->geo.lat = in[index]->geo.lat;
+	out->geo.lng = in[index]->geo.lng;
+	out->speed = in[index]->speed;
+	out->direction = in[index]->direction;
+	out->height = in[index]->height;
+	out->radius = in[index]->radius;
+	if (out->fix_type != in[index]->fix_type) {
+		out->fix_type = in[index]->fix_type;
+		callback_list_call_attr_0(cbl, attr_position_fix_type);
+	}
+	out->fix_time.tv_sec = in[index]->fix_time.tv_sec;
+	out->fix_time.tv_usec = in[index]->fix_time.tv_usec;
+	memcpy(out->fixiso8601, in[index]->fixiso8601, sizeof(out->fixiso8601));
+	if (out->sats != in[index]->sats) {
+		out->sats = in[index]->sats;
+		callback_list_call_attr_0(cbl, attr_position_qual);
+	}
+	if (out->sats_used != in[index]->sats_used) {
+		out->sats_used = in[index]->sats_used;
+		callback_list_call_attr_0(cbl, attr_position_sats_used);
+	}
+	out->flags = in[index]->flags;
+	dbg(lvl_debug, "lat %f lon %f time %s\n", out->geo.lat, out->geo.lng, out->fixiso8601);
+
+	if (validity_changed)
+		callback_list_call_attr_0(cbl, attr_position_valid);
+	/* TODO find out if the position actually has changed before triggering the callback */
+	callback_list_call_attr_0(cbl, attr_position_coord_geo);
+}
+
+
 struct object_func vehicle_func = {
 	attr_vehicle,
 	(object_func_new)vehicle_new,
