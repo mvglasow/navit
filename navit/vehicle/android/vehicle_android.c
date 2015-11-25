@@ -180,7 +180,10 @@ vehicle_android_position_callback(struct vehicle_priv *v, jobject location) {
 	index = strcmp(provider_chars, gps) ? raw_index_network : raw_index_gps;
 	(*jnienv)->ReleaseStringUTFChars(jnienv, provider, provider_chars);
 
-	v->raw_loc[index]->flags = location_flag_has_geo;
+	/* preserve location_flag_has_sat_data but clear the rest, then set location_flag_has_geo */
+	v->raw_loc[index]->flags &= location_flag_has_sat_data;
+	v->raw_loc[index]->flags |= location_flag_has_geo;
+
 	if ((*jnienv)->CallBooleanMethod(jnienv, location, v->Location_hasSpeed))
 		v->raw_loc[index]->flags |= location_flag_has_speed;
 	if ((*jnienv)->CallBooleanMethod(jnienv, location, v->Location_hasBearing))
@@ -221,24 +224,22 @@ vehicle_android_position_callback(struct vehicle_priv *v, jobject location) {
  */
 static void
 vehicle_android_status_callback(struct vehicle_priv *v, int sats_in_view, int sats_used) {
+	int updated = 0;	/* Whether an actual update has taken place. */
+
 	if (v->raw_loc[raw_index_gps]->sats != sats_in_view) {
 		v->raw_loc[raw_index_gps]->sats = sats_in_view;
-#if 0
-		/* Don't trigger callbacks before data is reflected in v->location */
-		callback_list_call_attr_0(v->cbl, attr_position_qual);
-#endif
+		updated = 1;
 	}
 	if (v->raw_loc[raw_index_gps]->sats_used != sats_used) {
 		v->raw_loc[raw_index_gps]->sats_used = sats_used;
-#if 0
-		/* Don't trigger callbacks before data is reflected in v->location */
-		callback_list_call_attr_0(v->cbl, attr_position_sats_used);
-#endif
+		updated = 1;
 	}
-	v->raw_loc[raw_index_gps]->flags |= location_flag_has_sat_data;
-	/* TODO should we update after this?
-	 * If we do, we'd fully recalculate the location despite results turning out the same.
-	 * If we don't, callbacks related to sat status would be delayed until the location changes. */
+	if (!(v->raw_loc[raw_index_gps]->flags & location_flag_has_sat_data)) {
+		v->raw_loc[raw_index_gps]->flags |= location_flag_has_sat_data;
+		updated = 1;
+	}
+	if (updated)
+		vehicle_update_position(v->raw_loc, &(v->location), v->cbl);
 }
 
 /**
@@ -256,20 +257,9 @@ static void
 vehicle_android_fix_callback(struct vehicle_priv *v, int fix_type) {
 	if (v->raw_loc[raw_index_gps]->fix_type != fix_type) {
 		v->raw_loc[raw_index_gps]->fix_type = fix_type;
-#if 0
-		/* Don't trigger callbacks before data is reflected in v->location */
-		callback_list_call_attr_0(v->cbl, attr_position_fix_type);
-#endif
-		if (!fix_type && (v->raw_loc[raw_index_gps]->valid == attr_position_valid_valid)) {
+		if (!fix_type && (v->raw_loc[raw_index_gps]->valid == attr_position_valid_valid))
 			v->raw_loc[raw_index_gps]->valid = attr_position_valid_extrapolated_time;
-#if 0
-			/* Don't trigger callbacks before data is reflected in v->location */
-			callback_list_call_attr_0(v->cbl, attr_position_valid);
-#endif
-		}
-		/* TODO should we update after this?
-		 * If we do, we'd fully recalculate the location despite results turning out the same.
-		 * If we don't, fix type/position validity callbacks would be delayed until the location changes. */
+		vehicle_update_position(v->raw_loc, &(v->location), v->cbl);
 	}
 }
 
