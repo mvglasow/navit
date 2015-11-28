@@ -1027,3 +1027,52 @@ int attr_rel2real(int attrval, int whole, int treat_neg_as_rel)
   return attrval;
 }
 
+
+/**
+ * @brief Compares two {@code enum attr_position_valid} values
+ *
+ * This function can be used to determine which of two available positions to use.
+ *
+ * Values are ordered in the following order of preference:
+ * <ul>
+ * <li>{@code attr_position_valid_valid}</li>
+ * <li>{@code attr_position_valid_static}</li>
+ * <li>{@code attr_position_valid_extrapolated_spatial}</li>
+ * <li>{@code attr_position_valid_extrapolated_time}</li>
+ * <li>{@code attr_position_valid_invalid}</li>
+ * </ul>
+ *
+ * @param v1 The first value
+ * @param v2 The second value
+ * @return 0 if {@code v1} and {@code v2} are equal, 1 if {@code v1} is higher in the order than
+ * {@code v2}, -1 if it is lower. If one of the arguments is an illegal value, the result is undefined.
+ */
+int attr_position_valid_comp(int v1, int v2) {
+	if (v1 == v2)
+		return 0;
+	else if (v1 == attr_position_valid_valid)
+		return 1;
+	else if (v2 == attr_position_valid_valid)
+		return -1;
+	else if (v1 == attr_position_valid_static)
+		return 1;
+	else if (v2 == attr_position_valid_static)
+		return -1;
+	else if (v1 == attr_position_valid_extrapolated_spatial)
+		return 1;
+	else if (v2 == attr_position_valid_extrapolated_spatial)
+		return -1;
+	else if (v1 == attr_position_valid_extrapolated_time)
+		return 1;
+	else if (v2 == attr_position_valid_extrapolated_time)
+		return -1;
+	/* any new values should be added above this comment */
+	else if (v1 == attr_position_valid_invalid)
+		return -1;
+	else if (v2 == attr_position_valid_invalid)
+		return 1;
+	else
+		/* Illegal arguments were probably supplied if we get here. */
+		return 0;
+}
+

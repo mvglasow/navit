@@ -167,17 +167,19 @@ vehicle_android_position_callback(struct vehicle_priv *v, jobject location) {
 
 	provider = (*jnienv)->CallObjectMethod(jnienv, location, v->Location_getProvider);
 	provider_chars = (*jnienv)->GetStringUTFChars(jnienv, provider, NULL);
-	dbg(lvl_debug, "provider=%s\n", provider_chars);
 	if (!strcmp(provider_chars, gps)) {
 		index = raw_index_gps;
+		v->raw_loc[index]->preference = preference_high;
 		/* For a GPS location, use system time in order to make fix_time comparable */
 		gettimeofday(&(v->raw_loc[index]->fix_time), NULL);
 	} else {
 		index = raw_index_network;
+		v->raw_loc[index]->preference = preference_medium;
 		v->raw_loc[index]->fix_time.tv_sec = (*jnienv)->CallLongMethod(jnienv, location, v->Location_getTime) / 1000;
 		v->raw_loc[index]->fix_time.tv_usec = ((*jnienv)->CallLongMethod(jnienv, location, v->Location_getTime) % 1000) * 1000;
 	}
 	index = strcmp(provider_chars, gps) ? raw_index_network : raw_index_gps;
+	dbg(lvl_debug, "provider=%s, index=%d\n", provider_chars, index);
 	(*jnienv)->ReleaseStringUTFChars(jnienv, provider, provider_chars);
 
 	/* preserve location_flag_has_sat_data but clear the rest, then set location_flag_has_geo */
@@ -257,8 +259,6 @@ static void
 vehicle_android_fix_callback(struct vehicle_priv *v, int fix_type) {
 	if (v->raw_loc[raw_index_gps]->fix_type != fix_type) {
 		v->raw_loc[raw_index_gps]->fix_type = fix_type;
-		if (!fix_type && (v->raw_loc[raw_index_gps]->valid == attr_position_valid_valid))
-			v->raw_loc[raw_index_gps]->valid = attr_position_valid_extrapolated_time;
 		vehicle_update_position(v->raw_loc, &(v->location), v->cbl);
 	}
 }
@@ -345,7 +345,7 @@ vehicle_android_new_android(struct vehicle_methods *meth,
 	ret->location.sats = 0;
 	ret->location.sats_used = 0;
 	ret->raw_loc = g_new0(struct location *, RAW_LOCATIONS + 1);
-	for (i = 0; i <= RAW_LOCATIONS; i++)
+	for (i = 0; i < RAW_LOCATIONS; i++)
 		ret->raw_loc[i] = g_new0(struct location, 1);
 	*meth = vehicle_android_methods;
 	vehicle_android_init(ret);
