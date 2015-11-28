@@ -56,16 +56,8 @@ public class NavitVehicle {
 	public native void VehicleCallback(int id, int enabled);
 
 	private class NavitLocationListener extends BroadcastReceiver implements GpsStatus.Listener, LocationListener {
-		public boolean precise = false;
 		public void onLocationChanged(Location location) {
 			lastLocation = location;
-			// Disable the fast provider if still active
-			/* TODO keep fast provider for interpolation */
-			if (precise && fastProvider != null) {
-				sLocationManager.removeUpdates(fastLocationListener);
-				fastProvider = null;
-			}
-			
 			VehicleCallback(vehicle_pcbid, location);
 			VehicleCallback(vehicle_fcbid, 1);
 		}
@@ -114,12 +106,11 @@ public class NavitVehicle {
 		this.context = context;
 		sLocationManager = (LocationManager)context.getSystemService(Context.LOCATION_SERVICE);
 		preciseLocationListener = new NavitLocationListener();
-		preciseLocationListener.precise = true;
 		fastLocationListener = new NavitLocationListener();
 
-		/* Use 2 LocationProviders, one precise (usually GPS), and one
-		   not so precise, but possible faster. The fast provider is
-		   disabled when the precise provider gets its first fix. */
+		/* Use 2 LocationProviders, one precise (usually GPS), and one not so precise, but possibly
+		 * faster. The fast provider gets a lower preference level so the location fuser will ignore it
+		 * when the precise provider is available. */
 
 		// Selection criteria for the precise provider
 		Criteria highCriteria = new Criteria();
