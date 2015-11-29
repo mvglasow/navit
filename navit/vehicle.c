@@ -1018,6 +1018,17 @@ vehicle_update_position(struct location ** in, struct location * out, struct cal
 	}
 	out->flags = tmp->flags;
 
+	if (valid_changed || fix_type_changed || qual_changed || sats_used_changed || coord_geo_changed) {
+		dbg(lvl_debug, "Attributes changed:%s%s%s%s%s\n",
+				valid_changed ? " position_valid" : "",
+				coord_geo_changed ? " position_coord_geo" : "",
+				fix_type_changed ? " position_fix_type ": "",
+				qual_changed ? " position_qual" : "",
+				sats_used_changed ? " position_sats_used" : "");
+	} else {
+		dbg(lvl_debug, "No attributes changed\n");
+	}
+
 	/* Trigger callbacks only after we've fully updated the location */
 	if (valid_changed)
 		callback_list_call_attr_0(cbl, attr_position_valid);
