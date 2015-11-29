@@ -31,7 +31,6 @@
 #include <math.h>
 #include <string.h>
 #include <glib.h>
-#include <time.h>
 #include "config.h"
 #include "debug.h"
 #include "coord.h"
