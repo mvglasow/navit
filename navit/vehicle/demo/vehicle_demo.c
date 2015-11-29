@@ -38,18 +38,18 @@ struct vehicle_priv {
 	int interval;
 	int position_set;
 	struct callback_list *cbl;
+	struct location location;  /**< The location of the vehicle.
+	                                For the demo vehicle the location is periodically updated based on
+	                                where the vehicle would be if it had followed the route from its
+	                                last location during the time elapsed. **/
 	struct navit *navit;
 	struct route *route;
-	struct coord_geo geo;
 	struct coord last;
 	double config_speed;
-	double speed;
-	double direction;
 	struct callback *timer_callback;
 	struct event_timeout *timer;
 	char *timep;
 	char *nmea;
-	enum attr_position_valid valid;  /**< Whether the vehicle has valid position data **/
 
 };
 
@@ -84,13 +84,13 @@ vehicle_demo_position_attr_get(struct vehicle_priv *priv,
 	double lat,lng;
 	switch (type) {
 	case attr_position_speed:
-		attr->u.numd = &priv->speed;
+		attr->u.numd = &priv->location.speed;
 		break;
 	case attr_position_direction:
-		attr->u.numd = &priv->direction;
+		attr->u.numd = &priv->location.direction;
 		break;
 	case attr_position_coord_geo:
-		attr->u.coord_geo = &priv->geo;
+		attr->u.coord_geo = &priv->location.geo;
 		break;
 	case attr_position_time_iso8601:
 		g_free(priv->timep);
@@ -104,12 +104,12 @@ vehicle_demo_position_attr_get(struct vehicle_priv *priv,
                 attr->u.num = 9;
                 break;
 	case attr_position_nmea:
-		lat=priv->geo.lat;
+		lat=priv->location.geo.lat;
 		if (lat < 0) {
 			lat=-lat;
 			ns='S';
 		}
-		lng=priv->geo.lng;
+		lng=priv->location.geo.lng;
 		if (lng < 0) {
 			lng=-lng;
 			ew='W';
@@ -119,7 +119,7 @@ vehicle_demo_position_attr_get(struct vehicle_priv *priv,
 		g_free(timep);
 		gga=g_strdup_printf("$GPGGA,%02d%02d%02d,%02.0f%07.4f,%c,%03.0f%07.4f,%c,1,08,2.5,0,M,,,,0000*  \n",hr,min,sec,floor(lat),(lat-floor(lat))*60.0,ns,floor(lng),(lng-floor(lng))*60,ew);
 		nmea_chksum(gga);
-		rmc=g_strdup_printf("$GPRMC,%02d%02d%02d,A,%02.0f%07.4f,%c,%03.0f%07.4f,%c,%3.1f,%3.1f,%02d%02d%02d,,*  \n",hr,min,sec,floor(lat),(lat-floor(lat))*60.0,ns,floor(lng),(lng-floor(lng))*60,ew,priv->speed/1.852,(double)priv->direction,day,mon,year%100);
+		rmc=g_strdup_printf("$GPRMC,%02d%02d%02d,A,%02.0f%07.4f,%c,%03.0f%07.4f,%c,%3.1f,%3.1f,%02d%02d%02d,,*  \n",hr,min,sec,floor(lat),(lat-floor(lat))*60.0,ns,floor(lng),(lng-floor(lng))*60,ew,priv->location.speed/1.852,(double)priv->location.direction,day,mon,year%100);
 		nmea_chksum(rmc);
 		g_free(priv->nmea);
 		priv->nmea=g_strdup_printf("%s%s",gga,rmc);
@@ -128,7 +128,7 @@ vehicle_demo_position_attr_get(struct vehicle_priv *priv,
 		attr->u.str=priv->nmea;
 		break;
 	case attr_position_valid:
-		attr->u.num=priv->valid;
+		attr->u.num=priv->location.valid;
 		break;
 	default:
 		return 0;
@@ -157,13 +157,13 @@ vehicle_demo_set_attr_do(struct vehicle_priv *priv, struct attr *attr)
 		priv->timer=event_add_timeout(priv->interval, 1, priv->timer_callback);
 		break;
 	case attr_position_coord_geo:
-		priv->geo=*(attr->u.coord_geo);
-		if (priv->valid != attr_position_valid_valid) {
-			priv->valid = attr_position_valid_valid;
+		priv->location.geo=*(attr->u.coord_geo);
+		if (priv->location.valid != attr_position_valid_valid) {
+			priv->location.valid = attr_position_valid_valid;
 			callback_list_call_attr_0(priv->cbl, attr_position_valid);
 		}
 		priv->position_set=1;
-		dbg(lvl_debug,"position_set %f %f\n", priv->geo.lat, priv->geo.lng);
+		dbg(lvl_debug,"position_set %f %f\n", priv->location.geo.lat, priv->location.geo.lng);
 		break;
 	case attr_profilename:
 	case attr_source:
@@ -192,6 +192,12 @@ struct vehicle_methods vehicle_demo_methods = {
 static void
 vehicle_demo_timer(struct vehicle_priv *priv)
 {
+	/* FIXME set missing (but required) members of location:
+	 * radius
+	 * fix_time and fixiso8601
+	 * flags
+	 * preference
+	 */
 	struct coord c, c2, pos, ci;
 	int slen, len, dx, dy;
 	struct route *route=NULL;
@@ -242,20 +248,20 @@ vehicle_demo_timer(struct vehicle_priv *priv)
 					dy = c.y - pos.y;
 					ci.x = pos.x + dx * len / slen;
 					ci.y = pos.y + dy * len / slen;
-					priv->direction =
+					priv->location.direction =
 					    transform_get_angle_delta(&pos, &c, 0);
-					priv->speed=priv->config_speed;
+					priv->location.speed=priv->config_speed;
 				} else {
 					ci.x = pos.x;
 					ci.y = pos.y;
-					priv->speed=0;
+					priv->location.speed=0;
 					dbg(lvl_debug,"destination reached\n");
 				}
 				dbg(lvl_debug, "ci=0x%x,0x%x\n", ci.x, ci.y);
 				transform_to_geo(projection_mg, &ci,
-						 &priv->geo);
-				if (priv->valid != attr_position_valid_valid) {
-					priv->valid = attr_position_valid_valid;
+						 &priv->location.geo);
+				if (priv->location.valid != attr_position_valid_valid) {
+					priv->location.valid = attr_position_valid_valid;
 					callback_list_call_attr_0(priv->cbl, attr_position_valid);
 				}
 				callback_list_call_attr_0(priv->cbl, attr_position_coord_geo);
@@ -285,7 +291,7 @@ vehicle_demo_new(struct vehicle_methods
 	ret->interval=1000;
 	ret->config_speed=40;
 	ret->timer_callback=callback_new_1(callback_cast(vehicle_demo_timer), ret);
-	ret->valid = attr_position_valid_invalid;
+	ret->location.valid = attr_position_valid_invalid;
 	*meth = vehicle_demo_methods;
 	while (attrs && *attrs) 
 		vehicle_demo_set_attr_do(ret, *attrs++);
