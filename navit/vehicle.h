@@ -23,6 +23,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#include <sys/time.h>
 #include "coord.h"
 
 struct point;
