@@ -96,6 +96,7 @@ navit/map.c
 navit/maptype.c
 navit/file.c
 navit/vehicle.c
+navit/location.c
 navit/navit.c
 navit/log.c
 navit/phrase.c

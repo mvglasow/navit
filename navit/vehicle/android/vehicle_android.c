@@ -34,6 +34,7 @@
 #include "item.h"
 #include "android.h"
 #include "vehicle.h"
+#include "location.h"
 
 #define RAW_LOCATIONS 2
 

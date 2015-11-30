@@ -31,6 +31,7 @@
 #include "transform.h"
 #include "plugin.h"
 #include "vehicle.h"
+#include "location.h"
 #include "event.h"
 #include "util.h"
 
