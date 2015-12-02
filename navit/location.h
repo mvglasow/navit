@@ -134,7 +134,48 @@ struct location {
 
 
 /* prototypes */
-void vehicle_update_position(struct location ** in, struct location * out, struct callback_list * cbl);
+struct location * location_new();
+void location_destroy(struct location *this_);
+
+void location_clear_altitude(struct location *this_);
+void location_clear_bearing(struct location *this_);
+void location_clear_position(struct location *this_);
+void location_clear_position_accuracy(struct location *this_);
+void location_clear_sat_data(struct location *this_);
+void location_clear_speed(struct location *this_);
+
+double location_get_altitude(struct location *this_);
+double location_get_bearing(struct location *this_);
+void location_get_fix_time(struct location *this_, struct timeval *time);
+int location_get_fix_type(struct location *this_);
+char *location_get_fixiso8601(struct location *this_);
+void location_get_position(struct location *this_, struct coord_geo *position);
+int location_get_position_accuracy(struct location *this_);
+int location_get_preference(struct location *this_);
+int location_get_sats(struct location *this_);
+int location_get_sats_used(struct location *this_);
+double location_get_speed(struct location *this_);
+int location_get_validity(struct location *this_);
+
+int location_has_altitude(struct location *this_);
+int location_has_bearing(struct location *this_);
+int location_has_position(struct location *this_);
+int location_has_position_accuracy(struct location *this_);
+int location_has_sat_data(struct location *this_);
+int location_has_speed(struct location *this_);
+
+void location_set_altitude(struct location *this_, double altitude);
+void location_set_bearing(struct location *this_, double bearing);
+void location_set_fix_time(struct location *this_, struct timeval *time);
+void location_set_fix_type(struct location *this_, int type);
+void location_set_position(struct location *this_, struct coord_geo *position);
+void location_set_position_accuracy(struct location *this_, int accuracy);
+void location_set_preference(struct location *this_, enum preference preference);
+void location_set_sat_data(struct location *this_, int sats, int sats_used);
+void location_set_speed(struct location *this_, double speed);
+void location_set_validity(struct location *this_, enum attr_position_valid valid);
+
+void location_update(struct location ** in, struct location * out, struct callback_list * cbl);
 /* end of prototypes */
 
 

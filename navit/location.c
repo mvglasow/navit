@@ -70,11 +70,554 @@ get_effective_preference_level(int plev, int valid) {
 
 
 /**
- * @brief Updates the vehicle position.
+ * @brief Creates a new location.
+ *
+ * @return A new location. The caller is responsible for destroying the location when it is no longer needed.
+ */
+struct location *
+location_new() {
+	struct location * ret = g_new0(struct location, 1);
+	ret->valid = attr_position_valid_invalid;
+	return ret;
+}
+
+
+/**
+ * @brief Clears the altitude of a location.
+ *
+ * After calling this function, calls to {@link location_has_altitude(struct location *)} will return
+ * false.
+ *
+ * @param this_ The location whose altitude is to be cleared.
+ */
+void location_clear_altitude(struct location *this_) {
+	this_->flags &= ~location_flag_has_height;
+}
+
+
+/**
+ * @brief Clears the bearing of a location.
+ *
+ * After calling this function, calls to {@link location_has_bearing(struct location *)} will return
+ * false.
+ *
+ * @param this_ The location whose bearing is to be cleared.
+ */
+void location_clear_bearing(struct location *this_) {
+	this_->flags &= ~location_flag_has_direction;
+}
+
+
+/**
+ * @brief Clears the position of a location.
+ *
+ * After calling this function, calls to {@link location_has_position(struct location *)} will return
+ * false.
+ *
+ * @param this_ The location whose position is to be cleared.
+ */
+void location_clear_position(struct location *this_) {
+	this_->flags &= ~location_flag_has_geo;
+}
+
+
+/**
+ * @brief Clears the positional accuracy of a location.
+ *
+ * After calling this function, calls to {@link location_has_position_accuracy(struct location *)} will
+ * return false.
+ *
+ * @param this_ The location whose positional accuracy is to be cleared.
+ */
+void location_clear_position_accuracy(struct location *this_) {
+	this_->flags &= ~location_flag_has_radius;
+}
+
+
+/**
+ * @brief Clears the satellite data of a location.
+ *
+ * After calling this function, calls to {@link location_has_sat_data(struct location *)} will return
+ * false.
+ *
+ * @param this_ The location whose satellite data is to be cleared.
+ */
+void location_clear_sat_data(struct location *this_){
+	this_->flags &= ~location_flag_has_sat_data;
+}
+
+
+/**
+ * @brief Clears the speed of a location.
+ *
+ * After calling this function, calls to {@link location_has_speed(struct location *)} will return
+ * false.
+ *
+ * @param this_ The location whose speed is to be cleared.
+ */
+void location_clear_speed(struct location *this_) {
+	this_->flags &= ~location_flag_has_speed;
+}
+
+
+/**
+ * @brief Returns the altitude of a location.
+ *
+ * Altitude is the difference between the position of the vehicle and mean sea level. The altitude of a
+ * land vehicle is always equal to terrain elevation.
+ *
+ * Prior to calling this function, the caller should ensure that the location actually supplies altitude
+ * data by calling {@link location_has_altitude(struct location *)}.
+ *
+ * @param this_ The location
+ *
+ * @return The altitude, if the location supplies it, else undefined.
+ */
+double location_get_altitude(struct location *this_) {
+	return this_->height;
+}
+
+
+/**
+ * @brief Returns the bearing of a location.
+ *
+ * The bearing is the direction into which the vehicle is facing or moving.
+ *
+ * Prior to calling this function, the caller should ensure that the location actually supplies bearing
+ * data by calling {@link location_has_bearing(struct location *)}.
+ *
+ * @param this_ The location
+ *
+ * @return The bearing, if the location supplies it, else undefined.
+ */
+double location_get_bearing(struct location *this_) {
+	return this_->direction;
+}
+
+
+/**
+ * @brief Returns the timestamp of a location.
+ *
+ * The timestamp is the time at which a location was obtained, in GMT and relative to system time.
+ *
+ * @param this_ The location
+ * @param time Points to a {@code struct timeval} which will receive the timestamp.
+ */
+void location_get_fix_time(struct location *this_, struct timeval *time) {
+	*time = this_->fix_time;
+}
+
+
+/**
+ * @brief Returns the fix type of a location.
+ *
+ * This is supported for legacy reasons. The semantics of the fix type may differ between
+ * implementations, but generally 0 denotes an invalid fix while nonzero values denote a valid fix,
+ * optionally using different values for different quality levels.
+ *
+ * @param this_ The location
+ *
+ * @return The fix type
+ */
+int location_get_fix_type(struct location *this_) {
+	return this_->fix_type;
+}
+
+
+/**
+ * @brief Returns the timestamp of a location in ISO 8601 format.
+ *
+ * The timestamp is the time at which the location was obtained, relative to system time.
+ * ISO 8601 is the format used, among others, by NMEA. The general format is
+ * {@code 2015-10-22T02:28:00.000Z}. This function is agnostic of time zones, thus the result will
+ * always be in UTC with a time zone designator of Z.
+ *
+ * @param this_ The location
+ *
+ * @return The timestamp in ISO8601 format. The string will be freed when the location is destroyed, and
+ * the caller should not attempt to alter or free the data.
+ */
+/* FIXME should we generate this on the fly and have the caller take care of everything? */
+char *location_get_fixiso8601(struct location *this_) {
+	return this_->fixiso8601;
+}
+
+
+/**
+ * @brief Returns the position of a location.
+ *
+ * The position refers to the actual coordinates (latitude and longitude) of the vehicle.
+ *
+ * Prior to calling this function, the caller should ensure that the location actually supplies position
+ * data by calling {@link location_has_position(struct location *)}.
+ *
+ * @param this_ The location
+ *
+ * @return The position, if the location supplies it, else undefined.
+ */
+void location_get_position(struct location *this_, struct coord_geo *position) {
+	*position = this_->geo;
+}
+
+
+/**
+ * @brief Returns the positional accuracy of a location.
+ *
+ * Positional accuracy is the quality indicator for the position, expressed as a distance in meters
+ * between actual and position which has a certain likelihood (usually 95%) of not being exceeded.
+ *
+ * Prior to calling this function, the caller should ensure that the location actually supplies
+ * positional accuracy data by calling {@link location_has_position_accuracy(struct location *)}.
+ *
+ * @param this_ The location
+ *
+ * @return The positional accuracy, if the location supplies it, else undefined.
+ */
+int location_get_position_accuracy(struct location *this_) {
+	return this_->radius;
+}
+
+
+/**
+ * @brief Returns the preference level of a location.
+ *
+ * See {@link enum preference} for a description of preference levels.
+ *
+ * @param this_ The location
+ *
+ * @return The preference level
+ */
+int location_get_preference(struct location *this_) {
+	return this_->preference;
+}
+
+
+/**
+ * @brief Returns the number of sats in view when the location was obtained.
+ *
+ * Prior to calling this function, the caller should ensure that the location actually supplies
+ * satellite data by calling {@link location_has_sat_data(struct location *)}.
+ *
+ * @param this_ The location
+ *
+ * @return The number of satellites in view, if the location supplies it, else undefined.
+ */
+int location_get_sats(struct location *this_) {
+	return this_->sats;
+}
+
+
+/**
+ * @brief Returns the number of satellites used to obtain a location.
+ *
+ * Prior to calling this function, the caller should ensure that the location actually supplies
+ * satellite data by calling {@link location_has_sat_data(struct location *)}.
+ *
+ * @param this_ The location
+ *
+ * @return The number of satellites used, if the location supplies it, else undefined.
+ */
+int location_get_sats_used(struct location *this_) {
+	return this_->sats_used;
+}
+
+
+/**
+ * @brief Returns the speed of a location.
+ *
+ * Speed is in km/h.
+ *
+ * Prior to calling this function, the caller should ensure that the location actually supplies altitude
+ * data by calling {@link location_has_speed(struct location *)}.
+ *
+ * @param this_ The location
+ *
+ * @return The speed, if the location supplies it, else undefined.
+ */
+double location_get_speed(struct location *this_) {
+	return this_->speed;
+}
+
+
+/**
+ * @brief Returns the validity of a location.
+ *
+ * See {@link enum attr_position_valid} for possible return values and their meanings.
+ *
+ * @param this_ The location
+ *
+ * @return The validity
+ */
+int location_get_validity(struct location *this_) {
+	return this_->valid;
+}
+
+
+/**
+ * @brief Returns whether the location supplies altitude data.
+ *
+ * This function should be called and its return value examined prior to any attempt to retrieve
+ * altitude data.
+ *
+ * @param this_ The location
+ *
+ * @return True if the location supplies altitude data, false if not.
+ */
+int location_has_altitude(struct location *this_) {
+	return !!(this_->flags & location_flag_has_height);
+}
+
+
+/**
+ * @brief Returns whether the location supplies bearing data.
+ *
+ * This function should be called and its return value examined prior to any attempt to retrieve
+ * bearing data.
+ *
+ * @param this_ The location
+ *
+ * @return True if the location supplies bearing data, false if not.
+ */
+int location_has_bearing(struct location *this_) {
+	return !!(this_->flags & location_flag_has_direction);
+}
+
+
+/**
+ * @brief Returns whether the location supplies position data.
+ *
+ * This function should be called and its return value examined prior to any attempt to retrieve
+ * position data.
+ *
+ * @param this_ The location
+ *
+ * @return True if the location supplies position data, false if not.
+ */
+int location_has_position(struct location *this_) {
+	return !!(this_->flags & location_flag_has_geo);
+}
+
+
+/**
+ * @brief Returns whether the location supplies positional accuracy data.
+ *
+ * This function should be called and its return value examined prior to any attempt to retrieve
+ * positional accuracy data.
+ *
+ * @param this_ The location
+ *
+ * @return True if the location supplies positional accuracy data, false if not.
+ */
+int location_has_position_accuracy(struct location *this_) {
+	return !!(this_->flags & location_flag_has_radius);
+}
+
+
+/**
+ * @brief Returns whether the location supplies sattelite data.
+ *
+ * This function should be called and its return value examined prior to any attempt to retrieve
+ * satellite data.
+ *
+ * @param this_ The location
+ *
+ * @return True if the location supplies satellite data, false if not.
+ */
+int location_has_sat_data(struct location *this_) {
+	return !!(this_->flags & location_flag_has_sat_data);
+}
+
+
+/**
+ * @brief Returns whether the location supplies speed data.
+ *
+ * This function should be called and its return value examined prior to any attempt to retrieve
+ * speed data.
+ *
+ * @param this_ The location
+ *
+ * @return True if the location supplies speed data, false if not.
+ */
+int location_has_speed(struct location *this_) {
+	return !!(this_->flags & location_flag_has_speed);
+}
+
+
+/**
+ * @brief Sets the altitude of a location.
+ *
+ * Altitude is the difference between the position of the vehicle and mean sea level. The altitude of a
+ * land vehicle is always equal to terrain elevation.
+ *
+ * After calling this function, {@link location_has_altitude(struct location *)} will return true.
+ *
+ * @param this_ The location
+ * @param altitude The altitude
+ */
+void location_set_altitude(struct location *this_, double altitude) {
+	this_->height = altitude;
+	this_->flags |= location_flag_has_height;
+}
+
+
+/**
+ * @brief Sets the bearing of a location.
+ *
+ * The bearing is the direction into which the vehicle is facing or moving.
+ *
+ * After calling this function, {@link location_has_bearing(struct location *)} will return true.
+ *
+ * @param this_ The location
+ * @param bearing The bearing
+ */
+void location_set_bearing(struct location *this_, double bearing) {
+	this_->direction = bearing;
+	this_->flags |= location_flag_has_direction;
+}
+
+
+/**
+ * @brief Sets the timestamp of a location.
+ *
+ * The timestamp is the time at which a location was obtained, in GMT and relative to system time.
+ *
+ * @param this_ The location
+ * @param time The timestamp
+ */
+void location_set_fix_time(struct location *this_, struct timeval *time) {
+	time_t timet;
+	struct tm *tm;
+
+	this_->fix_time = *time;
+	timet = this_->fix_time.tv_sec;
+	tm = gmtime(&timet);
+	strftime(this_->fixiso8601, sizeof(this_->fixiso8601), "%Y-%m-%dT%TZ", tm);
+}
+
+
+/**
+ * @brief Sets the fix type of a location.
+ *
+ * This is supported for legacy reasons. The semantics of the fix type may differ between
+ * implementations, but generally 0 denotes an invalid fix while nonzero values denote a valid fix,
+ * optionally using different values for different quality levels.
+ *
+ * @param this_ The location
+ * @param type The fix type
+ */
+void location_set_fix_type(struct location *this_, int type) {
+	this_->fix_type = type;
+}
+
+
+/**
+ * @brief Sets the position of a location.
+ *
+ * The position refers to the actual coordinates (latitude and longitude) of the vehicle.
+ *
+ * After calling this function, {@link location_has_position(struct location *)} will return true.
+ *
+ * @param this_ The location
+ * @param position The position
+ */
+void location_set_position(struct location *this_, struct coord_geo *position) {
+	this_->geo = *position;
+	this_->flags |= location_flag_has_geo;
+}
+
+
+/**
+ * @brief Sets the positional accuracy of a location.
+ *
+ * Positional accuracy is the quality indicator for the position, expressed as a distance in meters
+ * between actual and position which has a certain likelihood (usually 95%) of not being exceeded.
+ *
+ * After calling this function, {@link location_has_position_accuracy(struct location *)} will return
+ * true.
+ *
+ * @param this_ The location
+ * @param accuracy The positional accuracy
+ */
+void location_set_position_accuracy(struct location *this_, int accuracy) {
+	this_->radius = accuracy;
+	this_->flags |= location_flag_has_radius;
+}
+
+
+/**
+ * @brief Sets the preference level of a location.
+ *
+ * See {@link enum preference} for a description of preference levels.
+ *
+ * @param this_ The location
+ * @param preference The preference level
+ */
+void location_set_preference(struct location *this_, enum preference preference) {
+	this_->preference = preference;
+}
+
+/**
+ * @brief Sets the satellite data of a location.
+ *
+ * After calling this function, {@link location_has_sat_data(struct location *)} will return true.
+ *
+ * @param this_ The location
+ * @param sats The number of satellites in view
+ * @param sats_used The number of satellites used to obtain the position
+ */
+void location_set_sat_data(struct location *this_, int sats, int sats_used) {
+	this_->sats = sats;
+	this_->sats_used = sats_used;
+	this_->flags |= location_flag_has_sat_data;
+}
+
+
+/**
+ * @brief Sets the speed of a location.
+ *
+ * Speed is in km/h.
+ *
+ * After calling this function, {@link location_has_speed(struct location *)} will return true.
+ *
+ * @param this_ The location
+ * @param speed The speed
+ */
+void location_set_speed(struct location *this_, double speed) {
+	this_->speed = speed;
+	this_->flags |= location_flag_has_speed;
+}
+
+
+/**
+ * @brief Sets the validity of a location.
+ *
+ * See {@link enum attr_position_valid} for possible values and their meanings.
+ *
+ * @param this_ The location
+ * @param valid The validity
+ */
+void location_set_validity(struct location *this_, enum attr_position_valid valid) {
+	this_->valid = valid;
+}
+
+
+/**
+ * @brief Destroys a location.
+ *
+ * @param this_ The location to destroy.
+ */
+void
+location_destroy(struct location *this_) {
+	g_free(this_);
+}
+
+
+/**
+ * @brief Updates a location by fusing multiple input locations together.
  *
  * This method recalculates the position and sets its members accordingly. It is generally called from
- * the position callback but may be extended in the future to be called by other triggers (events or timers)
- * to extrapolate the current vehicle position.
+ * the position callback but may also be called by other triggers (events or timers) to extrapolate the
+ * current vehicle position.
  *
  * The new location is generated by fusing information from the supplied sources together. For now, this
  * function simply takes the most recent valid fix it received.
@@ -96,7 +639,6 @@ get_effective_preference_level(int plev, int valid) {
  * order of magnitude of 1 - 10 (put differently, at most 31 different locations). Any future extensions
  * to this function should consider these parameters.
  *
- * @param v The {@code struct_vehicle_priv} for the vehicle
  * @param in Raw locations (NULL-terminated pointer array)
  * @param out The last calculated location of the vehicle; this struct will receive the updated location
  * @param cbl Callback list of the vehicle; callbacks from this list will be triggered when one of the
@@ -104,7 +646,7 @@ get_effective_preference_level(int plev, int valid) {
  */
 /* FIXME: use Kalman filter for speed, bearing and altitude (requires accuracy for each) */
 void
-vehicle_update_position(struct location ** in, struct location * out, struct callback_list * cbl) {
+location_update(struct location ** in, struct location * out, struct callback_list * cbl) {
 	int i, i_eplev, used;
 	int fix_type_changed = 0;					/* Whether the fix type has changed. */
 	int qual_changed = 0;						/* Whether position quality (number of sats) has changed. */
