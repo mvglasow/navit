@@ -26,7 +26,7 @@
 #include <string.h>
 #include <glib.h>
 #include <math.h>
-#include <time.h>
+#include <sys/time.h>
 #include "debug.h"
 #include "callback.h"
 #include "plugin.h"
@@ -49,12 +49,18 @@ enum raw_index {
 
 struct vehicle_priv {
 	struct callback_list *cbl;
-	struct location location;  /**< The location of the vehicle.
+	struct location *location; /**< The location of the vehicle.
 	                                This is what Navit assumes to be the current location. It can be the
 	                                last position obtained from any location provider, or an estimate
 	                                based on previous positions, time elapsed and other factors. **/
 	struct location **raw_loc; /**< Raw locations used to calculate {@code location}.
 	                            *   This is a NULL-terminated pointer array. **/
+	double altitude;           /**< Temporary value for returning altitude in an attr, not set until attr is requested **/
+	double bearing;            /**< Temporary value for returning bearing in an attr, not set until attr is requested **/
+	/* FIXME should we do something similar for fix_iso8601? */
+	struct coord_geo position; /**< Temporary value for returning position in an attr, not set until attr is requested **/
+	double position_accuracy;  /**< Temporary value for returning positional accuracy in an attr, not set until attr is requested **/
+	double speed;              /**< Temporary value for returning speed in an attr, not set until attr is requested **/
 	struct attr ** attrs;
 	struct callback *pcb;      /**< The callback function for position updates **/
 	struct callback *scb;      /**< The callback function for status updates **/
@@ -81,8 +87,9 @@ vehicle_android_destroy(struct vehicle_priv *priv)
 {
 	int i;
 	dbg(lvl_debug,"enter\n");
+	location_destroy(priv->location);
 	for (i = 0; priv->raw_loc[i]; i++)
-		g_free(priv->raw_loc[i]);
+		location_destroy(priv->raw_loc[i]);
 	g_free(priv->raw_loc);
 	g_free(priv);
 }
@@ -102,36 +109,53 @@ vehicle_android_position_attr_get(struct vehicle_priv *priv,
 	dbg(lvl_debug,"enter %s\n",attr_to_name(type));
 	switch (type) {
 	case attr_position_fix_type:
-		attr->u.num = priv->location.fix_type;
+		attr->u.num = location_get_fix_type(priv->location);
 		break;
 	case attr_position_height:
-		attr->u.numd = &priv->location.height;
+		if (!location_has_altitude(priv->location))
+			return 0;
+		priv->altitude = location_get_altitude(priv->location);
+		attr->u.numd = &priv->altitude;
 		break;
 	case attr_position_speed:
-		attr->u.numd = &priv->location.speed;
+		if (!location_has_speed(priv->location))
+			return 0;
+		priv->speed = location_get_speed(priv->location);
+		attr->u.numd = &priv->speed;
 		break;
 	case attr_position_direction:
-		attr->u.numd = &priv->location.direction;
+		if (!location_has_bearing(priv->location))
+			return 0;
+		priv->bearing = location_get_bearing(priv->location);
+		attr->u.numd = &priv->bearing;
 		break;
 	case attr_position_radius:
-		attr->u.numd = &priv->location.radius;
+		if (!location_has_position_accuracy(priv->location))
+			return 0;
+		priv->position_accuracy = location_get_position_accuracy(priv->location);
+		attr->u.numd = &priv->position_accuracy;
 		break;
 	case attr_position_qual:
-		attr->u.num = priv->location.sats;
+		if (!location_has_sat_data(priv->location))
+			return 0;
+		attr->u.num = location_get_sats(priv->location);
 		break;
 	case attr_position_sats_used:
-		attr->u.num = priv->location.sats_used;
+		if (!location_has_sat_data(priv->location))
+			return 0;
+		attr->u.num = location_get_sats_used(priv->location);
 		break;
 	case attr_position_coord_geo:
-		attr->u.coord_geo = &priv->location.geo;
-		if (priv->location.valid == attr_position_valid_invalid)
+		location_get_position(priv->location, &priv->position);
+		attr->u.coord_geo = &priv->position;
+		if (!location_has_position(priv->location) || (location_get_validity(priv->location) == attr_position_valid_invalid))
 			return 0;
 		break;
 	case attr_position_time_iso8601:
-		attr->u.str=priv->location.fixiso8601;
+		attr->u.str = location_get_fixiso8601(priv->location);
 		break;
 	case attr_position_valid:
-		attr->u.num = priv->location.valid;
+		attr->u.num = location_get_validity(priv->location);
 		break;
 	default:
 		return 0;
@@ -157,8 +181,8 @@ struct vehicle_methods vehicle_android_methods = {
  */
 static void
 vehicle_android_position_callback(struct vehicle_priv *v, jobject location) {
-	time_t tnow;
-	struct tm *tm;
+	struct timeval tv;
+	struct coord_geo geo;
 	jobject provider;		/* The location provider as a Java String */
 	char * provider_chars;	/* The location provider as a C string */
 	char * gps = "gps";		/* The string used for the GPS location provider */
@@ -170,44 +194,44 @@ vehicle_android_position_callback(struct vehicle_priv *v, jobject location) {
 	provider_chars = (*jnienv)->GetStringUTFChars(jnienv, provider, NULL);
 	if (!strcmp(provider_chars, gps)) {
 		index = raw_index_gps;
-		v->raw_loc[index]->preference = preference_high;
+		location_set_preference(v->raw_loc[index], preference_high);
 		/* For a GPS location, use system time in order to make fix_time comparable */
-		gettimeofday(&(v->raw_loc[index]->fix_time), NULL);
+		gettimeofday(&tv, NULL);
+		location_set_fix_time(v->raw_loc[index], &tv);
 	} else {
 		index = raw_index_network;
-		v->raw_loc[index]->preference = preference_medium;
-		v->raw_loc[index]->fix_time.tv_sec = (*jnienv)->CallLongMethod(jnienv, location, v->Location_getTime) / 1000;
-		v->raw_loc[index]->fix_time.tv_usec = ((*jnienv)->CallLongMethod(jnienv, location, v->Location_getTime) % 1000) * 1000;
+		location_set_preference(v->raw_loc[index], preference_medium);
+		tv.tv_sec = (*jnienv)->CallLongMethod(jnienv, location, v->Location_getTime) / 1000;
+		tv.tv_usec = ((*jnienv)->CallLongMethod(jnienv, location, v->Location_getTime) % 1000) * 1000;
+		location_set_fix_time(v->raw_loc[index], &tv);
 	}
 	index = strcmp(provider_chars, gps) ? raw_index_network : raw_index_gps;
 	dbg(lvl_debug, "provider=%s, index=%d\n", provider_chars, index);
 	(*jnienv)->ReleaseStringUTFChars(jnienv, provider, provider_chars);
 
-	/* preserve location_flag_has_sat_data but clear the rest, then set location_flag_has_geo */
-	v->raw_loc[index]->flags &= location_flag_has_sat_data;
-	v->raw_loc[index]->flags |= location_flag_has_geo;
-
+	geo.lat = (*jnienv)->CallDoubleMethod(jnienv, location, v->Location_getLatitude);
+	geo.lng = (*jnienv)->CallDoubleMethod(jnienv, location, v->Location_getLongitude);
+	location_set_position(v->raw_loc[index], &geo);
 	if ((*jnienv)->CallBooleanMethod(jnienv, location, v->Location_hasSpeed))
-		v->raw_loc[index]->flags |= location_flag_has_speed;
+		location_set_speed(v->raw_loc[index], (*jnienv)->CallFloatMethod(jnienv, location, v->Location_getSpeed) * 3.6);
+	else
+		location_clear_speed(v->raw_loc[index]);
 	if ((*jnienv)->CallBooleanMethod(jnienv, location, v->Location_hasBearing))
-		v->raw_loc[index]->flags |= location_flag_has_direction;
+		location_set_bearing(v->raw_loc[index], (*jnienv)->CallFloatMethod(jnienv, location, v->Location_getBearing));
+	else
+		location_clear_bearing(v->raw_loc[index]);
 	if ((*jnienv)->CallBooleanMethod(jnienv, location, v->Location_hasAltitude))
-		v->raw_loc[index]->flags |= location_flag_has_height;
+		location_set_altitude(v->raw_loc[index], (*jnienv)->CallDoubleMethod(jnienv, location, v->Location_getAltitude));
+	else
+		location_clear_altitude(v->raw_loc[index]);
 	if ((*jnienv)->CallBooleanMethod(jnienv, location, v->Location_hasAccuracy))
-		v->raw_loc[index]->flags |= location_flag_has_radius;
-	v->raw_loc[index]->geo.lat = (*jnienv)->CallDoubleMethod(jnienv, location, v->Location_getLatitude);
-	v->raw_loc[index]->geo.lng = (*jnienv)->CallDoubleMethod(jnienv, location, v->Location_getLongitude);
-	v->raw_loc[index]->speed = (*jnienv)->CallFloatMethod(jnienv, location, v->Location_getSpeed) * 3.6;
-	v->raw_loc[index]->direction = (*jnienv)->CallFloatMethod(jnienv, location, v->Location_getBearing);
-	v->raw_loc[index]->height = (*jnienv)->CallDoubleMethod(jnienv, location, v->Location_getAltitude);
-	v->raw_loc[index]->radius = (*jnienv)->CallFloatMethod(jnienv, location, v->Location_getAccuracy);
-	tnow = v->raw_loc[index]->fix_time.tv_sec;
-	tm = gmtime(&tnow);
-	strftime(v->raw_loc[index]->fixiso8601, sizeof(v->raw_loc[index]->fixiso8601), "%Y-%m-%dT%TZ", tm);
-	v->raw_loc[index]->valid = attr_position_valid_valid;
-	dbg(lvl_debug,"lat %f lon %f time %s\n", v->raw_loc[index]->geo.lat, v->raw_loc[index]->geo.lng, v->raw_loc[index]->fixiso8601);
+		location_set_position_accuracy(v->raw_loc[index], (*jnienv)->CallFloatMethod(jnienv, location, v->Location_getAccuracy));
+	else
+		location_clear_position_accuracy(v->raw_loc[index]);
+	location_set_validity(v->raw_loc[index], attr_position_valid_valid);
+	dbg(lvl_debug,"lat %f lon %f time %s\n", geo.lat, geo.lng, location_get_fixiso8601(v->raw_loc[index]));
 
-	vehicle_update_position(v->raw_loc, &(v->location), v->cbl);
+	location_update(v->raw_loc, v->location, v->cbl);
 }
 
 
@@ -227,22 +251,13 @@ vehicle_android_position_callback(struct vehicle_priv *v, jobject location) {
  */
 static void
 vehicle_android_status_callback(struct vehicle_priv *v, int sats_in_view, int sats_used) {
-	int updated = 0;	/* Whether an actual update has taken place. */
+	if (location_has_sat_data(v->raw_loc[raw_index_gps])
+			&& (location_get_sats(v->raw_loc[raw_index_gps]) == sats_in_view)
+			&& (location_get_sats_used(v->raw_loc[raw_index_gps]) == sats_used))
+		return;
 
-	if (v->raw_loc[raw_index_gps]->sats != sats_in_view) {
-		v->raw_loc[raw_index_gps]->sats = sats_in_view;
-		updated = 1;
-	}
-	if (v->raw_loc[raw_index_gps]->sats_used != sats_used) {
-		v->raw_loc[raw_index_gps]->sats_used = sats_used;
-		updated = 1;
-	}
-	if (!(v->raw_loc[raw_index_gps]->flags & location_flag_has_sat_data)) {
-		v->raw_loc[raw_index_gps]->flags |= location_flag_has_sat_data;
-		updated = 1;
-	}
-	if (updated)
-		vehicle_update_position(v->raw_loc, &(v->location), v->cbl);
+	location_set_sat_data(v->raw_loc[raw_index_gps], sats_in_view, sats_used);
+	location_update(v->raw_loc, v->location, v->cbl);
 }
 
 /**
@@ -258,9 +273,9 @@ vehicle_android_status_callback(struct vehicle_priv *v, int sats_in_view, int sa
  */
 static void
 vehicle_android_fix_callback(struct vehicle_priv *v, int fix_type) {
-	if (v->raw_loc[raw_index_gps]->fix_type != fix_type) {
-		v->raw_loc[raw_index_gps]->fix_type = fix_type;
-		vehicle_update_position(v->raw_loc, &(v->location), v->cbl);
+	if (location_get_fix_type(v->raw_loc[raw_index_gps]) != fix_type) {
+		location_set_fix_type(v->raw_loc[raw_index_gps], fix_type);
+		location_update(v->raw_loc, v->location, v->cbl);
 	}
 }
 
@@ -342,12 +357,12 @@ vehicle_android_new_android(struct vehicle_methods *meth,
 	ret->pcb = callback_new_1(callback_cast(vehicle_android_position_callback), ret);
 	ret->scb = callback_new_1(callback_cast(vehicle_android_status_callback), ret);
 	ret->fcb = callback_new_1(callback_cast(vehicle_android_fix_callback), ret);
-	ret->location.valid = attr_position_valid_invalid;
-	ret->location.sats = 0;
-	ret->location.sats_used = 0;
+	ret->location = location_new();
+	location_set_validity(ret->location, attr_position_valid_invalid);
+	location_clear_sat_data(ret->location);
 	ret->raw_loc = g_new0(struct location *, RAW_LOCATIONS + 1);
 	for (i = 0; i < RAW_LOCATIONS; i++)
-		ret->raw_loc[i] = g_new0(struct location, 1);
+		ret->raw_loc[i] = location_new();
 	*meth = vehicle_android_methods;
 	vehicle_android_init(ret);
 	dbg(lvl_debug, "return\n");
