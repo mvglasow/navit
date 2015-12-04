@@ -178,7 +178,7 @@ vehicle_demo_set_attr_do(struct vehicle_priv *priv, struct attr *attr)
 		priv->timer=event_add_timeout(priv->interval, 1, priv->timer_callback);
 		break;
 	case attr_position_coord_geo:
-		position_set_geo(priv->location, attr->u.coord_geo);
+		location_set_position(priv->location, attr->u.coord_geo);
 		if (location_get_validity(priv->location) != attr_position_valid_valid) {
 			location_set_validity(priv->location, attr_position_valid_valid);
 			callback_list_call_attr_0(priv->cbl, attr_position_valid);
