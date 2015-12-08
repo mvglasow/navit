@@ -134,6 +134,7 @@ struct location {
 
 
 /* prototypes */
+void location_init(void);
 struct location * location_new();
 void location_destroy(struct location *this_);
 

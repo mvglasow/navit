@@ -893,4 +893,14 @@ location_update(struct location ** in, struct location * out, struct callback_li
 	dbg(lvl_debug, "lat %f lon %f time %s\n", out->geo.lat, out->geo.lng, out->fixiso8601);
 }
 
-
+/*
+ * @brief Init location code.
+ *
+ * Currently it's a dummy function, needed only to reference location code from the navit core so it's linked and its functions are
+ * available to navit modules.
+ *
+ */
+void 
+location_init(void)
+{
+}
