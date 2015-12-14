@@ -184,7 +184,7 @@ vehicle_demo_set_attr_do(struct vehicle_priv *priv, struct attr *attr)
 			callback_list_call_attr_0(priv->cbl, attr_position_valid);
 		}
 		priv->position_set=1;
-		dbg(lvl_debug,"position_set %f %f\n", priv->location->geo.lat, priv->location->geo.lng);
+		dbg(lvl_debug,"position_set %f %f\n", attr->u.coord_geo->lat, attr->u.coord_geo->lng);
 		break;
 	case attr_profilename:
 	case attr_source:
@@ -220,6 +220,7 @@ vehicle_demo_timer(struct vehicle_priv *priv)
 	 * preference
 	 */
 	struct coord c, c2, pos, ci;
+	struct coord_geo geo;
 	int slen, len, dx, dy;
 	struct route *route=NULL;
 	struct map *route_map=NULL;
@@ -275,12 +276,13 @@ vehicle_demo_timer(struct vehicle_priv *priv)
 				} else {
 					ci.x = pos.x;
 					ci.y = pos.y;
-					priv->location->speed=0;
+					/* FIXME or should we clear the speed instead? */
+					location_set_speed(&priv->location, 0);
 					dbg(lvl_debug,"destination reached\n");
 				}
 				dbg(lvl_debug, "ci=0x%x,0x%x\n", ci.x, ci.y);
-				transform_to_geo(projection_mg, &ci,
-						 &priv->location->geo);
+				transform_to_geo(projection_mg, &ci, &geo);
+				location_set_position(priv->location, &geo);
 				if (location_get_validity(priv->location) != attr_position_valid_valid) {
 					location_set_validity(priv->location, attr_position_valid_valid);
 					callback_list_call_attr_0(priv->cbl, attr_position_valid);
