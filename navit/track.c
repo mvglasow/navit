@@ -710,8 +710,6 @@ tracking_update(struct tracking *tr, struct vehicle *v, struct vehicleprofile *v
 
 	if (has_bearing)
 		direction = *direction_attr.u.numd;
-	else
-		direction = 0;
 
 	tr->valid=attr_position_valid_valid; /* FIXME use validity of input position (may be extrapolated) */
 	transform_from_geo(pro, coord_geo.u.coord_geo, &tr->curr_in);
