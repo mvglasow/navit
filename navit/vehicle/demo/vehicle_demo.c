@@ -277,7 +277,7 @@ vehicle_demo_timer(struct vehicle_priv *priv)
 					ci.x = pos.x;
 					ci.y = pos.y;
 					/* FIXME or should we clear the speed instead? */
-					location_set_speed(&priv->location, 0);
+					location_set_speed(priv->location, 0);
 					dbg(lvl_debug,"destination reached\n");
 				}
 				dbg(lvl_debug, "ci=0x%x,0x%x\n", ci.x, ci.y);
