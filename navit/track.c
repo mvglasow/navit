@@ -663,12 +663,15 @@ tracking_update(struct tracking *tr, struct vehicle *v, struct vehicleprofile *v
 	if (vehicleprofile)
 		tr->vehicleprofile=vehicleprofile;
 
-	if (! tr->vehicle)
+	if (! tr->vehicle) {
+		dbg(lvl_error, "no vehicle, update canceled\n");
 		return;
+	}
 	if (!vehicle_get_attr(tr->vehicle, attr_position_valid, &valid, NULL))
 		valid.u.num=attr_position_valid_valid;
 	if (valid.u.num == attr_position_valid_invalid) {
 		tr->valid=valid.u.num;
+		dbg(lvl_debug, "location is invalid, skipping\n");
 		return;
 	}
 
@@ -677,8 +680,9 @@ tracking_update(struct tracking *tr, struct vehicle *v, struct vehicleprofile *v
 	has_position = vehicle_get_attr(tr->vehicle, attr_position_coord_geo, &coord_geo, NULL);
 	has_time = vehicle_get_attr(tr->vehicle, attr_position_time_iso8601, &time_attr, NULL);
 
-	if (!has_speed || !has_bearing || !has_position || !has_time) {
-		dbg(lvl_error,"failed to get position data (has_speed=%d has_bearing=%d has_position=%d has_time=%d)\n", has_speed, has_bearing, has_position, has_time);
+	dbg(lvl_debug, "has_speed=%d has_bearing=%d\n", has_speed, has_bearing);
+	if (!has_position || !has_time) {
+		dbg(lvl_error,"failed to get position data (has_position=%d has_time=%d)\n", has_position, has_time);
 		return;
 	}
 	if (tr->tunnel_extrapolation) {
@@ -698,9 +702,18 @@ tracking_update(struct tracking *tr, struct vehicle *v, struct vehicleprofile *v
 	}
 	dbg(lvl_info,"Static speed: %ld, static distance: %ld\n",static_speed.u.num, static_distance.u.num);
 	time=iso8601_to_secs(time_attr.u.str);
-	speed=*speed_attr.u.numd;
-	direction=*direction_attr.u.numd;
-	tr->valid=attr_position_valid_valid;
+
+	if (has_speed)
+		speed = *speed_attr.u.numd;
+	else
+		speed = 0;
+
+	if (has_bearing)
+		direction = *direction_attr.u.numd;
+	else
+		direction = 0;
+
+	tr->valid=attr_position_valid_valid; /* FIXME use validity of input position (may be extrapolated) */
 	transform_from_geo(pro, coord_geo.u.coord_geo, &tr->curr_in);
 	if ((speed < static_speed.u.num && transform_distance(pro, &tr->last_in, &tr->curr_in) < static_distance.u.num )) {
 		dbg(lvl_debug,"static speed %f coord 0x%x,0x%x vs 0x%x,0x%x\n",speed,tr->last_in.x,tr->last_in.y, tr->curr_in.x, tr->curr_in.y);
