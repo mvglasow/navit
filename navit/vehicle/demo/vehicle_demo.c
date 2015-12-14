@@ -35,6 +35,9 @@
 #include "event.h"
 #include "util.h"
 
+/** The presumed accuracy for the demo vehicle (3 meters, approximately one lane width) */
+#define DEMO_ACCURACY 3
+
 struct vehicle_priv {
 	int interval;
 	int position_set;
@@ -161,6 +164,8 @@ vehicle_demo_position_attr_get(struct vehicle_priv *priv,
 static int
 vehicle_demo_set_attr_do(struct vehicle_priv *priv, struct attr *attr)
 {
+	struct timeval tv;
+
 	switch(attr->type) {
 	case attr_navit:
 		priv->navit = attr->u.navit;
@@ -178,7 +183,10 @@ vehicle_demo_set_attr_do(struct vehicle_priv *priv, struct attr *attr)
 		priv->timer=event_add_timeout(priv->interval, 1, priv->timer_callback);
 		break;
 	case attr_position_coord_geo:
+		gettimeofday(&tv, NULL);
 		location_set_position(priv->location, attr->u.coord_geo);
+		location_set_position_accuracy(priv->location, DEMO_ACCURACY);
+		location_set_fix_time(priv->location, &tv);
 		if (location_get_validity(priv->location) != attr_position_valid_valid) {
 			location_set_validity(priv->location, attr_position_valid_valid);
 			callback_list_call_attr_0(priv->cbl, attr_position_valid);
@@ -213,12 +221,6 @@ struct vehicle_methods vehicle_demo_methods = {
 static void
 vehicle_demo_timer(struct vehicle_priv *priv)
 {
-	/* FIXME set missing (but required) members of location:
-	 * radius
-	 * fix_time and fixiso8601
-	 * flags
-	 * preference
-	 */
 	struct coord c, c2, pos, ci;
 	struct coord_geo geo;
 	int slen, len, dx, dy;
@@ -226,7 +228,10 @@ vehicle_demo_timer(struct vehicle_priv *priv)
 	struct map *route_map=NULL;
 	struct map_rect *mr=NULL;
 	struct item *item=NULL;
+	struct timeval tv;
 
+	gettimeofday(&tv, NULL);
+	/* FIXME compare timestamps to determine len rather than relying on a hardcoded interval */
 	len = (priv->config_speed * priv->interval / 1000)/ 3.6;
 	dbg(lvl_debug, "###### Entering simulation loop\n");
 	if (!priv->config_speed)
@@ -283,6 +288,8 @@ vehicle_demo_timer(struct vehicle_priv *priv)
 				dbg(lvl_debug, "ci=0x%x,0x%x\n", ci.x, ci.y);
 				transform_to_geo(projection_mg, &ci, &geo);
 				location_set_position(priv->location, &geo);
+				location_set_position_accuracy(priv->location, DEMO_ACCURACY);
+				location_set_fix_time(priv->location, &tv);
 				if (location_get_validity(priv->location) != attr_position_valid_valid) {
 					location_set_validity(priv->location, attr_position_valid_valid);
 					callback_list_call_attr_0(priv->cbl, attr_position_valid);
@@ -316,6 +323,7 @@ vehicle_demo_new(struct vehicle_methods
 	ret->timer_callback=callback_new_1(callback_cast(vehicle_demo_timer), ret);
 	ret->location = location_new();
 	location_set_validity(ret->location, attr_position_valid_invalid);
+	location_set_preference(ret->location, preference_high);
 	*meth = vehicle_demo_methods;
 	while (attrs && *attrs) 
 		vehicle_demo_set_attr_do(ret, *attrs++);
