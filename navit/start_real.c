@@ -46,6 +46,7 @@
 #include "atom.h"
 #include "command.h"
 #include "geom.h"
+#include "location.h"
 #ifdef HAVE_API_WIN32_CE
 #include <windows.h>
 #include <winbase.h>
