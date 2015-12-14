@@ -656,6 +656,8 @@ tracking_update(struct tracking *tr, struct vehicle *v, struct vehicleprofile *v
 	struct coord cin;
 	struct attr valid,speed_attr,direction_attr,coord_geo,lag,time_attr,static_speed,static_distance;
 	double speed, direction;
+	int has_speed, has_bearing, has_position, has_time;
+
 	if (v)
 		tr->vehicle=v;
 	if (vehicleprofile)
@@ -669,15 +671,14 @@ tracking_update(struct tracking *tr, struct vehicle *v, struct vehicleprofile *v
 		tr->valid=valid.u.num;
 		return;
 	}
-	if (!vehicle_get_attr(tr->vehicle, attr_position_speed, &speed_attr, NULL) ||
-	    !vehicle_get_attr(tr->vehicle, attr_position_direction, &direction_attr, NULL) ||
-	    !vehicle_get_attr(tr->vehicle, attr_position_coord_geo, &coord_geo, NULL) ||
-	    !vehicle_get_attr(tr->vehicle, attr_position_time_iso8601, &time_attr, NULL)) {
-		dbg(lvl_error,"failed to get position data %d %d %d %d\n",
-		vehicle_get_attr(tr->vehicle, attr_position_speed, &speed_attr, NULL),
-	    vehicle_get_attr(tr->vehicle, attr_position_direction, &direction_attr, NULL),
-	    vehicle_get_attr(tr->vehicle, attr_position_coord_geo, &coord_geo, NULL),
-	    vehicle_get_attr(tr->vehicle, attr_position_time_iso8601, &time_attr, NULL));
+
+	has_speed = vehicle_get_attr(tr->vehicle, attr_position_speed, &speed_attr, NULL);
+	has_bearing = vehicle_get_attr(tr->vehicle, attr_position_direction, &direction_attr, NULL);
+	has_position = vehicle_get_attr(tr->vehicle, attr_position_coord_geo, &coord_geo, NULL);
+	has_time = vehicle_get_attr(tr->vehicle, attr_position_time_iso8601, &time_attr, NULL);
+
+	if (!has_speed || !has_bearing || !has_position || !has_time) {
+		dbg(lvl_error,"failed to get position data (has_speed=%d has_bearing=%d has_position=%d has_time=%d)\n", has_speed, has_bearing, has_position, has_time);
 		return;
 	}
 	if (tr->tunnel_extrapolation) {
