@@ -40,7 +40,7 @@
 
 struct vehicle_priv {
 	int interval;
-	int position_set;
+	int position_set;           /**< True if the current position was set manually **/
 	struct callback_list *cbl;
 	struct location *location;  /**< The location of the vehicle.
 	                                 For the demo vehicle the location is periodically updated based on
@@ -258,7 +258,7 @@ vehicle_demo_timer(struct vehicle_priv *priv)
 			dbg(lvl_warning, "endless loop\n");
 		}
 		priv->last = pos;
-		while (item && priv->config_speed) {
+		while (item) {
 			if (!item_coord_get(item, &c, 1)) {
 				item=map_rect_get_item(mr);
 				continue;
@@ -281,7 +281,6 @@ vehicle_demo_timer(struct vehicle_priv *priv)
 				} else {
 					ci.x = pos.x;
 					ci.y = pos.y;
-					/* FIXME or should we clear the speed instead? */
 					location_set_speed(priv->location, 0);
 					dbg(lvl_debug,"destination reached\n");
 				}
