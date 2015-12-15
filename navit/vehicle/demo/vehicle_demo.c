@@ -24,6 +24,7 @@
 #include "debug.h"
 #include "coord.h"
 #include "item.h"
+#include "xmlconfig.h"
 #include "navit.h"
 #include "map.h"
 #include "route.h"
@@ -31,6 +32,8 @@
 #include "transform.h"
 #include "plugin.h"
 #include "vehicle.h"
+#include "vehicleprofile.h"
+#include "roadprofile.h"
 #include "location.h"
 #include "event.h"
 #include "util.h"
@@ -229,13 +232,26 @@ vehicle_demo_timer(struct vehicle_priv *priv)
 	struct map_rect *mr=NULL;
 	struct item *item=NULL;
 	struct timeval tv;
+	struct vehicleprofile *vp = NULL;	/* vehicleprofile to determine default speed */
+	struct attr sitem_attr; 			/* street_item attr */
+	struct item *sitem = NULL;			/* street item associated with current route map item */
+	struct roadprofile *rp = NULL;		/* roadprofile for sitem */
+	struct attr maxspeed_attr;			/* maxspeed attr of sitem */
+	double item_speed;					/* maxspeed of sitem */
+	double vehicle_speed;				/* vehicle speed determined from roadprofile */
+	double speed = priv->config_speed;  /* simulated speed */
 
 	gettimeofday(&tv, NULL);
-	/* FIXME compare timestamps to determine len rather than relying on a hardcoded interval */
+	/* FIXME
+	 * - compare timestamps rather than relying on a hardcoded interval
+	 * - use time rather than len (allows for speed changes between segments) */
 	len = (priv->config_speed * priv->interval / 1000)/ 3.6;
 	dbg(lvl_debug, "###### Entering simulation loop\n");
+	/* TODO if config_speed is not set, don't just return but use defaults */
 	if (!priv->config_speed)
 		return;
+	if (priv->navit)
+		vp = navit_get_vehicleprofile(priv->navit);
 	if (priv->route)
 		route=priv->route;
 	else if (priv->navit) 
@@ -263,6 +279,47 @@ vehicle_demo_timer(struct vehicle_priv *priv)
 				item=map_rect_get_item(mr);
 				continue;
 			}
+
+			if (!priv->config_speed) {
+				vehicle_speed = 0;
+				if (vp && (vp->maxspeed_handling != maxspeed_ignore)) {
+					if (item_attr_get(item, attr_street_item, &sitem_attr)) {
+						sitem = sitem_attr.u.item;
+						if (sitem) {
+							rp = vehicleprofile_get_roadprofile(vp, sitem->type);
+							if (rp)
+								vehicle_speed = rp->route_weight;
+						} else {
+							dbg(lvl_warning, "street item is NULL\n");
+						}
+					} else {
+						dbg(lvl_warning, "could not get street item\n");
+					}
+				}
+				if (item_attr_get(item, attr_maxspeed, &maxspeed_attr)) {
+					item_speed = maxspeed_attr.u.num;
+				} else
+					item_speed = 0;
+				if (!vehicle_speed)
+					speed = item_speed;
+				else if (vp->maxspeed_handling == maxspeed_enforce)
+					speed = vehicle_speed;
+				else
+					speed = (vehicle_speed < item_speed) ? vehicle_speed : item_speed;
+				dbg(lvl_debug, "speed=%.0f: (%s, item_speed=%.0f, vehicle_speed=%.0f, vp=%p, rp=%p, vp->maxspeed_handling=%d)\n",
+						speed, sitem ? item_to_name(sitem->type) : "(none)", item_speed, vehicle_speed, vp, rp, vp?vp->maxspeed_handling:0);
+				if (!speed) {
+					/* We should never reach this point. If we do, it's probably a bug. Set debug level
+					 * for this function to lvl_debug (3) and examine any preceding debug output, in
+					 * particular the summary message just before. If maxspeed_handling is set to
+					 * maxspeed_ignore (2), rp may be nil and vehicle_speed may be 0. All other
+					 * variables should have valid data (other than zero, none or nil).
+					 */
+					dbg(lvl_error, "could not get speed of item, this is almost certainly a bug\n");
+					return;
+				}
+			}
+
 			dbg(lvl_debug, "next pos=0x%x,0x%x\n", c.x, c.y);
 			slen = transform_distance(projection_mg, &pos, &c);
 			dbg(lvl_debug, "len=%d slen=%d\n", len, slen);
