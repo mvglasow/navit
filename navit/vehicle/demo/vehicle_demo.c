@@ -41,6 +41,13 @@
 /** The presumed accuracy for the demo vehicle (3 meters, approximately one lane width) */
 #define DEMO_ACCURACY 3
 
+/**
+ * The presumed speed for off-road segments.
+ * This is a hardcoded value as these segments do not have a corresponding street item, which is a
+ * prerequisite for inferring speed information.
+ */
+#define OFFROAD_SPEED 5
+
 struct vehicle_priv {
 	int interval;
 	int position_set;           /**< True if the current position was set manually **/
@@ -306,18 +313,10 @@ vehicle_demo_timer(struct vehicle_priv *priv)
 					speed = vehicle_speed;
 				else
 					speed = (vehicle_speed < item_speed) ? vehicle_speed : item_speed;
-				dbg(lvl_debug, "speed=%.0f: (%s, item_speed=%.0f, vehicle_speed=%.0f, vp=%p, rp=%p, vp->maxspeed_handling=%d)\n",
+				if (!speed)
+					speed = OFFROAD_SPEED;
+				dbg(lvl_debug, "speed=%.0f: %s, item_speed=%.0f, vehicle_speed=%.0f, vp=%p, rp=%p, vp->maxspeed_handling=%d\n",
 						speed, sitem ? item_to_name(sitem->type) : "(none)", item_speed, vehicle_speed, vp, rp, vp?vp->maxspeed_handling:0);
-				if (!speed) {
-					/* We should never reach this point. If we do, it's probably a bug. Set debug level
-					 * for this function to lvl_debug (3) and examine any preceding debug output, in
-					 * particular the summary message just before. If maxspeed_handling is set to
-					 * maxspeed_ignore (2), rp may be nil and vehicle_speed may be 0. All other
-					 * variables should have valid data (other than zero, none or nil).
-					 */
-					dbg(lvl_error, "could not get speed of item, this is almost certainly a bug\n");
-					return;
-				}
 			}
 
 			dbg(lvl_debug, "next pos=0x%x,0x%x\n", c.x, c.y);
