@@ -276,6 +276,17 @@ vehicle_demo_timer(struct vehicle_priv *priv)
 	}
 
 	gettimeofday(&tv_new, NULL);
+
+	if (priv->position_set) {
+		/* The timespan since the last fix includes the calculation time for the route, which can cause
+		 * a huge leap at the start of a long/complex route. To avoid this, reset the timestamp.
+		 * Position updates will begin with the subsequent call to this function.
+		 */
+		location_set_fix_time(priv->location, &tv_new);
+		priv->position_set = 0;
+		return;
+	}
+
 	location_get_fix_time(priv->location, &tv_old);
 	/* calculate difference in 1/10 s, rounding microseconds */
 	timespan = (tv_new.tv_sec - tv_old.tv_sec) * 10 + (tv_new.tv_usec - tv_old.tv_usec + 50000) / 100000;
