@@ -266,21 +266,37 @@ vehicle_demo_timer(struct vehicle_priv *priv)
 		nav = navit_get_navigation(priv->navit);
 		vp = navit_get_vehicleprofile(priv->navit);
 	}
+	location_get_fix_time(priv->location, &tv_old);
+	if (!tv_old.tv_sec && !tv_old.tv_usec) {
+		/* invalid timestamp (most likely because no position has ever been set), cannot calculate timespan */
+		return;
+	}
+
 	/* default in case we can't (yet) retrieve the status attribute, mostly cosmetic */
 	status_attr.u.num = status_no_destination;
 	if (!nav || !navigation_get_attr(nav, attr_nav_status, &status_attr, NULL) || (status_attr.u.num != status_routing)) {
-		/* not yet initialized or still calculating */
-		dbg(lvl_debug, "route not ready (nav=%p, status %d), exiting\n", nav, status_attr.u.num);
+		/* not yet initialized, not routing or still calculating */
+		dbg(lvl_debug, "no route or route not ready (nav=%p, status %d), exiting\n", nav, status_attr.u.num);
+
+		/* make sure the position's timestamp will be reset (see below) when starting a new route */
+		priv->position_set = 1;
 		return;
 	}
 
 	gettimeofday(&tv_new, NULL);
-	location_get_fix_time(priv->location, &tv_old);
-	/* calculate difference in 1/10 s, rounding microseconds */
-	timespan = (tv_new.tv_sec - tv_old.tv_sec) * 10 + (tv_new.tv_usec - tv_old.tv_usec + 50000) / 100000;
-	if (!tv_old.tv_sec && !tv_old.tv_usec) {
+
+	if (priv->position_set) {
+		/* The timespan since the last fix includes the calculation time for the route, which can cause
+		 * a huge leap at the start of a long/complex route. To avoid this, reset the timestamp.
+		 * Position updates will begin with the subsequent call to this function.
+		 */
+		location_set_fix_time(priv->location, &tv_new);
+		priv->position_set = 0;
 		return;
 	}
+
+	/* calculate difference in 1/10 s, rounding microseconds */
+	timespan = (tv_new.tv_sec - tv_old.tv_sec) * 10 + (tv_new.tv_usec - tv_old.tv_usec + 50000) / 100000;
 	dbg(lvl_debug, "timespan=%d (%d.%d - %d.%d)\n", timespan, tv_new.tv_sec, tv_new.tv_usec, tv_old.tv_sec, tv_old.tv_usec);
 	if (timespan <= 0) {
 		dbg(lvl_error, "last location has an invalid timestamp, aborting\n");
