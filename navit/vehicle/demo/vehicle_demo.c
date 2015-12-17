@@ -210,6 +210,7 @@ vehicle_demo_set_attr_do(struct vehicle_priv *priv, struct attr *attr)
 		}
 		priv->position_set=1;
 		dbg(lvl_debug,"position_set %f %f %s\n", attr->u.coord_geo->lat, attr->u.coord_geo->lng, location_get_fixiso8601(priv->location));
+		callback_list_call_attr_0(priv->cbl, attr_position_coord_geo);
 		break;
 	case attr_profilename:
 	case attr_source:
@@ -413,11 +414,6 @@ vehicle_demo_timer(struct vehicle_priv *priv)
 				callback_list_call_attr_0(priv->cbl, attr_position_coord_geo);
 				break;
 			}
-		}
-	} else {
-		if (priv->position_set) {
-			dbg(lvl_debug, "no changes, calling callbacks for position_coord_geo attribute\n");
-			callback_list_call_attr_0(priv->cbl, attr_position_coord_geo);
 		}
 	}
 	if (mr)
