@@ -27,7 +27,9 @@
 #include "xmlconfig.h"
 #include "navit.h"
 #include "map.h"
+#include "navit.h"
 #include "route.h"
+#include "navigation.h"
 #include "callback.h"
 #include "transform.h"
 #include "plugin.h"
@@ -68,6 +70,8 @@ struct vehicle_priv {
 	double config_speed;
 	struct callback *timer_callback;
 	struct event_timeout *timer;
+	struct callback *nav_set_cb;  /**< Callback to call when the navigation object changes **/
+	struct callback *nav_done_cb; /**< Callback to call after a new route has been calculated **/
 	char *timep;
 	char *nmea;
 
@@ -171,10 +175,13 @@ vehicle_demo_position_attr_get(struct vehicle_priv *priv,
 	return 1;
 }
 
+
 static int
 vehicle_demo_set_attr_do(struct vehicle_priv *priv, struct attr *attr)
 {
 	struct timeval tv;
+
+	dbg(lvl_debug,"enter, attribute %s\n",attr_to_name(attr->type));
 
 	switch(attr->type) {
 	case attr_navit:
@@ -202,7 +209,7 @@ vehicle_demo_set_attr_do(struct vehicle_priv *priv, struct attr *attr)
 			callback_list_call_attr_0(priv->cbl, attr_position_valid);
 		}
 		priv->position_set=1;
-		dbg(lvl_debug,"position_set %f %f\n", attr->u.coord_geo->lat, attr->u.coord_geo->lng);
+		dbg(lvl_debug,"position_set %f %f %s\n", attr->u.coord_geo->lat, attr->u.coord_geo->lng, location_get_fixiso8601(priv->location));
 		break;
 	case attr_profilename:
 	case attr_source:
@@ -233,12 +240,16 @@ vehicle_demo_timer(struct vehicle_priv *priv)
 {
 	struct coord c, c2, pos, ci;
 	struct coord_geo geo;
-	int slen, len, dx, dy;
+	int slen;							/* Length of current segment */
+	int dx, dy;							/* Two-dimensional length of current segment */
 	struct route *route=NULL;
 	struct map *route_map=NULL;
 	struct map_rect *mr=NULL;
 	struct item *item=NULL;
-	struct timeval tv;
+	struct timeval tv_old;				/* timestamp for previous location */
+	struct timeval tv_new;				/* timestamp for new location */
+	int timespan;						/* timespan for which to simulate movement, in tenths of seconds */
+	int stime;							/* time needed to follow entire length of current segment, in tenths of seconds */
 	struct vehicleprofile *vp = NULL;	/* vehicleprofile to determine default speed */
 	struct attr sitem_attr; 			/* street_item attr */
 	struct item *sitem = NULL;			/* street item associated with current route map item */
@@ -248,11 +259,18 @@ vehicle_demo_timer(struct vehicle_priv *priv)
 	double vehicle_speed;				/* vehicle speed determined from roadprofile */
 	double speed = priv->config_speed;  /* simulated speed */
 
-	gettimeofday(&tv, NULL);
-	/* FIXME
-	 * - compare timestamps rather than relying on a hardcoded interval
-	 * - use time rather than len (allows for speed changes between segments) */
-	len = (priv->config_speed * priv->interval / 1000)/ 3.6;
+	gettimeofday(&tv_new, NULL);
+	location_get_fix_time(priv->location, &tv_old);
+	/* calculate difference in 1/10 s, rounding microseconds */
+	timespan = (tv_new.tv_sec - tv_old.tv_sec) * 10 + (tv_new.tv_usec - tv_old.tv_usec + 50000) / 100000;
+	if (!tv_old.tv_sec && !tv_old.tv_usec) {
+		return;
+	}
+	dbg(lvl_debug, "timespan=%d (%d.%d - %d.%d)\n", timespan, tv_new.tv_sec, tv_new.tv_usec, tv_old.tv_sec, tv_old.tv_usec);
+	if (timespan <= 0) {
+		dbg(lvl_error, "last location has an invalid timestamp, aborting\n");
+		return;
+	}
 	dbg(lvl_debug, "###### Entering simulation loop\n");
 	/* TODO if config_speed is not set, don't just return but use defaults */
 	if (!priv->config_speed)
@@ -288,6 +306,7 @@ vehicle_demo_timer(struct vehicle_priv *priv)
 			}
 
 			if (!priv->config_speed) {
+				/* if speed is not fixed, determine speed for the segment */
 				vehicle_speed = 0;
 				if (vp && (vp->maxspeed_handling != maxspeed_ignore)) {
 					if (item_attr_get(item, attr_street_item, &sitem_attr)) {
@@ -321,16 +340,22 @@ vehicle_demo_timer(struct vehicle_priv *priv)
 
 			dbg(lvl_debug, "next pos=0x%x,0x%x\n", c.x, c.y);
 			slen = transform_distance(projection_mg, &pos, &c);
-			dbg(lvl_debug, "len=%d slen=%d\n", len, slen);
-			if (slen < len) {
-				len -= slen;
+			stime = slen * 36 / speed;
+			dbg(lvl_debug, "timespan=%d stime=%d slen=%d speed=%.0f\n", timespan, stime, slen, speed);
+			if (stime < timespan) {
+				timespan -= stime;
 				pos = c;
 			} else {
 				if (item_coord_get(item, &c2, 1) || map_rect_get_item(mr)) {
 					dx = c.x - pos.x;
 					dy = c.y - pos.y;
-					ci.x = pos.x + dx * len / slen;
-					ci.y = pos.y + dy * len / slen;
+
+					/* The following two actually use (len_traveled / slen) as a factor. Since we never
+					 * calculate len_traveled, we use (timespan / stime) instead, which is directly
+					 * proportional to the above. */
+					ci.x = pos.x + dx * timespan / stime;
+					ci.y = pos.y + dy * timespan / stime;
+
 					location_set_bearing(priv->location,
 					    transform_get_angle_delta(&pos, &c, 0));
 					location_set_speed(priv->location, priv->config_speed);
@@ -340,11 +365,11 @@ vehicle_demo_timer(struct vehicle_priv *priv)
 					location_set_speed(priv->location, 0);
 					dbg(lvl_debug,"destination reached\n");
 				}
-				dbg(lvl_debug, "ci=0x%x,0x%x\n", ci.x, ci.y);
 				transform_to_geo(projection_mg, &ci, &geo);
+				dbg(lvl_debug, "ci=0x%x,0x%x lat=%.6f lng=%.6f\n", ci.x, ci.y, geo.lat, geo.lng);
 				location_set_position(priv->location, &geo);
 				location_set_position_accuracy(priv->location, DEMO_ACCURACY);
-				location_set_fix_time(priv->location, &tv);
+				location_set_fix_time(priv->location, &tv_new);
 				if (location_get_validity(priv->location) != attr_position_valid_valid) {
 					location_set_validity(priv->location, attr_position_valid_valid);
 					callback_list_call_attr_0(priv->cbl, attr_position_valid);
@@ -362,7 +387,6 @@ vehicle_demo_timer(struct vehicle_priv *priv)
 }
 
 
-
 static struct vehicle_priv *
 vehicle_demo_new(struct vehicle_methods
 		 *meth, struct callback_list
@@ -377,6 +401,8 @@ vehicle_demo_new(struct vehicle_methods
 	ret->config_speed=40;
 	ret->timer_callback=callback_new_1(callback_cast(vehicle_demo_timer), ret);
 	ret->location = location_new();
+	ret->nav_set_cb = NULL;
+	ret->nav_done_cb = NULL;
 	location_set_validity(ret->location, attr_position_valid_invalid);
 	location_set_preference(ret->location, preference_high);
 	*meth = vehicle_demo_methods;

@@ -3205,9 +3205,24 @@ navit_vehicle_update_status(struct navit *this_, struct navit_vehicle *nv, enum 
 void
 navit_set_position(struct navit *this_, struct pcoord *c)
 {
+	struct attr vehicle, source, pos;
+	struct coord c1;
+
 	if (this_->route) {
 		route_set_position(this_->route, c);
 		callback_list_call_attr_0(this_->attr_cbl, attr_position);
+	}
+	if (navit_get_attr(this_, attr_vehicle, &vehicle, NULL) && vehicle.u.vehicle &&
+			vehicle_get_attr(vehicle.u.vehicle, attr_source, &source, NULL) && source.u.str && !strcmp("demo://",source.u.str)) {
+		dbg(lvl_debug, "setting vehicle position\n");
+		/* set vehicle position attribute for demo vehicle */
+		pos.type = attr_position_coord_geo;
+		pos.u.coord_geo = g_new0(struct coord_geo, 1);
+		c1.x = c->x;
+		c1.y = c->y;
+		transform_to_geo(projection_mg, &c1, pos.u.coord_geo);
+		vehicle_set_attr(vehicle.u.vehicle, &pos);
+		g_free(pos.u.coord_geo);
 	}
 	if (this_->ready == 3)
 		navit_draw(this_);
