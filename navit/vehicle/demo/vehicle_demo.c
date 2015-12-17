@@ -273,8 +273,10 @@ vehicle_demo_timer(struct vehicle_priv *priv)
 	}
 	dbg(lvl_debug, "###### Entering simulation loop\n");
 	/* TODO if config_speed is not set, don't just return but use defaults */
-	if (!priv->config_speed)
+	if (!priv->config_speed) {
+		dbg(lvl_debug, "config_speed is zero, exiting\n");
 		return;
+	}
 	if (priv->navit)
 		vp = navit_get_vehicleprofile(priv->navit);
 	if (priv->route)
@@ -287,10 +289,23 @@ vehicle_demo_timer(struct vehicle_priv *priv)
 		mr=map_rect_new(route_map, NULL);
 	if (mr)
 		item=map_rect_get_item(mr);
-	if (item && item->type == type_route_start)
+	if (item) { /* TODO debug code */
+		if (item_coord_get(item, &c, 1))
+			transform_to_geo(projection_mg, &c, &geo);
+		else {
+			geo.lat=360;
+			geo.lng=360;
+		}
+		dbg(lvl_debug, "first item (%d, %d), type=%s, lat=%.6f, lng=%.6f\n", item->id_hi, item->id_lo, item_to_name(item->type), geo.lat, geo.lng);
+	}
+	if (item && item->type == type_route_start) {
+		dbg(lvl_debug, "discarding item (%d, %d), type=%s\n", item->id_hi, item->id_lo, item_to_name(item->type));
 		item=map_rect_get_item(mr);
-	while(item && item->type!=type_street_route)
+	}
+	while(item && item->type!=type_street_route) {
+		dbg(lvl_debug, "discarding item (%d, %d), type=%s\n", item->id_hi, item->id_lo, item_to_name(item->type));
 		item=map_rect_get_item(mr);
+	}
 	if (item && item_coord_get(item, &pos, 1)) {
 		priv->position_set=0;
 		dbg(lvl_debug, "current pos=0x%x,0x%x\n", pos.x, pos.y);
@@ -301,9 +316,18 @@ vehicle_demo_timer(struct vehicle_priv *priv)
 		priv->last = pos;
 		while (item) {
 			if (!item_coord_get(item, &c, 1)) {
+				dbg(lvl_debug, "discarding item (%d, %d), type=%s (no coords)\n", item->id_hi, item->id_lo, item_to_name(item->type));
 				item=map_rect_get_item(mr);
 				continue;
 			}
+
+			/* debug code */
+			if (item_attr_get(item, attr_street_item, &sitem_attr))
+				sitem = sitem_attr.u.item;
+			else
+				sitem = NULL;
+			transform_to_geo(projection_mg, &c, &geo);
+			dbg(lvl_debug, "examining item (%d, %d), type=%s, sitem=%p, start at (lat=%.6f, lng=%.6f)\n", item->id_hi, item->id_lo, item_to_name(item->type), sitem, geo.lat, geo.lng);
 
 			if (!priv->config_speed) {
 				/* if speed is not fixed, determine speed for the segment */
@@ -379,8 +403,10 @@ vehicle_demo_timer(struct vehicle_priv *priv)
 			}
 		}
 	} else {
-		if (priv->position_set) 
+		if (priv->position_set) {
+			dbg(lvl_debug, "no changes, calling callbacks for position_coord_geo attribute\n");
 			callback_list_call_attr_0(priv->cbl, attr_position_coord_geo);
+		}
 	}
 	if (mr)
 		map_rect_destroy(mr);
