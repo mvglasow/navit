@@ -251,6 +251,8 @@ vehicle_demo_timer(struct vehicle_priv *priv)
 	struct timeval tv_new;				/* timestamp for new location */
 	int timespan;						/* timespan for which to simulate movement, in tenths of seconds */
 	int stime;							/* time needed to follow entire length of current segment, in tenths of seconds */
+	struct navigation *nav = NULL;      /* navigation object */
+	struct attr status_attr;			/* route status attr */
 	struct vehicleprofile *vp = NULL;	/* vehicleprofile to determine default speed */
 	struct attr sitem_attr; 			/* street_item attr */
 	struct item *sitem = NULL;			/* street item associated with current route map item */
@@ -259,6 +261,18 @@ vehicle_demo_timer(struct vehicle_priv *priv)
 	double item_speed;					/* maxspeed of sitem */
 	double vehicle_speed;				/* vehicle speed determined from roadprofile */
 	double speed = priv->config_speed;  /* simulated speed */
+
+	if (priv->navit) {
+		nav = navit_get_navigation(priv->navit);
+		vp = navit_get_vehicleprofile(priv->navit);
+	}
+	/* default in case we can't (yet) retrieve the status attribute, mostly cosmetic */
+	status_attr.u.num = status_no_destination;
+	if (!nav || !navigation_get_attr(nav, attr_nav_status, &status_attr, NULL) || (status_attr.u.num != status_routing)) {
+		/* not yet initialized or still calculating */
+		dbg(lvl_debug, "route not ready (nav=%p, status %d), exiting\n", nav, status_attr.u.num);
+		return;
+	}
 
 	gettimeofday(&tv_new, NULL);
 	location_get_fix_time(priv->location, &tv_old);
@@ -278,8 +292,6 @@ vehicle_demo_timer(struct vehicle_priv *priv)
 		dbg(lvl_debug, "config_speed is zero, exiting\n");
 		return;
 	}
-	if (priv->navit)
-		vp = navit_get_vehicleprofile(priv->navit);
 	if (priv->route)
 		route=priv->route;
 	else if (priv->navit) 
