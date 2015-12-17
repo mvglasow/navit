@@ -176,97 +176,6 @@ vehicle_demo_position_attr_get(struct vehicle_priv *priv,
 }
 
 
-/**
- * @brief Called when a new route has been calculated.
- *
- * This function is registered as a callback function for the {@code navigation.navigation_long}
- * attribute. It is called when a route has been calculated and maneuver generation has finished.
- *
- * When called, it updates the vehicle position.
- */
-static void
-vehicle_demo_on_navigation_done(struct vehicle_priv *priv) {
-	struct coord pos;
-	struct coord_geo geo;
-	struct route *route=NULL;
-	struct map *route_map=NULL;
-	struct map_rect *mr=NULL;
-	struct item *item=NULL;
-	struct timeval tv_new;				/* timestamp for new location */
-
-	dbg(lvl_debug, "enter\n");
-
-#if 0
-	if (priv->route)
-		route=priv->route;
-	else if (priv->navit)
-		route=navit_get_route(priv->navit);
-	if (route)
-		route_map=route_get_map(route);
-	if (route_map)
-		mr=map_rect_new(route_map, NULL);
-	if (mr)
-		item=map_rect_get_item(mr);
-	if (item && item->type == type_route_start)
-		item=map_rect_get_item(mr);
-	while(item && item->type!=type_street_route)
-		item=map_rect_get_item(mr);
-	if (item && item_coord_get(item, &pos, 1)) {
-		gettimeofday(&tv_new, NULL);
-		transform_to_geo(projection_mg, &pos, &geo);
-		location_set_position(priv->location, &geo);
-		location_set_position_accuracy(priv->location, DEMO_ACCURACY);
-		location_set_fix_time(priv->location, &tv_new);
-		if (location_get_validity(priv->location) != attr_position_valid_valid) {
-			location_set_validity(priv->location, attr_position_valid_valid);
-			callback_list_call_attr_0(priv->cbl, attr_position_valid);
-		}
-		callback_list_call_attr_0(priv->cbl, attr_position_coord_geo);
-	}
-	if (mr)
-		map_rect_destroy(mr);
-#endif
-}
-
-
-/**
- * @brief Called when the navigation object has been changed.
- *
- * This function is registered as a callback function for the navit object, with its attribute type set
- * to {@code attr_navigation}. It is called whenever that attribute changes. This usually happens once
- * on startup, when the navigation object gets created.
- *
- * When called, it registers {@link vehicle_demo_on_navigation_done(struct vehicle_priv *)} as a
- * callback for the new navigation object, or resets it if the navigation object has been destroyed.
- *
- * @param priv The vehicle that should receive the callback
- * @param type The attribute type (may not be set, use {@code attr->type} to find out the actual
- * attribute type)
- * @param attr The attribute which was added.
- */
-static void
-vehicle_demo_on_navigation_set(struct vehicle_priv *priv, enum attr_type type, struct attr *attr) {
-	struct navigation *nav;
-
-	dbg(lvl_debug, "enter, priv=%p, type=%s, attr=%p (%s)\n", priv, attr_to_name(type), attr, attr_to_name(attr->type));
-	if (attr->type != attr_navigation)
-		return;
-	/* register callback */
-	nav = attr->u.navigation;
-	dbg(lvl_debug, "nav=%p, priv->nav_done_cb=%p\n", nav, priv->nav_done_cb);
-	if (nav) {
-		if (priv->nav_done_cb) {
-			/* FIXME should we (and can we) unregister the old callback? */
-			callback_destroy(priv->nav_done_cb);
-			priv->nav_done_cb = NULL;
-		}
-		dbg(lvl_debug, "registering callback\n");
-		priv->nav_done_cb = callback_new_1(callback_cast(vehicle_demo_on_navigation_done), priv);
-		navigation_register_callback(nav, attr_navigation_long, priv->nav_done_cb);
-	}
-}
-
-
 static int
 vehicle_demo_set_attr_do(struct vehicle_priv *priv, struct attr *attr)
 {
@@ -278,13 +187,6 @@ vehicle_demo_set_attr_do(struct vehicle_priv *priv, struct attr *attr)
 	switch(attr->type) {
 	case attr_navit:
 		priv->navit = attr->u.navit;
-		/* register callback */
-		/* FIXME should we unregister existing callbacks? (Not that we're likely to ever need this...) */
-		priv->nav_set_cb = callback_new_attr_1(callback_cast(vehicle_demo_on_navigation_set), attr_navigation, priv);
-		navit_add_callback(priv->navit, priv->nav_set_cb);
-
-		/* FIXME should we test if navit.navigation is already set (and register callbacks if it is)? */
-
 		break;
 	case attr_route:
 		priv->route = attr->u.route;
@@ -299,10 +201,6 @@ vehicle_demo_set_attr_do(struct vehicle_priv *priv, struct attr *attr)
 		priv->timer=event_add_timeout(priv->interval, 1, priv->timer_callback);
 		break;
 	case attr_position_coord_geo:
-		/*
-		 * Not sure where this code would ever get called. Setting the position e.g. through the
-		 * internal GUI results in a call to navit_set_position() but not to this code.
-		 */
 		gettimeofday(&tv, NULL);
 		location_set_position(priv->location, attr->u.coord_geo);
 		location_set_position_accuracy(priv->location, DEMO_ACCURACY);
