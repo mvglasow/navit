@@ -180,7 +180,6 @@ static int
 vehicle_demo_set_attr_do(struct vehicle_priv *priv, struct attr *attr)
 {
 	struct timeval tv;
-	struct navigation *nav;
 
 	dbg(lvl_debug,"enter, attribute %s\n",attr_to_name(attr->type));
 
