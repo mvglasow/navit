@@ -303,11 +303,6 @@ vehicle_demo_timer(struct vehicle_priv *priv)
 		return;
 	}
 	dbg(lvl_debug, "###### Entering simulation loop\n");
-	/* TODO if config_speed is not set, don't just return but use defaults */
-	if (!priv->config_speed) {
-		dbg(lvl_debug, "config_speed is zero, exiting\n");
-		return;
-	}
 	if (priv->route)
 		route=priv->route;
 	else if (priv->navit) 
@@ -411,7 +406,7 @@ vehicle_demo_timer(struct vehicle_priv *priv)
 
 					location_set_bearing(priv->location,
 					    transform_get_angle_delta(&pos, &c, 0));
-					location_set_speed(priv->location, priv->config_speed);
+					location_set_speed(priv->location, speed);
 				} else {
 					ci.x = pos.x;
 					ci.y = pos.y;
@@ -448,7 +443,6 @@ vehicle_demo_new(struct vehicle_methods
 	ret = g_new0(struct vehicle_priv, 1);
 	ret->cbl = cbl;
 	ret->interval=1000;
-	ret->config_speed=40;
 	ret->timer_callback=callback_new_1(callback_cast(vehicle_demo_timer), ret);
 	ret->location = location_new();
 	ret->nav_set_cb = NULL;
