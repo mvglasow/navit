@@ -375,10 +375,10 @@ vehicle_demo_timer(struct vehicle_priv *priv)
 					item_speed = maxspeed_attr.u.num;
 				} else
 					item_speed = 0;
-				if (!vehicle_speed)
-					speed = item_speed;
-				else if (vp->maxspeed_handling == maxspeed_enforce)
+				if (!item_speed)
 					speed = vehicle_speed;
+				else if (vp->maxspeed_handling == maxspeed_enforce)
+					speed = item_speed;
 				else
 					speed = (vehicle_speed < item_speed) ? vehicle_speed : item_speed;
 				if (!speed)
