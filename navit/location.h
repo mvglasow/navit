@@ -111,6 +111,7 @@ void location_set_sat_data(struct location *this_, int sats, int sats_used);
 void location_set_speed(struct location *this_, double speed);
 void location_set_validity(struct location *this_, enum attr_position_valid valid);
 
+int location_extrapolate(struct location *in, struct location *out, struct navit *navit, double aspeed, int flags);
 void location_update(struct location ** in, struct location * out, struct callback_list * cbl);
 /* end of prototypes */
 
