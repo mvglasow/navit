@@ -35,10 +35,26 @@
 #include "config.h"
 #include "debug.h"
 #include "item.h"
+#include "xmlconfig.h"
+#include "navit.h"
 #include "coord.h"
 #include "transform.h"
 #include "callback.h"
+#include "vehicleprofile.h"
+#include "roadprofile.h"
 #include "location.h"
+
+
+/** The presumed accuracy for the demo vehicle (3 meters, approximately one lane width) */
+#define DEMO_ACCURACY 3
+
+
+/**
+ * The presumed speed for off-road segments.
+ * This is a hardcoded value as these segments do not have a corresponding street item, which is a
+ * prerequisite for inferring speed information.
+ */
+#define OFFROAD_SPEED 5
 
 
 /**
@@ -674,6 +690,244 @@ void location_set_validity(struct location *this_, enum attr_position_valid vali
 void
 location_destroy(struct location *this_) {
 	g_free(this_);
+}
+
+
+/**
+ * @brief Calculates a new location based on a previous one.
+ *
+ * Flags are currently not implemented but may be used in the future to:
+ * <ul>
+ * <li>Determine how to set location validity</li>
+ * <li>Determine how to set location accuracy</li>
+ * <li>Determine how to handle speed (e.g. assume maximum allowed speed or infer new speed from last known speed)</li>
+ * </ul>
+ *
+ * @param in The previous location.
+ * @param out The new location. It may be the same as {@code in}, in which case {@code in} will be
+ * overwritten with the new location.
+ * @param navit The navit object.
+ * @param speed The presumed speed of the vehicle. If it is zero, speed will be inferred from the
+ * current vehicle profile and route segment.
+ * @param flags Reserved for future use, set to zero.
+ *
+ * @return True if a new location was calculated, false if not.
+ */
+/* FIXME currently this takes the timestamp of {@code in} but assumes the route start as the current position */
+int
+location_extrapolate(struct location *in, struct location *out, struct navit *navit, double aspeed, int flags) {
+	struct coord c, c2;
+	struct coord pos;					/* Position on current route segment */
+	struct coord ci;
+	struct coord_geo geo;
+	int slen;							/* Length of current segment */
+	int dx, dy;							/* Two-dimensional length of current segment */
+	struct route *route=NULL;
+	struct map *route_map=NULL;
+	struct map_rect *mr=NULL;
+	struct item *item=NULL;
+	struct timeval tv_old;				/* timestamp for previous location */
+	struct timeval tv_new;				/* timestamp for new location */
+	int timespan;						/* timespan for which to simulate movement, in tenths of seconds */
+	int stime;							/* time needed to follow entire length of current segment, in tenths of seconds */
+	struct navigation *nav = NULL;      /* navigation object */
+	struct attr status_attr;			/* route status attr */
+	struct vehicleprofile *vp = NULL;	/* vehicleprofile to determine default speed */
+	struct attr sitem_attr; 			/* street_item attr */
+	struct item *sitem = NULL;			/* street item associated with current route map item */
+	struct roadprofile *rp = NULL;		/* roadprofile for sitem */
+	struct attr maxspeed_attr;			/* maxspeed attr of sitem */
+	double item_speed;					/* maxspeed of sitem */
+	double vehicle_speed;				/* vehicle speed determined from roadprofile */
+	double sim_speed = aspeed;  		/* simulated speed */
+
+	if (navit) {
+		nav = navit_get_navigation(navit);
+		vp = navit_get_vehicleprofile(navit);
+	}
+	location_get_fix_time(in, &tv_old);
+	if (!tv_old.tv_sec && !tv_old.tv_usec) {
+		/* invalid timestamp (most likely because no position has ever been set), cannot calculate timespan */
+		return 0;
+	}
+
+#if 0
+	/* TODO this should remain exclusive to vehicle_demo and run prior to calling location_extrapolate */
+	/* default in case we can't (yet) retrieve the status attribute, mostly cosmetic */
+	status_attr.u.num = status_no_destination;
+	if (!nav || !navigation_get_attr(nav, attr_nav_status, &status_attr, NULL) || (status_attr.u.num != status_routing)) {
+		/* not yet initialized, not routing or still calculating */
+		dbg(lvl_debug, "no route or route not ready (nav=%p, status %d), exiting\n", nav, status_attr.u.num);
+
+		/* make sure the position's timestamp will be reset (see below) when starting a new route */
+		priv->position_set = 1;
+		return;
+	}
+#endif
+
+	gettimeofday(&tv_new, NULL);
+
+#if 0
+	/* TODO this should remain exclusive to vehicle_demo and run prior to calling location_extrapolate */
+	if (priv->position_set) {
+		/* The timespan since the last fix includes the calculation time for the route, which can cause
+		 * a huge leap at the start of a long/complex route. To avoid this, reset the timestamp.
+		 * Position updates will begin with the subsequent call to this function.
+		 */
+		location_set_fix_time(priv->location, &tv_new);
+		priv->position_set = 0;
+		return;
+	}
+#endif
+
+	/* calculate difference in 1/10 s, rounding microseconds */
+	timespan = (tv_new.tv_sec - tv_old.tv_sec) * 10 + (tv_new.tv_usec - tv_old.tv_usec + 50000) / 100000;
+	dbg(lvl_debug, "timespan=%d (%d.%d - %d.%d)\n", timespan, tv_new.tv_sec, tv_new.tv_usec, tv_old.tv_sec, tv_old.tv_usec);
+	if (timespan <= 0) {
+		dbg(lvl_error, "last location has an invalid timestamp, aborting\n");
+		return 0;
+	}
+	dbg(lvl_debug, "###### Entering simulation loop\n");
+	if (navit)
+		route = navit_get_route(navit);
+	if (route)
+		route_map = route_get_map(route);
+	if (route_map)
+		mr = map_rect_new(route_map, NULL);
+	if (mr)
+		item = map_rect_get_item(mr);
+	if (item) { /* TODO debug code */
+		if (item_coord_get(item, &c, 1))
+			transform_to_geo(projection_mg, &c, &geo);
+		else {
+			geo.lat = 360;
+			geo.lng = 360;
+		}
+		dbg(lvl_debug, "first item (%d, %d), type=%s, lat=%.6f, lng=%.6f\n", item->id_hi, item->id_lo, item_to_name(item->type), geo.lat, geo.lng);
+	} else
+		return 0;
+	if (item && item->type == type_route_start) {
+		dbg(lvl_debug, "discarding item (%d, %d), type=%s\n", item->id_hi, item->id_lo, item_to_name(item->type));
+		item = map_rect_get_item(mr);
+	}
+	while(item && item->type!=type_street_route) {
+		dbg(lvl_debug, "discarding item (%d, %d), type=%s\n", item->id_hi, item->id_lo, item_to_name(item->type));
+		item = map_rect_get_item(mr);
+	}
+	if (item && item_coord_get(item, &pos, 1)) {
+#if 0
+		/* FIXME this should remain somewhere in vehicle_demo_timer (e.g. after this function returns true) */
+		priv->position_set=0;
+#endif
+		dbg(lvl_debug, "current pos=0x%x,0x%x\n", pos.x, pos.y);
+#if 0
+		/* this code isn't strictly necessary and anyway it's buggy */
+		dbg(lvl_debug, "last pos=0x%x,0x%x\n", priv->last.x, priv->last.y);
+		if (priv->last.x == pos.x && priv->last.y == pos.y) {
+			dbg(lvl_warning, "endless loop\n");
+		}
+		priv->last = pos;
+#endif
+		while (item) {
+			if (!item_coord_get(item, &c, 1)) {
+				dbg(lvl_debug, "discarding item (%d, %d), type=%s (no coords)\n", item->id_hi, item->id_lo, item_to_name(item->type));
+				item = map_rect_get_item(mr);
+				continue;
+			}
+
+			/* debug code */
+			if (item_attr_get(item, attr_street_item, &sitem_attr))
+				sitem = sitem_attr.u.item;
+			else
+				sitem = NULL;
+			transform_to_geo(projection_mg, &c, &geo);
+			dbg(lvl_debug, "examining item (%d, %d), type=%s, sitem=%p, start at (lat=%.6f, lng=%.6f)\n", item->id_hi, item->id_lo, item_to_name(item->type), sitem, geo.lat, geo.lng);
+
+			if (!aspeed) {
+				/* if sim_speed is not fixed, determine sim_speed for the segment */
+				vehicle_speed = 0;
+				if (vp && (vp->maxspeed_handling != maxspeed_ignore)) {
+					if (item_attr_get(item, attr_street_item, &sitem_attr)) {
+						sitem = sitem_attr.u.item;
+						if (sitem) {
+							rp = vehicleprofile_get_roadprofile(vp, sitem->type);
+							if (rp)
+								vehicle_speed = rp->route_weight;
+						} else {
+							dbg(lvl_warning, "street item is NULL\n");
+						}
+					} else {
+						dbg(lvl_warning, "could not get street item\n");
+					}
+				}
+				if (item_attr_get(item, attr_maxspeed, &maxspeed_attr)) {
+					item_speed = maxspeed_attr.u.num;
+				} else
+					item_speed = 0;
+				if (!item_speed)
+					sim_speed = vehicle_speed;
+				else if (vp->maxspeed_handling == maxspeed_enforce)
+					sim_speed = item_speed;
+				else
+					sim_speed = (vehicle_speed < item_speed) ? vehicle_speed : item_speed;
+				if (!sim_speed)
+					sim_speed = OFFROAD_SPEED;
+				dbg(lvl_debug, "sim_speed=%.0f: %s, item_speed=%.0f, vehicle_speed=%.0f, vp=%p, rp=%p, vp->maxspeed_handling=%d\n",
+						sim_speed, sitem ? item_to_name(sitem->type) : "(none)", item_speed, vehicle_speed, vp, rp, vp?vp->maxspeed_handling:0);
+			}
+
+			dbg(lvl_debug, "next pos=0x%x,0x%x\n", c.x, c.y);
+			slen = transform_distance(projection_mg, &pos, &c);
+			stime = slen * 36 / sim_speed;
+			dbg(lvl_debug, "timespan=%d stime=%d slen=%d sim_speed=%.0f\n", timespan, stime, slen, sim_speed);
+			if (stime < timespan) {
+				timespan -= stime;
+				pos = c;
+			} else {
+				if (item_coord_get(item, &c2, 1) || map_rect_get_item(mr)) {
+					dx = c.x - pos.x;
+					dy = c.y - pos.y;
+
+					/* The following two actually use (len_traveled / slen) as a factor. Since we never
+					 * calculate len_traveled, we use (timespan / stime) instead, which is directly
+					 * proportional to the above. */
+					ci.x = pos.x + dx * timespan / stime;
+					ci.y = pos.y + dy * timespan / stime;
+
+					location_set_bearing(out,
+					    transform_get_angle_delta(&pos, &c, 0));
+					location_set_speed(out, sim_speed);
+				} else {
+					ci.x = pos.x;
+					ci.y = pos.y;
+					location_set_speed(out, 0);
+					dbg(lvl_debug,"destination reached\n");
+				}
+				transform_to_geo(projection_mg, &ci, &geo);
+				dbg(lvl_debug, "ci=0x%x,0x%x lat=%.6f lng=%.6f\n", ci.x, ci.y, geo.lat, geo.lng);
+				/* FIXME ensure we set all properties we know, and clear the rest */
+				location_set_position(out, &geo);
+				/* FIXME define different ways to set accuracy */
+				location_set_position_accuracy(out, DEMO_ACCURACY);
+				location_set_fix_time(out, &tv_new);
+				//if (location_get_validity(in) != attr_position_valid_valid) {
+					location_set_validity(out, attr_position_valid_valid);
+#if 0
+					/* FIXME this should be done in vehicle_demo after this function returns true */
+					callback_list_call_attr_0(priv->cbl, attr_position_valid);
+#endif
+				//}
+#if 0
+				/* FIXME this should be done in vehicle_demo after this function returns true */
+				callback_list_call_attr_0(priv->cbl, attr_position_coord_geo);
+#endif
+				break;
+			}
+		}
+	}
+	if (mr)
+		map_rect_destroy(mr);
+	return 1;
 }
 
 
