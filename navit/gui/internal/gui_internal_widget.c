@@ -320,11 +320,6 @@ static void gui_internal_box_render(struct gui_priv *this, struct widget *w)
 	GList *l;
 
 	gui_internal_background_render(this, w);
-#if 0
-	w->border=1;
-	w->foreground=this->foreground;
-#endif
-#if 1
 	if (w->foreground && w->border) {
 	struct point pnt[5];
 	pnt[0]=w->p;
@@ -339,13 +334,11 @@ static void gui_internal_box_render(struct gui_priv *this, struct widget *w)
 	graphics_draw_lines(this->gra, w->foreground, pnt, 5);
 	graphics_gc_set_linewidth(w->foreground, 1);
 	}
-#endif
 
 	l=w->children;
 	while (l) {
 		wc=l->data;
-		if (!(wc->state & STATE_OFFSCREEN))
-			gui_internal_widget_render(this, wc);
+		gui_internal_widget_render(this, wc);
 		l=g_list_next(l);
 	}
 	if (w->scroll_buttons) 
@@ -561,14 +554,6 @@ static void gui_internal_box_pack(struct gui_priv *this, struct widget *w)
 				wc->p.x=x-wc->w/2;
 			if (w->flags & gravity_right)
 				wc->p.x=x-wc->w;
-#if 0
-			if (w->flags & flags_scrolly)
-				dbg(lvl_debug,"%d - %d vs %d - %d\n",y,y+wc->h,w->p.y,w->p.y+w->h-hb);
-			if (y+wc->h > w->p.y+w->h-hb || y+wc->h < w->p.y)
-				wc->state |= STATE_OFFSCREEN;
-			else
-				wc->state &= ~STATE_OFFSCREEN;
-#endif
 			y+=wc->h+w->spy;
 			l=g_list_next(l);
 		}
@@ -834,6 +819,9 @@ gui_internal_scroll_buttons_init(struct gui_priv *this, struct widget *widget, s
 		 	gravity_center|orientation_horizontal, gui_internal_table_button_prev, widget);
 
 	sb->button_box=gui_internal_box_new(this, gravity_center|orientation_horizontal);
+	sb->button_box->background=this->background;
+	sb->prev_button->state &= ~STATE_SENSITIVE;
+	sb->next_button->state &= ~STATE_SENSITIVE;
 	gui_internal_widget_append(sb->button_box, sb->prev_button);
 	gui_internal_widget_append(sb->button_box, sb->next_button);
 
@@ -1237,7 +1225,7 @@ gui_internal_table_render(struct gui_priv * this, struct widget * w)
 	GList * cur_row = NULL;
 	GList * current_desc=NULL;
 	struct table_data * table_data = (struct table_data*)w->data;
-	int is_skipped=0;
+	int drawing_space_left=1;
 	int is_first_page=1;
 	struct table_column_desc * dim=NULL;
 
@@ -1258,6 +1246,28 @@ gui_internal_table_render(struct gui_priv * this, struct widget * w)
 	} else {
 		table_data->top_row=NULL;
 	}
+
+	/* First, let's deactivate all columns that are in rows which are *before*
+	 * our current page.
+	 * */
+	GList *row = w->children;
+	while (row != cur_row) {
+		struct widget * cur_row_widget = (struct widget*)row->data;
+		GList * cur_column=NULL;
+		if(cur_row_widget == table_data->scroll_buttons.button_box)
+		{
+			row = g_list_next(row);
+			continue;
+		}
+		for(cur_column = cur_row_widget->children; cur_column;
+		    cur_column=g_list_next(cur_column))
+		{
+			struct  widget * cur_widget = (struct widget*) cur_column->data;
+			cur_widget->state &= ~STATE_SENSITIVE;
+		}
+		row = g_list_next(row);
+	}
+
 	/*
 	 * Loop through each row.  Drawing each cell with the proper sizes,
 	 * at the proper positions.
@@ -1270,7 +1280,7 @@ gui_internal_table_render(struct gui_priv * this, struct widget * w)
 		current_desc = column_desc;
 		cur_row_widget = (struct widget*)cur_row->data;
 		x =w->p.x+this->spacing;
-		if(cur_row_widget == table_data->scroll_buttons.button_box )
+		if(cur_row_widget == table_data->scroll_buttons.button_box)
 		{
 			continue;
 		}
@@ -1281,11 +1291,7 @@ gui_internal_table_render(struct gui_priv * this, struct widget * w)
 
 		if( y + dim->height + bbox_height + this->spacing >= w->p.y + w->h )
 		{
-			/*
-			 * No more drawing space left.
-			 */
-			is_skipped=1;
-			break;
+			drawing_space_left=0;
 		}
 		for(cur_column = cur_row_widget->children; cur_column;
 		    cur_column=g_list_next(cur_column))
@@ -1293,36 +1299,49 @@ gui_internal_table_render(struct gui_priv * this, struct widget * w)
 			struct  widget * cur_widget = (struct widget*) cur_column->data;
 			dim = (struct table_column_desc*)current_desc->data;
 
-			cur_widget->p.x=x;
-			cur_widget->w=dim->width;
-			cur_widget->p.y=y;
-			cur_widget->h=dim->height;
-			x=x+cur_widget->w;
-			max_height = dim->height;
-			/* We pack the widget before rendering to ensure that the x and y
-			 * coordinates get pushed down.
-			 */
-			gui_internal_widget_pack(this,cur_widget);
-			gui_internal_widget_render(this,cur_widget);
-
-			if(dim->height > max_height)
-			{
+			if (drawing_space_left) {
+				cur_widget->p.x=x;
+				cur_widget->w=dim->width;
+				cur_widget->p.y=y;
+				cur_widget->h=dim->height;
+				x=x+cur_widget->w;
 				max_height = dim->height;
+				/* We pack the widget before rendering to ensure that the x and y
+				 * coordinates get pushed down.
+				 */
+				cur_widget->state |= STATE_SENSITIVE;
+				gui_internal_widget_pack(this,cur_widget);
+				gui_internal_widget_render(this,cur_widget);
+
+				if(dim->height > max_height)
+				{
+				    max_height = dim->height;
+				}
+			} else {
+				/* Deactivate contents that we don't have space for. */
+				cur_widget->state &= ~STATE_SENSITIVE;
 			}
 		}
-		
-		/* Row object should have its coordinates in actual
-		 * state to be able to pass mouse clicks to Column objects
-		 */
-		cur_row_widget->p.x=w->p.x;
-		cur_row_widget->w=w->w;
-		cur_row_widget->p.y=y;
-		cur_row_widget->h=max_height;
-		y = y + max_height;
-		table_data->bottom_row=cur_row;
-		current_desc = g_list_next(current_desc);
+
+		if (drawing_space_left) {
+			/* Row object should have its coordinates in actual
+			 * state to be able to pass mouse clicks to Column objects
+			 */
+			cur_row_widget->p.x=w->p.x;
+			cur_row_widget->w=w->w;
+			cur_row_widget->p.y=y;
+			cur_row_widget->h=max_height;
+			y = y + max_height;
+			table_data->bottom_row=cur_row;
+			current_desc = g_list_next(current_desc);
+		}
 	}
-	if(table_data->scroll_buttons.button_box && (is_skipped || !is_first_page) && !table_data->scroll_buttons.button_box_hide )
+
+	/* By default, hide all scroll buttons. */
+	table_data->scroll_buttons.next_button->state&= ~STATE_SENSITIVE;
+	table_data->scroll_buttons.prev_button->state&= ~STATE_SENSITIVE;
+
+	if(table_data->scroll_buttons.button_box && (!drawing_space_left || !is_first_page) && !table_data->scroll_buttons.button_box_hide )
 	{
 		table_data->scroll_buttons.button_box->p.y =w->p.y+w->h-table_data->scroll_buttons.button_box->h -
 			this->spacing;
@@ -1332,33 +1351,20 @@ gui_internal_table_render(struct gui_priv * this, struct widget * w)
 		}
 		table_data->scroll_buttons.button_box->p.x = w->p.x;
 		table_data->scroll_buttons.button_box->w = w->w;
-		//    table_data->button_box->h = w->h - y;
-		//    table_data->next_button->h=table_data->button_box->h;
-		//    table_data->prev_button->h=table_data->button_box->h;
-		//    table_data->next_button->c.y=table_data->button_box->c.y;
-		//    table_data->prev_button->c.y=table_data->button_box->c.y;
 		gui_internal_widget_pack(this,table_data->scroll_buttons.button_box);
 		if(table_data->scroll_buttons.next_button->p.y > w->p.y + w->h + table_data->scroll_buttons.next_button->h)
 		{
 			table_data->scroll_buttons.button_box->p.y = w->p.y + w->h -
 				table_data->scroll_buttons.button_box->h;
 		}
-		if(is_skipped)
+		if(!drawing_space_left)
 	        {
 			table_data->scroll_buttons.next_button->state|= STATE_SENSITIVE;
-		}
-		else
-		{
-			table_data->scroll_buttons.next_button->state&= ~STATE_SENSITIVE;
 		}
 
 		if(table_data->top_row != w->children)
 		{
 			table_data->scroll_buttons.prev_button->state|= STATE_SENSITIVE;
-		}
-		else
-		{
-			table_data->scroll_buttons.prev_button->state&= ~STATE_SENSITIVE;
 		}
 		gui_internal_widget_render(this,table_data->scroll_buttons.button_box);
 	}
