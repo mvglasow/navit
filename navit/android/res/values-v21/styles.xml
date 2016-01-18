@@ -8,6 +8,8 @@
     <style name="NavitBaseTheme" parent="android:Theme.Material">
 
         <!-- API 21 theme customizations can go here. -->
+        <item name="android:windowTranslucentNavigation">true</item>
+        <item name="android:windowTranslucentStatus">true</item>
         
         <!-- Main theme colors -->
         <!-- your app branding color for the app bar -->
