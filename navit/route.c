@@ -2005,18 +2005,17 @@ route_seg_speed(struct vehicleprofile *profile, struct route_segment_data *over,
 	int speed,maxspeed;
 	if (!roadprofile || !roadprofile->route_weight)
 		return 0;
-	/* maxspeed_handling: 0=always, 1 only if maxspeed restricts the speed, 2 never */
 	speed=roadprofile->route_weight;
-	if (profile->maxspeed_handling != 2) {
+	if (profile->maxspeed_handling != maxspeed_ignore) {
 		if (over->flags & AF_SPEED_LIMIT) {
 			maxspeed=RSD_MAXSPEED(over);
-			if (!profile->maxspeed_handling)
+			if (profile->maxspeed_handling == maxspeed_enforce)
 				speed=maxspeed;
 		} else
 			maxspeed=INT_MAX;
 		if (dist && maxspeed > dist->maxspeed)
 			maxspeed=dist->maxspeed;
-		if (maxspeed != INT_MAX && (profile->maxspeed_handling != 1 || maxspeed < speed))
+		if (maxspeed != INT_MAX && (profile->maxspeed_handling != maxspeed_restrict || maxspeed < speed))
 			speed=maxspeed;
 	}
 	if (over->flags & AF_DANGEROUS_GOODS) {
@@ -2832,11 +2831,12 @@ static void
 route_graph_clone_segment(struct route_graph *this, struct route_graph_segment *s, struct route_graph_point *start, struct route_graph_point *end, int flags)
 {
 	struct route_graph_segment_data data;
-	data.flags=s->data.flags|flags;
-	data.offset=1;
-	data.maxspeed=-1;
 	data.item=&s->data.item;
+	data.offset=1;
+	data.flags=s->data.flags|flags;
 	data.len=s->data.len+1;
+	data.maxspeed=-1;
+	data.dangerous_goods=0;
 	if (s->data.flags & AF_SPEED_LIMIT)
 		data.maxspeed=RSD_MAXSPEED(&s->data);
 	if (s->data.flags & AF_SEGMENTED) 

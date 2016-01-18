@@ -2041,22 +2041,22 @@ navit_init(struct navit *this_)
 	dbg(lvl_info,"enter gui %p graphics %p\n",this_->gui,this_->gra);
 
 	if (!this_->gui && !(this_->flags & 2)) {
-		dbg(lvl_error,"Warning: No GUI available.\n");
-		return;
+		dbg(lvl_error,"FATAL: No GUI available.\n");
+		exit(1);
 	}
 	if (!this_->gra && !(this_->flags & 1)) {
-		dbg(lvl_error,"Warning: No graphics subsystem available.\n");
-		return;
+		dbg(lvl_error,"FATAL: No graphics subsystem available.\n");
+		exit(1);
 	}
 	dbg(lvl_info,"Connecting gui to graphics\n");
 	if (this_->gui && this_->gra && gui_set_graphics(this_->gui, this_->gra)) {
 		struct attr attr_type_gui, attr_type_graphics;
 		gui_get_attr(this_->gui, attr_type, &attr_type_gui, NULL);
 		graphics_get_attr(this_->gra, attr_type, &attr_type_graphics, NULL);
-		dbg(lvl_error,"failed to connect graphics '%s' to gui '%s'\n", attr_type_graphics.u.str, attr_type_gui.u.str);
-		dbg(lvl_error," Please see http://wiki.navit-project.org/index.php/Failed_to_connect_graphics_to_gui\n");
-		dbg(lvl_error," for explanations and solutions\n");
-		return;
+		dbg(lvl_error,"FATAL: Failed to connect graphics '%s' to gui '%s'\n", attr_type_graphics.u.str, attr_type_gui.u.str);
+		dbg(lvl_error,"Please see http://wiki.navit-project.org/index.php/Failed_to_connect_graphics_to_gui "
+			"for explanations and solutions\n");
+		exit(1);
 	}
 	if (this_->speech && this_->navigation) {
 		struct attr speech;
@@ -2443,6 +2443,8 @@ navit_set_attr_do(struct navit *this_, struct attr *attr, int init)
 	active.type=attr_active;
 	active.u.num=0;
 
+	dbg(lvl_debug, "enter, this_=%p, attr=%p (%s), init=%d\n", this_, attr, attr_to_name(attr->type), init);
+
 	switch (attr->type) {
 	case attr_autozoom:
 		attr_updated=(this_->autozoom_secs != attr->u.num);
@@ -2635,7 +2637,8 @@ navit_set_attr_do(struct navit *this_, struct attr *attr, int init)
 		this_->waypoints_flag=!!attr->u.num;
 		break;
 	default:
-		return 0;
+		dbg(lvl_debug, "calling generic setter method for attribute type %s\n", attr_to_name(attr->type))
+		return navit_object_set_attr((struct navit_object *) this_, attr);
 	}
 	if (attr_updated && !init) {
 		callback_list_call_attr_2(this_->attr_cbl, attr->type, this_, attr);
@@ -2852,7 +2855,8 @@ navit_get_attr(struct navit *this_, enum attr_type type, struct attr *attr, stru
 		attr->u.num=this_->waypoints_flag;
 		break;
 	default:
-		return 0;
+		dbg(lvl_debug, "calling generic getter method for attribute type %s\n", attr_to_name(type))
+		return navit_object_get_attr((struct navit_object *) this_, type, attr, iter);
 	}
 	attr->type=type;
 	return ret;
