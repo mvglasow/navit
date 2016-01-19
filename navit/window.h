@@ -18,10 +18,25 @@
  */
 
 /**
+ * Describes areas at each edge of the application window which may be obstructed by the system UI.
+ *
+ * This allows the map to use all available space, including areas which may be obscured by system UI
+ * elements, while constraining other elements such as OSDs or UI controls to an area that is guaranteed
+ * to be visible as long as Navit is in the foreground.
+ */
+struct padding {
+	int left;
+	int top;
+	int right;
+	int bottom;
+};
+
+/**
  * Describes the Navit application window or equivalent.
  */
 struct window {
 	void *priv;                                    /**< Private data of the graphics implementation */
 	int (*fullscreen)(struct window *win, int on); /**< Method to toggle fullscreen mode */
 	void (*disable_suspend)(struct window *win);   /**< Method to disable suspend mode or screen savers */
+	struct padding padding;                       /**< Padding for UI controls around window edges */
 };
