@@ -25,6 +25,8 @@ import java.util.ArrayList;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
@@ -199,6 +201,45 @@ public class NavitGraphics
 			Log.e("Navit", "NavitGraphics -> onSizeChanged scaledDensity="
 					+ Navit.metrics.scaledDensity);
 			super.onSizeChanged(w, h, oldw, oldh);
+			
+			/*
+			 * Determine if and where the navigation bar is going to be shown, and calculate insets
+			 * for objects which should not be obstructed.
+			 * Calls in this block are supported on API13+ but we only need the functionality on API17+.
+			 */
+			if (Build.VERSION.SDK_INT >= 17) {
+				/*
+				 * Determine visibility of navigation bar.
+				 * This logic is based on the presence of a hardware menu button and is known to work on
+				 * devices which allow switching between hw and sw buttons (OnePlus One running CyanogenMod).
+				 */
+				Boolean isNavShowing = !ViewConfiguration.get(activity.getApplication()).hasPermanentMenuKey();
+				Log.d("NavitGraphics", String.format("isNavShowing=%b", isNavShowing));
+
+				/*
+				 * Determine where the navigation bar would be displayed.
+				 * Logic is taken from AOSP RenderSessionImpl.findNavigationBar()
+				 * (platform/frameworks/base/tools/layoutlib/bridge/src/com/android/layoutlib/bridge/impl/RenderSessionImpl.java)
+				 */
+				Boolean isLandscape = (activity.getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE);
+				Boolean isNavAtBottom = (!isLandscape) || (activity.getResources().getConfiguration().smallestScreenWidthDp >= 600);
+				Log.d("NavitGraphics", String.format("isNavAtBottom=%b (Configuration.smallestScreenWidthDp=%d, isLandscape=%b)", 
+						isNavAtBottom, activity.getResources().getConfiguration().smallestScreenWidthDp, isLandscape));
+				
+				if (isNavShowing) {
+					Navit.insetLeft = 0;
+					Navit.insetTop = Navit.status_bar_height;
+					Navit.insetRight = isNavAtBottom ? 0 : Navit.navigation_bar_width;
+					Navit.insetBottom = (!isNavAtBottom) ? 0 : isLandscape ? Navit.navigation_bar_height_landscape : Navit.navigation_bar_height;
+				} else {
+					Navit.insetLeft = 0;
+					Navit.insetTop = 0;
+					Navit.insetRight = 0;
+					Navit.insetBottom = 0;
+				}
+				Log.d("NavitGraphics", String.format("Insets: left=%d top=%d right=%d bottom=%d", Navit.insetLeft, Navit.insetTop, Navit.insetRight, Navit.insetBottom));
+			}
+
 			draw_bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
 			draw_canvas = new Canvas(draw_bitmap);
 			bitmap_w = w;
@@ -802,6 +843,10 @@ public class NavitGraphics
 	 * this method will always return {@code true}, as these Android versions relied on devices having a physical
 	 * Menu button. On API levels 11 through 13 (Honeycomb releases), this method will always return
 	 * {@code false}, as Honeycomb was a tablet-only release and did not require devices to have a Menu button.
+	 * 
+	 * Note that this method is not aware of non-standard mechanisms on some customized builds of Android. For
+	 * example, CyanogenMod has an option to add a menu button to the navigation bar. Even with that option,
+	 * this method will still return `false`.
 	 */
 	public boolean hasMenuButton() {
 		if (Build.VERSION.SDK_INT <= 10)
