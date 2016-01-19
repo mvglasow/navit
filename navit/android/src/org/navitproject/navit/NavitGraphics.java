@@ -226,18 +226,14 @@ public class NavitGraphics
 				Log.d("NavitGraphics", String.format("isNavAtBottom=%b (Configuration.smallestScreenWidthDp=%d, isLandscape=%b)", 
 						isNavAtBottom, activity.getResources().getConfiguration().smallestScreenWidthDp, isLandscape));
 				
-				if (isNavShowing) {
-					Navit.insetLeft = 0;
-					Navit.insetTop = Navit.status_bar_height;
-					Navit.insetRight = isNavAtBottom ? 0 : Navit.navigation_bar_width;
-					Navit.insetBottom = (!isNavAtBottom) ? 0 : isLandscape ? Navit.navigation_bar_height_landscape : Navit.navigation_bar_height;
-				} else {
-					Navit.insetLeft = 0;
-					Navit.insetTop = 0;
-					Navit.insetRight = 0;
-					Navit.insetBottom = 0;
-				}
-				Log.d("NavitGraphics", String.format("Insets: left=%d top=%d right=%d bottom=%d", Navit.insetLeft, Navit.insetTop, Navit.insetRight, Navit.insetBottom));
+				if (isNavShowing)
+					PaddingChangedCallback(PaddingChangedCallbackID, 
+							0,                                              // left
+							Navit.status_bar_height,                        // top
+							isNavAtBottom ? 0 : Navit.navigation_bar_width, // right
+							(!isNavAtBottom) ? 0 : isLandscape ? Navit.navigation_bar_height_landscape : Navit.navigation_bar_height);
+				else
+					PaddingChangedCallback(PaddingChangedCallbackID, 0, 0, 0, 0);
 			}
 
 			draw_bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
@@ -824,6 +820,7 @@ public class NavitGraphics
 		};
 
 	public native void SizeChangedCallback(int id, int x, int y);
+	public native void PaddingChangedCallback(int id, int left, int right, int top, int bottom);
 	public native void KeypressCallback(int id, String s);
 	public native int CallbackMessageChannel(int i, String s);
 	public native void ButtonCallback(int id, int pressed, int button, int x, int y);
@@ -832,7 +829,7 @@ public class NavitGraphics
 	public static native String[][] GetAllCountries();
 	private Canvas	draw_canvas;
 	private Bitmap	draw_bitmap;
-	private int		SizeChangedCallbackID, ButtonCallbackID, MotionCallbackID, KeypressCallbackID;
+	private int		SizeChangedCallbackID, PaddingChangedCallbackID, ButtonCallbackID, MotionCallbackID, KeypressCallbackID;
 	// private int count;
 
 	/**
@@ -860,6 +857,10 @@ public class NavitGraphics
 	public void setSizeChangedCallback(int id)
 	{
 		SizeChangedCallbackID = id;
+	}
+	public void setPaddingChangedCallback(int id)
+	{
+		PaddingChangedCallbackID = id;
 	}
 	public void setButtonCallback(int id)
 	{

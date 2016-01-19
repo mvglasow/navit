@@ -84,10 +84,6 @@ public class Navit extends Activity
 	public static int                navigation_bar_height          = 0;
 	public static int                navigation_bar_height_landscape= 0;
 	public static int                navigation_bar_width           = 0;
-	public static int                insetLeft                      = 0;
-	public static int                insetTop                       = 0;
-	public static int                insetRight                     = 0;
-	public static int                insetBottom                    = 0;
 	public static Boolean            show_soft_keyboard             = false;
 	public static Boolean            show_soft_keyboard_now_showing = false;
 	public static long               last_pressed_menu_key          = 0L;
