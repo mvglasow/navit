@@ -207,6 +207,8 @@ public class NavitGraphics
 			 * for objects which should not be obstructed.
 			 * Calls in this block are supported on API13+ but we only need the functionality on API17+.
 			 */
+			// FIXME this code will not fire when toggling fullscreen mode
+			// FIXME this code will produce incorrect results in fullscreen mode
 			if (Build.VERSION.SDK_INT >= 17) {
 				/*
 				 * Determine visibility of navigation bar.
