@@ -172,11 +172,13 @@ osd_std_resize(struct osd_item *item)
  * object width (height) is not changed here, for button and image osds it means
  * to derive values from the underlying image.
  *
- * Screen width and height are given in pixels. This method will subtract the padding (if any) from
- * these values to obtain the equivalent of 100% in each dimension.
+ * This method considers padding if the graphics plugin supports it (i.e. its `get_data` method returns
+ * a valid pointer if `"padding"` is supplied as its arument): It will offset the origin of the item by
+ * the amount of padding in the left and top edges, and will reduce `w` and `h` by the total amount of
+ * padding in the respective dimension to obtain the equivalent of 100%.
  *
- * If padding is specified, this method will also offset the origin by the amount of padding along the
- * left and top edges.
+ * If the graphics driver does not support padding, none of these corrections take place (this is
+ * equivalent to 0 padding on all sides).
  *
  * @param item The item whose size and position are to be calculated
  * @param w Available screen width in pixels
@@ -185,9 +187,20 @@ osd_std_resize(struct osd_item *item)
 void
 osd_std_calculate_sizes(struct osd_item *item, int w, int h)
 {
+	struct padding *padding = NULL;
+
+	if (item->gr) {
+		padding = graphics_get_data(item->gr, "padding");
+		dbg(lvl_debug, "Got padding=%p for item=%p: left=%d top=%d right=%d bottom=%d\n",
+				padding, item, padding->left, padding->top, padding->right, padding->bottom);
+	} else
+		dbg(lvl_warning, "cannot get padding for item=%p: item->gr is NULL\n", item);
+
 	/* reduce w and h by total padding in the respective dimension */
-	// FIXME crude test code
-	h -= 219;
+	if (padding) {
+		w -= (padding->left + padding->right);
+		h -= (padding->top + padding->bottom);
+	}
 
 	if(item->rel_w!=ATTR_REL_RELSHIFT)
 		item->w=attr_rel2real(item->rel_w, w, 1);
@@ -201,8 +214,10 @@ osd_std_calculate_sizes(struct osd_item *item, int w, int h)
 	item->p.y=attr_rel2real(item->rel_y, h, 1);
 
 	/* add left and top padding to item->p */
-	// FIXME crude test code
-	item->p.y += 75;
+	if (padding) {
+		item->p.x += padding->left;
+		item->p.y += padding->top;
+	}
 }
 
 /**
