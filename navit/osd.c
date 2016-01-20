@@ -171,15 +171,24 @@ osd_std_resize(struct osd_item *item)
  * or relative height is set to 0% (int value is equal to ATTR_REL_RELSHIFT), 
  * object width (height) is not changed here, for button and image osds it means
  * to derive values from the underlying image.
- * @param item
- * @param w Available screen width in pixels (the width that corresponds to
- * 100%)
- * @param h Available screen height in pixels (the height that corresponds to
- * 100%)
+ *
+ * Screen width and height are given in pixels. This method will subtract the padding (if any) from
+ * these values to obtain the equivalent of 100% in each dimension.
+ *
+ * If padding is specified, this method will also offset the origin by the amount of padding along the
+ * left and top edges.
+ *
+ * @param item The item whose size and position are to be calculated
+ * @param w Available screen width in pixels
+ * @param h Available screen height in pixels
  */
 void
 osd_std_calculate_sizes(struct osd_item *item, int w, int h)
 {
+	/* reduce w and h by total padding in the respective dimension */
+	// FIXME crude test code
+	h -= 219;
+
 	if(item->rel_w!=ATTR_REL_RELSHIFT)
 		item->w=attr_rel2real(item->rel_w, w, 1);
 	if(item->w<0)
@@ -190,6 +199,10 @@ osd_std_calculate_sizes(struct osd_item *item, int w, int h)
 		item->h=0;
 	item->p.x=attr_rel2real(item->rel_x, w, 1);
 	item->p.y=attr_rel2real(item->rel_y, h, 1);
+
+	/* add left and top padding to item->p */
+	// FIXME crude test code
+	item->p.y += 75;
 }
 
 /**
