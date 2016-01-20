@@ -675,10 +675,6 @@ graphics_cocoa_new(struct navit *nav, struct graphics_methods *meth, struct attr
 		return NULL;
 	ret=g_new0(struct graphics_priv, 1);
 	ret->cbl=cbl;
-	ret->win.padding.left = 0;
-	ret->win.padding.top = 0;
-	ret->win.padding.right = 0;
-	ret->win.padding.bottom = 0;
 	global_graphics_cocoa=ret;
 	return ret;
 }
