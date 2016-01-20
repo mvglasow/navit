@@ -207,7 +207,7 @@ public class NavitGraphics
 				navit = (Navit) activity;
 				navit.refreshPadding();
 			} else
-				Log.wtf("NavitGraphics", "Main Activity is not a Navit instance, cannot update padding");
+				Log.e("NavitGraphics", "Main Activity is not a Navit instance, cannot update padding");
 
 			draw_bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
 			draw_canvas = new Canvas(draw_bitmap);
