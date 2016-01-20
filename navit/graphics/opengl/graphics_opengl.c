@@ -1333,6 +1333,10 @@ get_data(struct graphics_priv *this, const char *type)
 		win->priv = this;
 		win->fullscreen = graphics_opengl_fullscreen;
 		win->disable_suspend = graphics_opengl_disable_suspend;
+		win->padding.left = 0;
+		win->padding.top = 0;
+		win->padding.right = 0;
+		win->padding.bottom = 0;
 		return win;
 	} else {
 #ifdef USE_OPENGLES

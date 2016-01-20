@@ -193,6 +193,10 @@ get_data(struct graphics_priv *this, char const *type)
 		win->priv = this;
 		win->fullscreen = graphics_null_fullscreen;
 		win->disable_suspend = graphics_null_disable_suspend;
+		win->padding.left = 0;
+		win->padding.top = 0;
+		win->padding.right = 0;
+		win->padding.bottom = 0;
 		resize_callback(1,1);
 		return win;
 	}

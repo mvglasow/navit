@@ -994,6 +994,10 @@ static void * get_data(struct graphics_priv *this_, const char *type)
 
         this_->window.fullscreen = fullscreen;
         this_->window.disable_suspend = disable_suspend;
+        this_->window.padding.left = 0;
+        this_->window.padding.top = 0;
+        this_->window.padding.right = 0;
+        this_->window.padding.bottom = 0;
 
         this_->window.priv=g_new0(struct window_priv, 1);
 

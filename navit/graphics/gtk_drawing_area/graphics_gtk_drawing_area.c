@@ -1121,6 +1121,10 @@ graphics_gtk_drawing_area_new(struct navit *nav, struct graphics_methods *meth, 
 	else
 		this->window_title=g_strdup("Navit");
 	this->cbl=cbl;
+	this->window.padding.left = 0;
+	this->window.padding.top = 0;
+	this->window.padding.right = 0;
+	this->window.padding.bottom = 0;
 	gtk_widget_set_events(draw, GDK_BUTTON_PRESS_MASK|GDK_BUTTON_RELEASE_MASK|GDK_POINTER_MOTION_MASK|GDK_KEY_PRESS_MASK);
 	g_signal_connect(G_OBJECT(draw), "expose_event", G_CALLBACK(expose), this);
         g_signal_connect(G_OBJECT(draw), "configure_event", G_CALLBACK(configure), this);
