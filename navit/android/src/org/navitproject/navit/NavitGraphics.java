@@ -202,41 +202,12 @@ public class NavitGraphics
 					+ Navit.metrics.scaledDensity);
 			super.onSizeChanged(w, h, oldw, oldh);
 			
-			/*
-			 * Determine if and where the navigation bar is going to be shown, and calculate insets
-			 * for objects which should not be obstructed.
-			 * Calls in this block are supported on API13+ but we only need the functionality on API17+.
-			 */
-			// FIXME this code will not fire when toggling fullscreen mode
-			// FIXME this code will produce incorrect results in fullscreen mode
-			if (Build.VERSION.SDK_INT >= 17) {
-				/*
-				 * Determine visibility of navigation bar.
-				 * This logic is based on the presence of a hardware menu button and is known to work on
-				 * devices which allow switching between hw and sw buttons (OnePlus One running CyanogenMod).
-				 */
-				Boolean isNavShowing = !ViewConfiguration.get(activity.getApplication()).hasPermanentMenuKey();
-				Log.d("NavitGraphics", String.format("isNavShowing=%b", isNavShowing));
-
-				/*
-				 * Determine where the navigation bar would be displayed.
-				 * Logic is taken from AOSP RenderSessionImpl.findNavigationBar()
-				 * (platform/frameworks/base/tools/layoutlib/bridge/src/com/android/layoutlib/bridge/impl/RenderSessionImpl.java)
-				 */
-				Boolean isLandscape = (activity.getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE);
-				Boolean isNavAtBottom = (!isLandscape) || (activity.getResources().getConfiguration().smallestScreenWidthDp >= 600);
-				Log.d("NavitGraphics", String.format("isNavAtBottom=%b (Configuration.smallestScreenWidthDp=%d, isLandscape=%b)", 
-						isNavAtBottom, activity.getResources().getConfiguration().smallestScreenWidthDp, isLandscape));
-				
-				if (isNavShowing)
-					PaddingChangedCallback(PaddingChangedCallbackID, 
-							0,                                              // left
-							Navit.status_bar_height,                        // top
-							isNavAtBottom ? 0 : Navit.navigation_bar_width, // right
-							(!isNavAtBottom) ? 0 : isLandscape ? Navit.navigation_bar_height_landscape : Navit.navigation_bar_height);
-				else
-					PaddingChangedCallback(PaddingChangedCallbackID, 0, 0, 0, 0);
-			}
+			Navit navit = null;
+			if (activity instanceof Navit) {
+				navit = (Navit) activity;
+				navit.refreshPadding();
+			} else
+				Log.wtf("NavitGraphics", "Main Activity is not a Navit instance, cannot update padding");
 
 			draw_bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
 			draw_canvas = new Canvas(draw_bitmap);
@@ -863,6 +834,7 @@ public class NavitGraphics
 	public void setPaddingChangedCallback(int id)
 	{
 		PaddingChangedCallbackID = id;
+		Navit.setPaddingChangedCallback(id, this);
 	}
 	public void setButtonCallback(int id)
 	{
