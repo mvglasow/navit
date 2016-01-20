@@ -871,10 +871,6 @@ get_data(struct graphics_priv *this, char const *type)
 	win->priv=this;
 	win->fullscreen=window_fullscreen;
 	win->disable_suspend=NULL;
-	win->padding.left = 0;
-	win->padding.top = 0;
-	win->padding.right = 0;
-	win->padding.bottom = 0;
 	return win;
     } else {
 	return NULL;

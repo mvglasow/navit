@@ -867,10 +867,6 @@ graphics_gd_new(struct navit *nav, struct graphics_methods *meth, struct attr **
 	ret->nav=nav;
 	ret->w=800;
 	ret->h=600;
-	ret->window.padding.left = 0;
-	ret->window.padding.top = 0;
-	ret->window.padding.right = 0;
-	ret->window.padding.bottom = 0;
 	while (*attrs) {
 		set_attr_do(ret, *attrs, 1);
 		attrs++;
