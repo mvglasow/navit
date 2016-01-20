@@ -819,6 +819,10 @@ graphics_android_new(struct navit *nav, struct graphics_methods *meth, struct at
 	ret->win.priv=ret;
 	ret->win.fullscreen=graphics_android_fullscreen;
 	ret->win.disable_suspend=graphics_android_disable_suspend;
+	ret->win.padding.left = 0;
+	ret->win.padding.top = 0;
+	ret->win.padding.right = 0;
+	ret->win.padding.bottom = 0;
 	if ((attr=attr_search(attrs, NULL, attr_use_camera))) {
 		use_camera=attr->u.num;
 	}
