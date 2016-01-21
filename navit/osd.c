@@ -189,10 +189,12 @@ osd_std_calculate_sizes(struct osd_item *item, int w, int h)
 {
 	struct padding *padding = NULL;
 
+	dbg(lvl_debug, "enter\n");
+
 	if (item->gr) {
 		padding = graphics_get_data(item->gr, "padding");
-		dbg(lvl_debug, "Got padding=%p for item=%p (item->gr=%p): left=%d top=%d right=%d bottom=%d\n",
-				padding, item, item->gr, padding->left, padding->top, padding->right, padding->bottom);
+		dbg(lvl_debug, "Got padding=%p for item=%p (at %d, %d, item->gr=%p): left=%d top=%d right=%d bottom=%d\n",
+				padding, item, item->p.x, item->p.y, item->gr, padding->left, padding->top, padding->right, padding->bottom);
 	} else
 		dbg(lvl_warning, "cannot get padding for item=%p: item->gr is NULL\n", item);
 
@@ -201,6 +203,8 @@ osd_std_calculate_sizes(struct osd_item *item, int w, int h)
 		w -= (padding->left + padding->right);
 		h -= (padding->top + padding->bottom);
 	}
+
+	dbg(lvl_debug, "corrected w and h\n");
 
 	if(item->rel_w!=ATTR_REL_RELSHIFT)
 		item->w=attr_rel2real(item->rel_w, w, 1);
@@ -213,11 +217,15 @@ osd_std_calculate_sizes(struct osd_item *item, int w, int h)
 	item->p.x=attr_rel2real(item->rel_x, w, 1);
 	item->p.y=attr_rel2real(item->rel_y, h, 1);
 
+	dbg(lvl_debug, "got raw sizes\n");
+
 	/* add left and top padding to item->p */
 	if (padding) {
 		item->p.x += padding->left;
 		item->p.y += padding->top;
 	}
+
+	dbg(lvl_debug, "shifted origin, done\n");
 }
 
 /**
@@ -438,9 +446,13 @@ osd_set_std_graphic(struct navit *nav, struct osd_item *item, struct osd_priv *p
 {
 	struct graphics *navit_gr;
 
+	dbg(lvl_error, "enter\n");
+
 	navit_gr = navit_get_graphics(nav);
-	osd_std_calculate_sizes(item, navit_get_width(nav), navit_get_height(nav));
 	item->gr = graphics_overlay_new(navit_gr, &item->p, item->w, item->h, 1);
+	dbg(lvl_error, "created new overlay\n");
+	osd_std_calculate_sizes(item, navit_get_width(nav), navit_get_height(nav));
+	dbg(lvl_error, "got sizes\n");
 
 	item->graphic_bg = graphics_gc_new(item->gr);
 	graphics_gc_set_foreground(item->graphic_bg, &item->color_bg);
