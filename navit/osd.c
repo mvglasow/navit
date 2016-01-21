@@ -437,9 +437,30 @@ void
 osd_set_std_graphic(struct navit *nav, struct osd_item *item, struct osd_priv *priv)
 {
 	struct graphics *navit_gr;
+	int w, h;
+	struct padding *padding = NULL;
 
 	navit_gr = navit_get_graphics(nav);
-	osd_std_calculate_sizes(item, navit_get_width(nav), navit_get_height(nav));
+	w = navit_get_width(nav);
+	h = navit_get_height(nav);
+
+	padding = graphics_get_data(navit_gr, "padding");
+
+	if (padding) {
+		dbg(lvl_error, "Got padding=%p for item=%p: left=%d top=%d right=%d bottom=%d\n",
+				padding, item, padding->left, padding->top, padding->right, padding->bottom);
+		w -= (padding->left + padding->right);
+		h -= (padding->top + padding->bottom);
+	} else
+		dbg(lvl_error, "Padding is NULL\n");
+
+	osd_std_calculate_sizes(item, w, h);
+
+	if (padding) {
+		item->p.x += padding->left;
+		item->p.y += padding->top;
+	}
+
 	item->gr = graphics_overlay_new(navit_gr, &item->p, item->w, item->h, 1);
 
 	item->graphic_bg = graphics_gc_new(item->gr);
