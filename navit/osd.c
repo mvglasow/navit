@@ -191,8 +191,8 @@ osd_std_calculate_sizes(struct osd_item *item, int w, int h)
 
 	if (item->gr) {
 		padding = graphics_get_data(item->gr, "padding");
-		dbg(lvl_debug, "Got padding=%p for item=%p: left=%d top=%d right=%d bottom=%d\n",
-				padding, item, padding->left, padding->top, padding->right, padding->bottom);
+		dbg(lvl_debug, "Got padding=%p for item=%p (item->gr=%p): left=%d top=%d right=%d bottom=%d\n",
+				padding, item, item->gr, padding->left, padding->top, padding->right, padding->bottom);
 	} else
 		dbg(lvl_warning, "cannot get padding for item=%p: item->gr is NULL\n", item);
 
