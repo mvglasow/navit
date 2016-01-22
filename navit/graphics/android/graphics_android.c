@@ -499,6 +499,7 @@ static void
 resize_callback(struct graphics_priv *gra, int w, int h)
 {
 	dbg(lvl_debug,"w=%d h=%d ok\n",w,h);
+	dbg(lvl_debug,"gra=%p, %d callbacks in list\n", gra, g_list_length(gra->cbl));
 	 callback_list_call_attr_2(gra->cbl, attr_resize, (void *)w, (void *)h);
 }
 
