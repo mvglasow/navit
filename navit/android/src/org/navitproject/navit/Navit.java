@@ -111,7 +111,7 @@ public class Navit extends Activity
 	static final String              NAVIT_DATA_SHARE_DIR           = NAVIT_DATA_DIR + "/share";
 	static final String              FIRST_STARTUP_FILE             = NAVIT_DATA_SHARE_DIR + "/has_run_once.txt";
 	public static final String       NAVIT_PREFS                    = "NavitPrefs";
-	private Boolean                  isFullscreen                   = false;
+	Boolean                          isFullscreen                   = false;
 
 	public void removeFileIfExists(String source) {
 		File file = new File(source);
@@ -635,56 +635,6 @@ public class Navit extends Activity
 		}
 	}
 	
-	/**
-	 * @brief Refreshes padding
-	 * 
-	 * This method is called when the Activity is resized or when toggling Fullscreen mode.
-	 * 
-	 * It determines if and where the navigation bar is going to be shown, and calculates the padding
-	 * for objects which should not be obstructed.
-	 */
-	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-	public void refreshPadding() {
-		/*
-		 * The code would work on API14+ but is meaningful only on API17+
-		 */
-		if (Build.VERSION.SDK_INT < 17)
-			return;
-		
-		/*
-		 * Determine visibility of status bar.
-		 * The status bar is always visible unless we are in fullscreen mode.
-		 */
-		Boolean isStatusShowing = !isFullscreen;
-		
-		/*
-		 * Determine visibility of navigation bar.
-		 * This logic is based on the presence of a hardware menu button and is known to work on
-		 * devices which allow switching between hw and sw buttons (OnePlus One running CyanogenMod).
-		 */
-		Boolean isNavShowing = !ViewConfiguration.get(getApplication()).hasPermanentMenuKey();
-		
-		Log.d(TAG, String.format("isStatusShowing=%b isNavShowing=%b", isStatusShowing, isNavShowing));
-
-		/*
-		 * Determine where the navigation bar would be displayed.
-		 * Logic is taken from AOSP RenderSessionImpl.findNavigationBar()
-		 * (platform/frameworks/base/tools/layoutlib/bridge/src/com/android/layoutlib/bridge/impl/RenderSessionImpl.java)
-		 */
-		Boolean isLandscape = (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE);
-		Boolean isNavAtBottom = (!isLandscape) || (getResources().getConfiguration().smallestScreenWidthDp >= 600);
-		Log.d(TAG, String.format("isNavAtBottom=%b (Configuration.smallestScreenWidthDp=%d, isLandscape=%b)", 
-				isNavAtBottom, getResources().getConfiguration().smallestScreenWidthDp, isLandscape));
-		
-		int left = 0;
-		int top = isStatusShowing ? Navit.status_bar_height : 0;
-		int right = (isNavShowing && !isNavAtBottom) ? Navit.navigation_bar_width : 0;
-		int bottom = (!(isNavShowing && isNavAtBottom)) ? 0 : isLandscape ? Navit.navigation_bar_height_landscape : Navit.navigation_bar_height;
-		
-		Log.d(TAG, String.format("Padding left=%d top=%d right=%d bottom=%d", left, top, right, bottom));
-
-		N_NavitGraphics.PaddingChangedCallback(N_PaddingChangedCallbackID, left, top, right, bottom);
-	}
 	
 	/**
 	 * @brief Shows the Options menu.
