@@ -527,8 +527,6 @@ public class Navit extends Activity
 
 	// define callback id here
 	public static NavitGraphics N_NavitGraphics = null;
-	// pointers to graphics instances for use with the respective callbacks
-	public static int N_PaddingChangedCallbackID;
 
 	// callback id gets set here when called from NavitGraphics
 	public static void setKeypressCallback(int kp_cb_id, NavitGraphics ng)
@@ -544,14 +542,6 @@ public class Navit extends Activity
 		//Log.e("Navit", "setKeypressCallback -> id2=" + mo_cb_id);
 		//Log.e("Navit", "setKeypressCallback -> ng=" + String.valueOf(ng));
 		//N_MotionCallbackID = mo_cb_id;
-		N_NavitGraphics = ng;
-	}
-
-	public static void setPaddingChangedCallback(int pc_cb_id, NavitGraphics ng)
-	{
-		//Log.e("Navit", "setKeypressCallback -> id2=" + mo_cb_id);
-		//Log.e("Navit", "setKeypressCallback -> ng=" + String.valueOf(ng));
-		N_PaddingChangedCallbackID = pc_cb_id;
 		N_NavitGraphics = ng;
 	}
 

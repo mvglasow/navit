@@ -889,7 +889,6 @@ public class NavitGraphics
 	public void setPaddingChangedCallback(int id)
 	{
 		PaddingChangedCallbackID = id;
-		Navit.setPaddingChangedCallback(id, this);
 	}
 	public void setButtonCallback(int id)
 	{
