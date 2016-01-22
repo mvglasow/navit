@@ -30,6 +30,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.ActivityManager.TaskDescription;
@@ -50,6 +51,7 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.Point;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
@@ -525,6 +527,7 @@ public class Navit extends Activity
 
 	// define callback id here
 	public static NavitGraphics N_NavitGraphics = null;
+	// pointers to graphics instances for use with the respective callbacks
 	public static int N_PaddingChangedCallbackID;
 
 	// callback id gets set here when called from NavitGraphics
@@ -793,6 +796,8 @@ public class Navit extends Activity
 	}
 	
 	public void fullscreen(int fullscreen) {
+		int w, h;
+		
 		isFullscreen = (fullscreen != 0);
 		if (isFullscreen) {
 			getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
@@ -802,7 +807,19 @@ public class Navit extends Activity
 			getWindow().addFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
 			getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
 		}
-		refreshPadding();
+		
+		Display display_ = getWindowManager().getDefaultDisplay();
+		if (Build.VERSION.SDK_INT < 17) {
+			w = display_.getWidth();
+			h = display_.getHeight();
+		} else {
+			Point size = new Point();
+			display_.getRealSize(size);
+			w = size.x;
+			h = size.y;
+		}
+		Log.d(TAG, String.format("Toggle fullscreen, w=%d, h=%d", w, h));
+		N_NavitGraphics.handleResize(w, h);
 	}
 
 	public void disableSuspend()

@@ -202,18 +202,7 @@ public class NavitGraphics
 					+ Navit.metrics.scaledDensity);
 			super.onSizeChanged(w, h, oldw, oldh);
 			
-			Navit navit = null;
-			if (activity instanceof Navit) {
-				navit = (Navit) activity;
-				navit.refreshPadding();
-			} else
-				Log.e("NavitGraphics", "Main Activity is not a Navit instance, cannot update padding");
-
-			draw_bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
-			draw_canvas = new Canvas(draw_bitmap);
-			bitmap_w = w;
-			bitmap_h = h;
-			SizeChangedCallback(SizeChangedCallbackID, w, h);
+			handleResize(w, h);
 		}
 
 		public void do_longpress_action()
@@ -804,6 +793,26 @@ public class NavitGraphics
 	private Bitmap	draw_bitmap;
 	private int		SizeChangedCallbackID, PaddingChangedCallbackID, ButtonCallbackID, MotionCallbackID, KeypressCallbackID;
 	// private int count;
+	
+	public void handleResize(int w, int h) {
+		if (this.parent_graphics != null)
+			this.parent_graphics.handleResize(w, h);
+		else {
+			Log.d("NavitGraphics", String.format("handleResize w=%d h=%d", w, h));
+			Navit navit = null;
+			if (activity instanceof Navit) {
+				navit = (Navit) activity;
+				navit.refreshPadding();
+			} else
+				Log.e("NavitGraphics", "Main Activity is not a Navit instance, cannot update padding");
+
+			draw_bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+			draw_canvas = new Canvas(draw_bitmap);
+			bitmap_w = w;
+			bitmap_h = h;
+			SizeChangedCallback(SizeChangedCallbackID, w, h);
+		}
+	}
 
 	/**
 	 * @brief Returns whether the device has a hardware menu button.
