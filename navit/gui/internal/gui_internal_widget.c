@@ -22,7 +22,7 @@ gui_internal_background_render(struct gui_priv *this, struct widget *w)
 		dbg(lvl_error, "...for root widget\n");
 	} else if (!w->parent) {
 		dbg(lvl_error, "...for a widget with no parent\n");
-	} else if ((w->p.x == this->root.p.x) && (w->p.y == this->root.p.y) && (w->w == this->root.w) && (w->h = this->root.h)) {
+	} else if ((w->p.x == this->root.p.x) && (w->p.y == this->root.p.y) && (w->w == this->root.w) && (w->h == this->root.h)) {
 		dbg(lvl_error, "...for a widget taking up all the space\n");
 	}
 	if (w->state & STATE_HIGHLIGHTED)
@@ -332,7 +332,7 @@ static void gui_internal_box_render(struct gui_priv *this, struct widget *w)
 		dbg(lvl_error, "...for root widget\n");
 	} else if (!w->parent) {
 		dbg(lvl_error, "...for a widget with no parent\n");
-	} else if ((w->p.x == this->root.p.x) && (w->p.y == this->root.p.y) && (w->w == this->root.w) && (w->h = this->root.h)) {
+	} else if ((w->p.x == this->root.p.x) && (w->p.y == this->root.p.y) && (w->w == this->root.w) && (w->h == this->root.h)) {
 		dbg(lvl_error, "...for a widget taking up all the space\n");
 	}
 
