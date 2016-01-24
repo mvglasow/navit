@@ -17,7 +17,6 @@ static void
 gui_internal_background_render(struct gui_priv *this, struct widget *w)
 {
 	struct point pnt=w->p;
-#if 0
 	dbg(lvl_error, "enter\n");
 	if (w == &this->root) {
 		dbg(lvl_error, "...for root widget\n");
@@ -26,7 +25,6 @@ gui_internal_background_render(struct gui_priv *this, struct widget *w)
 	} else if ((w->p.x == this->root.p.x) && (w->p.y == this->root.p.y) && (w->w == this->root.w) && (w->h == this->root.h)) {
 		dbg(lvl_error, "...for a widget taking up all the space\n");
 	}
-#endif
 	if (w->state & STATE_HIGHLIGHTED)
 		graphics_draw_rectangle(this->gra, this->highlight_background, &pnt, w->w, w->h);
 	else {
@@ -309,9 +307,6 @@ struct widget *
 gui_internal_box_new_with_label(struct gui_priv *this, enum flags flags, const char *label)
 {
 	struct widget *widget=g_new0(struct widget, 1);
-#if 0
-	dbg(lvl_error, "enter, widget=%p\n", widget);
-#endif
 
 	if (label)
 		widget->text=g_strdup(label);
@@ -331,7 +326,7 @@ static void gui_internal_box_render(struct gui_priv *this, struct widget *w)
 {
 	struct widget *wc;
 	GList *l;
-#if 0
+
 	dbg(lvl_error, "enter\n");
 	if (w == &this->root) {
 		dbg(lvl_error, "...for root widget\n");
@@ -340,7 +335,7 @@ static void gui_internal_box_render(struct gui_priv *this, struct widget *w)
 	} else if ((w->p.x == this->root.p.x) && (w->p.y == this->root.p.y) && (w->w == this->root.w) && (w->h == this->root.h)) {
 		dbg(lvl_error, "...for a widget taking up all the space\n");
 	}
-#endif
+
 	gui_internal_background_render(this, w);
 	if (w->foreground && w->border) {
 	struct point pnt[5];
@@ -777,28 +772,6 @@ gui_internal_widget_render(struct gui_priv *this, struct widget *w)
 {
 	if(w->p.x > this->root.w || w->p.y > this->root.h)
 		return;
-
-	if (w == &this->root) {
-		dbg(lvl_error, "rendering root widget\n");
-	} else if (!w->parent) {
-		dbg(lvl_error, "rendering a widget with no parent\n");
-	} else if (w->parent == &this->root) {
-		dbg(lvl_error, "rendering top-level widget %p (parent %p), type %s (%d)\n",
-				w, w->parent,
-				(w->type == widget_box) ? "widget_box" : (w->type == widget_label) ? "widget_label" : (w->type == widget_image) ? "widget_image" : (w->type == widget_table) ? "widget_table" : "unknown", w->type);
-	} else if (w->parent->parent == &this->root) {
-		dbg(lvl_error, "rendering second-level widget %p (parent %p), type %s (%d)\n",
-				w, w->parent,
-				(w->type == widget_box) ? "widget_box" : (w->type == widget_label) ? "widget_label" : (w->type == widget_image) ? "widget_image" : (w->type == widget_table) ? "widget_table" : "unknown", w->type);
-	} else if ((w->p.x == this->root.p.x) && (w->p.y == this->root.p.y) && (w->w == this->root.w) && (w->h == this->root.h)) {
-		dbg(lvl_error, "rendering widget %p (parent %p) taking up all the space, type %s (%d)\n",
-				w, w->parent,
-				(w->type == widget_box) ? "widget_box" : (w->type == widget_label) ? "widget_label" : (w->type == widget_image) ? "widget_image" : (w->type == widget_table) ? "widget_table" : "unknown", w->type);
-#if 0
-		w->p.y +=75;
-		w->h -= 219;
-#endif
-	}
 
 	switch (w->type) {
 	case widget_box:
