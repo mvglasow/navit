@@ -119,9 +119,8 @@ gui_internal_menu(struct gui_priv *this, const char *label)
         topbox->h=this->root.h;
         gui_internal_widget_append(&this->root, topbox);
 	menu=gui_internal_box_new(this, gravity_left_center|orientation_vertical);
-	menu->p.y = 75;
 	menu->w=topbox->w;
-	menu->h=topbox->h - 219;
+	menu->h=topbox->h;
 	menu->background=this->background;
 	gui_internal_apply_config(this);
  	topbox->menu_data=g_new0(struct menu_data, 1);
@@ -153,7 +152,7 @@ gui_internal_menu(struct gui_priv *this, const char *label)
 	if (this->flags & 192) {
 		menu=gui_internal_box_new(this, gravity_left_center|orientation_vertical);
 		menu->w=topbox->w;
-		menu->h=topbox->h - 219;
+		menu->h=topbox->h;
 		w1=gui_internal_time_help(this);
 		gui_internal_widget_append(menu, w1);
 		w1=gui_internal_box_new(this, gravity_center|orientation_horizontal_vertical|flags_expand|flags_fill);
@@ -166,7 +165,7 @@ gui_internal_menu(struct gui_priv *this, const char *label)
         topbox->w=this->root.w;
         topbox->h=this->root.h;
 	menu->w=topbox->w;
-	menu->h=topbox->h - 219;
+	menu->h=topbox->h;
 	return w;
 }
 
