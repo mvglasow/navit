@@ -17,14 +17,6 @@ static void
 gui_internal_background_render(struct gui_priv *this, struct widget *w)
 {
 	struct point pnt=w->p;
-	dbg(lvl_error, "enter\n");
-	if (w == &this->root) {
-		dbg(lvl_error, "...for root widget\n");
-	} else if (!w->parent) {
-		dbg(lvl_error, "...for a widget with no parent\n");
-	} else if ((w->p.x == this->root.p.x) && (w->p.y == this->root.p.y) && (w->w == this->root.w) && (w->h = this->root.h)) {
-		dbg(lvl_error, "...for a widget taking up all the space\n");
-	}
 	if (w->state & STATE_HIGHLIGHTED)
 		graphics_draw_rectangle(this->gra, this->highlight_background, &pnt, w->w, w->h);
 	else {
@@ -326,15 +318,6 @@ static void gui_internal_box_render(struct gui_priv *this, struct widget *w)
 {
 	struct widget *wc;
 	GList *l;
-
-	dbg(lvl_error, "enter\n");
-	if (w == &this->root) {
-		dbg(lvl_error, "...for root widget\n");
-	} else if (!w->parent) {
-		dbg(lvl_error, "...for a widget with no parent\n");
-	} else if ((w->p.x == this->root.p.x) && (w->p.y == this->root.p.y) && (w->w == this->root.w) && (w->h = this->root.h)) {
-		dbg(lvl_error, "...for a widget taking up all the space\n");
-	}
 
 	gui_internal_background_render(this, w);
 	if (w->foreground && w->border) {

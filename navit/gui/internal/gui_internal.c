@@ -2223,13 +2223,10 @@ gui_internal_enter(struct gui_priv *this, int ignore)
 	if (ignore != -1) 
 		this->ignore_button=ignore;
 
-	dbg(lvl_error, "**********enter, root.w=%d root.h=%d\n", this->root.w, this->root.h);
-
 	navit_block(this->nav, 1);
 	graphics_overlay_disable(gra, 1);
 	this->root.p.x=0;
 	this->root.p.y=0;
-
 	this->root.background=this->background;
 }
 
@@ -2663,8 +2660,6 @@ static void gui_internal_resize(void *data, int w, int h)
 {
 	struct gui_priv *this=data;
 	int changed=0;
-
-	dbg(lvl_error, "**********enter\n");
 
 	gui_internal_setup(this);
 
