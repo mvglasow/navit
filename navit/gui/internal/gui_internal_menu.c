@@ -96,6 +96,8 @@ gui_internal_menu(struct gui_priv *this, const char *label)
 {
 	struct widget *menu,*w,*w1,*topbox;
 
+	dbg(lvl_error, "enter\n");
+
 	gui_internal_search_idle_end(this);
 	topbox=gui_internal_box_new_with_label(this, 0, label);
         topbox->w=this->root.w;
