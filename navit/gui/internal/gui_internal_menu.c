@@ -168,10 +168,13 @@ gui_internal_menu(struct gui_priv *this, const char *label)
 	if (this->flags & 192) {
 		menu=gui_internal_box_new(this, gravity_left_center|orientation_vertical);
 		if (padding) {
-			// FIXME do we need to set p?
+			menu->p.x = padding->left;
+			menu->p.y = padding->top;
 			menu->w = topbox->w - padding->left - padding->right;
 			menu->h = topbox->h - padding->top - padding->bottom;
 		} else {
+			menu->p.x = 0;
+			menu->p.y = 0;
 			menu->w = topbox->w;
 			menu->h = topbox->h;
 		}
@@ -186,14 +189,17 @@ gui_internal_menu(struct gui_priv *this, const char *label)
 	gui_internal_widget_reset_pack(this, topbox);
         topbox->w=this->root.w;
         topbox->h=this->root.h;
-    	if (padding) {
-    		// FIXME do we need to set p again? Do we need this at all?
-    		menu->w = topbox->w - padding->left - padding->right;
-    		menu->h = topbox->h - padding->top - padding->bottom;
-    	} else {
-    		menu->w = topbox->w;
-    		menu->h = topbox->h;
-    	}
+		if (padding) {
+			menu->p.x = padding->left;
+			menu->p.y = padding->top;
+			menu->w = topbox->w - padding->left - padding->right;
+			menu->h = topbox->h - padding->top - padding->bottom;
+		} else {
+			menu->p.x = 0;
+			menu->p.y = 0;
+			menu->w = topbox->w;
+			menu->h = topbox->h;
+		}
 	return w;
 }
 
