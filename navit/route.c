@@ -2505,22 +2505,252 @@ route_graph_flood(struct route_graph *this, struct route_info *dst, struct vehic
  * @param changes Points to a `GList` of `struct route_traffic_distortion_change` elements describing
  * the segments for which the traffic situation has changed
  */
+// FIXME this is absolutely not thread-safe and will wreak havoc if run concurrently with route_graph_flood()
 void route_process_traffic_changes(struct route *this_, GList ** changes) {
-	struct route_traffic_distortion_change *curr = NULL;
+	struct route_traffic_distortion_change *c = NULL;
+	struct route_graph_point *p_min;
+
+	/* This heap will hold all points with "temporarily" calculated costs */
+	struct fibheap *heap;
+
+	struct route_graph_segment *s, *s2, *old_seg;
+	int val, old_val;
+	int flags;
+	GList *c_list, *c_list_next;
 
 	if (!changes)
 		return;
 
+	heap = fh_makekeyheap();
+
 	while (*changes) {
-		curr = g_list_nth_data(*changes, 0);
-		*changes = g_list_remove(*changes, curr);
+		c = g_list_nth_data(*changes, 0);
+		*changes = g_list_remove(*changes, c);
 
-		/* TODO process changes */
+		if (c->from) {
+			if (c->from->value < c->to->value) {
+				/* if needed, swap from and to so they agree with the route graph direction */
+				p_min = c->from;
+				c->from = c->to;
+				c->to = p_min;
+			}
+			if (!(c->flags & TDC_SEG_DECREASED)) {
+				/* if no cost decrease flag is set and the segment is not a route candidate, skip it */
+				if (!c->from->seg
+						|| ((c->from == c->from->seg->start) && (c->to != c->from->seg->end))
+						|| ((c->from == c->from->seg->end) && (c->to != c->from->seg->start))) {
+					g_free(c);
+					continue;
+				}
 
-		g_free(curr);
+			}
+			if (!(c->flags & TDC_SEG_INCREASED)) {
+				/* if no cost increase flag is set and `to` cost + segment cost >= `from` cost, drop & continue */
+				/* FIXME there may be multiple matching segments */
+				for (s = c->from->start; c && s; s = s->start_next)
+					if (s->end == c->to) {
+						val = route_value_seg(this_->vehicleprofile, NULL, s, 1);
+						if (route_value_add(c->to->value, val) >= c->to->value) {
+							g_free(c);
+							c = NULL;
+						}
+					}
+				if (c)
+					for (s = c->from->end; c && s; s = s->end_next)
+						if (s->start == c->to) {
+							val = route_value_seg(this_->vehicleprofile, NULL, s, -1);
+							if (route_value_add(c->to->value, val) >= c->to->value) {
+								g_free(c);
+								c = NULL;
+							}
+						}
+				if (!c)
+					continue;
+			}
+			/* TODO should we deduplicate elements? */
+			c->to->changes = g_list_append(c->to->changes, c);
+		}
+		c->to->change_flags |= c->flags;
+
+		if (!c->to->el) {
+			if (debug_route)
+				printf("insert_c_to p=%p el=%p val=%d ", c->to, c->to->el, c->to->value);
+			c->to->el = fh_insertkey(heap, c->to->value, c->to);
+			if (debug_route)
+				printf("el new=%p\n", c->to->el);
+		} else {
+			if (debug_route)
+				printf("replace_c_to p=%p el=%p val=%d\n", c->to, c->to->el, c->to->value);
+			fh_replacekey(heap, c->to->el, c->to->value);
+		}
+
+		if (!c->from)
+			g_free(c);
 	}
 
 	g_free(changes);
+
+	while (1) {
+		p_min = fh_extractmin(heap); /* Starting Dijkstra by selecting the point with the minimum costs on the heap */
+		if (!p_min) /* There are no more points with temporarily calculated costs, Dijkstra has finished */
+			break;
+		if (debug_route)
+			printf("extract p=%p free el=%p value=%d change_flags=0x%x, 0x%x, 0x%x\n",
+					p_min, p_min->el, p_min->value, p_min->change_flags, p_min->c.x, p_min->c.y);
+		p_min->el = NULL; /* This point is permanently calculated now, we've taken it out of the heap */
+
+		/* iterate over segments of which p_min is the end point */
+		for (s = p_min->end; s; s = s->end_next) {
+			c = NULL;
+			flags = p_min->change_flags & TDC_POINT_MASK;
+			/* find changes matching the segment, there may be multiple */
+			for (c_list = p_min->changes; c_list; c_list = c_list_next) {
+				c_list_next = g_list_next(c_list);
+				c = c_list->data;
+				if (c->from == s->start) {
+					/* we have a match, drop c from list */
+					p_min->changes = g_list_delete_link(p_min->changes, c_list);
+					flags |= c->flags;
+					g_free(c);
+				}
+			}
+			/* If neither the node nor the segment have changed, skip */
+			if (!flags)
+				continue;
+			/* If the segment is not the next segment to destination and the cost has not decreased, skip */
+			if ((s != s->start->seg) && !(flags & TDC_SEG_DECREASED) && !(p_min->change_flags & TDC_DECREASED))
+				continue;
+			old_val = s->start->value;
+			old_seg = s->start->seg;
+			if (!(flags & (TDC_INCREASED | TDC_SEG_INCREASED))) {
+				val = route_value_add(p_min->value, route_value_seg(this_->vehicleprofile, NULL, s, 1));
+				/* if end node cost + segment cost is not less than current start node cost, skip */
+				if (val >= s->start->value)
+					continue;
+				/* we have a cheaper path, update route graph */
+				s->start->value = val;
+				s->start->seg = s;
+			} else {
+				s->start->value = INT_MAX;
+				for (s2 = s->start->start; s2; s2 = s2->start_next) {
+					val = route_value_add(s2->end->value, route_value_seg(this_->vehicleprofile, NULL, s2, 1));
+					if (val < s->start->value) {
+						s->start->value = val;
+						s->start->seg = s2;
+					}
+				}
+				for (s2 = s->start->end; s2; s2 = s2->end_next) {
+					val = route_value_add(s2->start->value, route_value_seg(this_->vehicleprofile, NULL, s2, -1));
+					if (val < s->start->value) {
+						s->start->value = val;
+						s->start->seg = s2;
+					}
+				}
+			}
+			// TODO set a flag if s->start is part of the route and s->start->seg != old_seg
+			if (s->start->value != old_val) {
+				s->start->change_flags |= (s->start->value > old_val) ? TDC_INCREASED: TDC_DECREASED;
+				if (!s->start->el) {
+					if (debug_route)
+						printf("insert_start p=%p el=%p val=%d ", s->start, s->start->el, s->start->value);
+					s->start->el = fh_insertkey(heap, s->start->value, s->start);
+					if (debug_route)
+						printf("el new=%p\n", s->start->el);
+				} else if (s->start->value > old_val) {
+					/* workaround as our Fibonacci heap implementation does not support increasing the key,
+					 * despite the documentation stating otherwise */
+					if (debug_route)
+						printf("replace_start p=%p el=%p val=%d", s->start, s->start->el, s->start->value);
+					fh_delete(heap, s->start->el);
+					s->start->el = fh_insertkey(heap, s->start->value, s->start);
+					if (debug_route)
+						printf("el new=%p\n", s->start->el);
+				} else {
+					if (debug_route)
+						printf("replace_start p=%p el=%p val=%d\n", s->start, s->start->el, s->start->value);
+					fh_replacekey(heap, s->start->el, s->start->value);
+				}
+			}
+		}
+		/* iterate over segments of which p_min is the start point */
+		for (s = p_min->start; s; s = s->start_next) {
+			c = NULL;
+			flags = p_min->change_flags & TDC_POINT_MASK;
+			/* find changes matching the segment, there may be multiple */
+			for (c_list = p_min->changes; c_list; c_list = c_list_next) {
+				c_list_next = g_list_next(c_list);
+				c = c_list->data;
+				if (c->from == s->end) {
+					/* we have a match, drop c from list */
+					p_min->changes = g_list_delete_link(p_min->changes, c_list);
+					flags |= c->flags;
+					g_free(c);
+				}
+			}
+			/* If neither the node nor the segment have changed, skip */
+			if (!flags)
+				continue;
+			/* If the segment is not the next segment to destination and the cost has not decreased, skip */
+			if ((s != s->end->seg) && !(flags & TDC_SEG_DECREASED) && !(p_min->change_flags & TDC_DECREASED))
+				continue;
+			old_val = s->end->value;
+			old_seg = s->end->seg;
+			if (!(flags & (TDC_INCREASED | TDC_SEG_INCREASED))) {
+				val = route_value_add(p_min->value, route_value_seg(this_->vehicleprofile, NULL, s, -1));
+				/* if end node cost + segment cost is not less than current start node cost, skip */
+				if (val >= s->end->value)
+					continue;
+				/* we have a cheaper path, update route graph */
+				s->end->value = val;
+				s->end->seg = s;
+			} else {
+				s->end->value = INT_MAX;
+				for (s2 = s->end->end; s2; s2 = s2->end_next) {
+					val = route_value_add(s2->end->value, route_value_seg(this_->vehicleprofile, NULL, s2, 1));
+					if (val < s->end->value) {
+						s->end->value = val;
+						s->end->seg = s2;
+					}
+				}
+				for (s2 = s->end->start; s2; s2 = s2->start_next) {
+					val = route_value_add(s2->start->value, route_value_seg(this_->vehicleprofile, NULL, s2, -1));
+					if (val < s->end->value) {
+						s->end->value = val;
+						s->end->seg = s2;
+					}
+				}
+			}
+			// TODO set a flag if s->end is part of the route and s->end->seg != old_seg
+			if (s->end->value != old_val) {
+				s->end->change_flags |= (s->end->value > old_val) ? TDC_INCREASED: TDC_DECREASED;
+				if (!s->end->el) {
+					if (debug_route)
+						printf("insert_end p=%p el=%p val=%d ", s->end, s->end->el, s->end->value);
+					s->end->el = fh_insertkey(heap, s->end->value, s->end);
+					if (debug_route)
+						printf("el new=%p\n", s->end->el);
+				} else if (s->end->value > old_val) {
+					/* workaround as our Fibonacci heap implementation does not support increasing the key,
+					 * despite the documentation stating otherwise */
+					if (debug_route)
+						printf("replace_end p=%p el=%p val=%d", s->end, s->end->el, s->end->value);
+					fh_delete(heap, s->end->el);
+					s->end->el = fh_insertkey(heap, s->end->value, s->end);
+					if (debug_route)
+						printf("el new=%p\n", s->end->el);
+				} else {
+					if (debug_route)
+						printf("replace_end p=%p el=%p val=%d\n", s->end, s->end->el, s->end->value);
+					fh_replacekey(heap, s->end->el, s->end->value);
+				}
+			}
+		}
+		/* TODO change route path if necessary */
+
+		p_min->change_flags = 0;
+	}
+
+	fh_deleteheap(heap);
 }
 
 /**
