@@ -2594,9 +2594,10 @@ void route_process_traffic_changes(struct route *this_, GList ** changes) {
 		p_min = fh_extractmin(heap); /* Starting Dijkstra by selecting the point with the minimum costs on the heap */
 		if (!p_min) /* There are no more points with temporarily calculated costs, Dijkstra has finished */
 			break;
-		if (debug_route)
-			printf("extract p=%p free el=%p value=%d change_flags=0x%x, 0x%x, 0x%x\n",
-					p_min, p_min->el, p_min->value, p_min->change_flags, p_min->c.x, p_min->c.y);
+		//if (debug_route)
+			printf("extract p=%p free el=%p value=%d change_flags=0x%x, 0x%x, 0x%x, seg: %p-%p\n",
+					p_min, p_min->el, p_min->value, p_min->change_flags, p_min->c.x, p_min->c.y,
+					p_min->seg ? p_min->seg->start : NULL, p_min->seg ? p_min->seg->end : NULL);
 		p_min->el = NULL; /* This point is permanently calculated now, we've taken it out of the heap */
 
 		/* iterate over segments of which p_min is the end point */
@@ -2648,25 +2649,28 @@ void route_process_traffic_changes(struct route *this_, GList ** changes) {
 				}
 			}
 			// TODO set a flag if s->start is part of the route and s->start->seg != old_seg
+			if (s->start->seg != old_seg)
+			//if (debug_route)
+				printf("seg_change_start p=%p: old %p, new %p\n", s->start, old_seg, s->start->seg);
 			if (s->start->value != old_val) {
 				s->start->change_flags |= (s->start->value > old_val) ? TDC_INCREASED: TDC_DECREASED;
 				if (!s->start->el) {
-					if (debug_route)
+					//if (debug_route)
 						printf("insert_start p=%p el=%p val=%d ", s->start, s->start->el, s->start->value);
 					s->start->el = fh_insertkey(heap, s->start->value, s->start);
-					if (debug_route)
+					//if (debug_route)
 						printf("el new=%p\n", s->start->el);
 				} else if (s->start->value > old_val) {
 					/* workaround as our Fibonacci heap implementation does not support increasing the key,
 					 * despite the documentation stating otherwise */
-					if (debug_route)
+					//if (debug_route)
 						printf("replace_start p=%p el=%p val=%d", s->start, s->start->el, s->start->value);
 					fh_delete(heap, s->start->el);
 					s->start->el = fh_insertkey(heap, s->start->value, s->start);
-					if (debug_route)
+					//if (debug_route)
 						printf("el new=%p\n", s->start->el);
 				} else {
-					if (debug_route)
+					//if (debug_route)
 						printf("replace_start p=%p el=%p val=%d\n", s->start, s->start->el, s->start->value);
 					fh_replacekey(heap, s->start->el, s->start->value);
 				}
@@ -2721,25 +2725,28 @@ void route_process_traffic_changes(struct route *this_, GList ** changes) {
 				}
 			}
 			// TODO set a flag if s->end is part of the route and s->end->seg != old_seg
+			if (s->end->seg != old_seg)
+			//if (debug_route)
+				printf("seg_change_end p=%p: old %p, new %p\n", s->end, old_seg, s->end->seg);
 			if (s->end->value != old_val) {
 				s->end->change_flags |= (s->end->value > old_val) ? TDC_INCREASED: TDC_DECREASED;
 				if (!s->end->el) {
-					if (debug_route)
+					//if (debug_route)
 						printf("insert_end p=%p el=%p val=%d ", s->end, s->end->el, s->end->value);
 					s->end->el = fh_insertkey(heap, s->end->value, s->end);
-					if (debug_route)
+					//if (debug_route)
 						printf("el new=%p\n", s->end->el);
 				} else if (s->end->value > old_val) {
 					/* workaround as our Fibonacci heap implementation does not support increasing the key,
 					 * despite the documentation stating otherwise */
-					if (debug_route)
+					//if (debug_route)
 						printf("replace_end p=%p el=%p val=%d", s->end, s->end->el, s->end->value);
 					fh_delete(heap, s->end->el);
 					s->end->el = fh_insertkey(heap, s->end->value, s->end);
-					if (debug_route)
+					//if (debug_route)
 						printf("el new=%p\n", s->end->el);
 				} else {
-					if (debug_route)
+					//if (debug_route)
 						printf("replace_end p=%p el=%p val=%d\n", s->end, s->end->el, s->end->value);
 					fh_replacekey(heap, s->end->el, s->end->value);
 				}
@@ -2747,6 +2754,7 @@ void route_process_traffic_changes(struct route *this_, GList ** changes) {
 		}
 		/* TODO change route path if necessary */
 
+		//printf("reset flags p=%p\n", p_min);
 		p_min->change_flags = 0;
 	}
 
