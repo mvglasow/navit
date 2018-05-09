@@ -24,7 +24,7 @@
 /**
  * @brief Saves a buffer to a file
  *
- * This function saves a buffer to a file. 
+ * This function saves a buffer to a file.
  *
  * @param filename The name of the while to where the buffer is saved to.
  * @param b Buffer which is saved to file.
@@ -37,7 +37,7 @@ save_buffer(char *filename, struct buffer *b, long long offset)
 	f=fopen(filename,"rb+");
 	if (! f)
 		f=fopen(filename,"wb+");
-		
+
 	dbg_assert(f != NULL);
 	dbg_assert(fseeko(f, offset, SEEK_SET)==0);
 	dbg_assert(fwrite(b->base, b->size, 1, f)==1);
@@ -46,7 +46,7 @@ save_buffer(char *filename, struct buffer *b, long long offset)
 /**
  * @brief Loads a buffer from a file
  *
- * This function loads a buffer from a file. 
+ * This function loads a buffer from a file.
  *
  * @param filename The name of the while to where the buffer is loaded from.
  * @param b Buffer in which file is loaded.
@@ -71,20 +71,20 @@ load_buffer(char *filename, struct buffer *b, long long offset, long long size)
 	}
 	b->size=b->malloced=size;
 	dbg_assert(b->size>0);
-	
+
 	fseeko(f, offset, SEEK_SET);
 	b->base=g_malloc(b->size);
-	if (fread(b->base, b->size, 1, f) == 0){
+	if (fread(b->base, b->size, 1, f) == 0) {
 		dbg(lvl_warning, "fread failed");
 		return 0;
-        }
+	}
 	fclose(f);
 	return 1;
 }
 /**
- * @brief Determines size of buffer for file 
+ * @brief Determines size of buffer for file
  *
- * This function determines the size of the buffer required to read a file. 
+ * This function determines the size of the buffer required to read a file.
  *
  * @param  filename Name of file for which the required size of the buffer is determined
  * @return required size of buffer

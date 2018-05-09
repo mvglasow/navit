@@ -174,7 +174,7 @@ write_zipmember(struct zip_info *zip_info, char *name, int filelen, char *data, 
 		dbg_assert(fwrite(&cd_ext, sizeof(cd_ext), 1, zip_info->dir)==1);
 		zip_info->dir_size+=sizeof(cd_ext);
 	}
-	
+
 	g_free(compbuffer);
 }
 
@@ -183,15 +183,14 @@ zip_write_index(struct zip_info *info)
 {
 	int size=ftell(info->index);
 	char *buffer;
-	
+
 	buffer=g_alloca(size);
 	fseek(info->index, 0, SEEK_SET);
-	
-	if (fread(buffer, size, 1, info->index) == 0){
+
+	if (fread(buffer, size, 1, info->index) == 0) {
 		dbg(lvl_warning, "fread failed");
 		return 1;
-	}
-	else{
+	} else {
 		write_zipmember(info, "index", strlen("index"), buffer, size);
 	}
 	info->zipnum++;
@@ -230,7 +229,7 @@ zip_write_directory(struct zip_info *info)
 		0x0,
 		0x0,
 		0x0,
-		0x0,		
+		0x0,
 	};
 	struct zip64_eocl eocl = {
 		0x07064b50,

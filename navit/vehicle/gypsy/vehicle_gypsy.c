@@ -91,7 +91,7 @@ static struct vehicle_priv {
  *
  * Anytime this functions get called, we have to call the global
  * callback.
- * 
+ *
  * @param device The GypsyDevice
  * @param fixstatus The fisstatus 0, 1, 2 or 3
  * @param userdata
@@ -99,8 +99,8 @@ static struct vehicle_priv {
  */
 static void
 vehicle_gypsy_fixstatus_changed(GypsyDevice *device,
-		gint fixstatus,
-		gpointer userdata)
+                                gint fixstatus,
+                                gpointer userdata)
 {
 	struct vehicle_priv *priv = vehicle_last;
 
@@ -125,21 +125,21 @@ vehicle_gypsy_fixstatus_changed(GypsyDevice *device,
  *
  * If we get any new information, we have to call the global
  * callback.
- * 
+ *
  * @param position The GypsyPosition
- * @param fields_set Bitmask indicating what field was set 
+ * @param fields_set Bitmask indicating what field was set
  * @param timestamp the time since Unix Epoch
- * @param latitude 
- * @param longitude 
+ * @param latitude
+ * @param longitude
  * @param altitude
  * @param userdata
  * @returns nothing
  */
-static void 
-vehicle_gypsy_position_changed(GypsyPosition *position, 
-		GypsyPositionFields fields_set, int timestamp, 
-		double latitude, double longitude, double altitude, 
-		gpointer userdata)
+static void
+vehicle_gypsy_position_changed(GypsyPosition *position,
+                               GypsyPositionFields fields_set, int timestamp,
+                               double latitude, double longitude, double altitude,
+                               gpointer userdata)
 {
 	struct vehicle_priv *priv = vehicle_last;
 	int cb = FALSE;
@@ -147,24 +147,20 @@ vehicle_gypsy_position_changed(GypsyPosition *position,
 	if (timestamp > 0)
 		priv->fix_time = timestamp;
 
-	if (fields_set & GYPSY_POSITION_FIELDS_LATITUDE)
-	{
+	if (fields_set & GYPSY_POSITION_FIELDS_LATITUDE) {
 		cb = TRUE;
 		priv->geo.lat = latitude;
 	}
-	if (fields_set & GYPSY_POSITION_FIELDS_LONGITUDE)
-	{
+	if (fields_set & GYPSY_POSITION_FIELDS_LONGITUDE) {
 		cb = TRUE;
 		priv->geo.lng = longitude;
 	}
-	if (fields_set & GYPSY_POSITION_FIELDS_ALTITUDE)
-	{
+	if (fields_set & GYPSY_POSITION_FIELDS_ALTITUDE) {
 		cb = TRUE;
 		priv->height = altitude;
 	}
 
-	if (cb)
-	{
+	if (cb) {
 		priv->have_cords = 1;
 		callback_list_call_attr_0(priv->cbl, attr_position_coord_geo);
 	}
@@ -178,20 +174,20 @@ vehicle_gypsy_position_changed(GypsyPosition *position,
  * Anytime this functions get called, we have to call the global
  * callback.
  *
- * @param satellite The GypsySatellite 
+ * @param satellite The GypsySatellite
  * @param satellites An GPtrArray wich hold information of all sats
  * @param userdata
  * @returns nothing
  */
-static void 
-vehicle_gypsy_satellite_changed(GypsySatellite *satellite, 
-		GPtrArray *satellites,
-		gpointer userdata)
+static void
+vehicle_gypsy_satellite_changed(GypsySatellite *satellite,
+                                GPtrArray *satellites,
+                                gpointer userdata)
 {
 	struct vehicle_priv *priv = vehicle_last;
 
 	int i, sats, used=0;
-	
+
 	sats = satellites->len;
 	for (i = 0; i < sats; i++) {
 		GypsySatelliteDetails *details = satellites->pdata[i];
@@ -201,7 +197,7 @@ vehicle_gypsy_satellite_changed(GypsySatellite *satellite,
 
 	priv->sats_used = used;
 	priv->sats = sats;
-	
+
 	callback_list_call_attr_0(priv->cbl, attr_position_coord_geo);
 }
 
@@ -212,9 +208,9 @@ vehicle_gypsy_satellite_changed(GypsySatellite *satellite,
  *
  * If we get any new information, we have to call the global
  * callback.
- * 
+ *
  * @param course The GypsyCourse
- * @param fields Bitmask indicating what field was set 
+ * @param fields Bitmask indicating what field was set
  * @param timestamp the time since Unix Epoch
  * @param speed
  * @param direction
@@ -222,25 +218,23 @@ vehicle_gypsy_satellite_changed(GypsySatellite *satellite,
  * @param userdata
  * @returns nothing
  */
-static void 
-vehicle_gypsy_course_changed (GypsyCourse *course, 
-		GypsyCourseFields fields,
-		int timestamp,
-		double speed,
-		double direction,
-		double climb,
-		gpointer userdata)
+static void
+vehicle_gypsy_course_changed (GypsyCourse *course,
+                              GypsyCourseFields fields,
+                              int timestamp,
+                              double speed,
+                              double direction,
+                              double climb,
+                              gpointer userdata)
 {
 	struct vehicle_priv *priv = vehicle_last;
 	int cb = FALSE;
 
-	if (fields & GYPSY_COURSE_FIELDS_SPEED)
-	{
+	if (fields & GYPSY_COURSE_FIELDS_SPEED) {
 		priv->speed = speed*3.6;
 		cb = TRUE;
 	}
-	if (fields & GYPSY_COURSE_FIELDS_DIRECTION)
-	{
+	if (fields & GYPSY_COURSE_FIELDS_DIRECTION) {
 		priv->direction = direction;
 		cb = TRUE;
 	}
@@ -251,7 +245,7 @@ vehicle_gypsy_course_changed (GypsyCourse *course,
 
 /**
  * @brief Attempt to open the gypsy device.
- * 
+ *
  * Tells gypsy wich functions to call when anything occours.
  *
  * @param data
@@ -264,15 +258,15 @@ vehicle_gypsy_try_open(gpointer *data)
 	char *source = g_strdup(priv->source);
 
 	GError *error = NULL;
-	
+
 	g_type_init();
-	priv->control = gypsy_control_get_default(); 
-	priv->path = gypsy_control_create(priv->control, source+8, &error); 
-	if (priv->path == NULL) { 
-		g_warning ("Error creating gypsy conrtol path for %s: %s", source+8, error->message); 
-		return TRUE; 
+	priv->control = gypsy_control_get_default();
+	priv->path = gypsy_control_create(priv->control, source+8, &error);
+	if (priv->path == NULL) {
+		g_warning ("Error creating gypsy conrtol path for %s: %s", source+8, error->message);
+		return TRUE;
 	}
-	
+
 	priv->position = gypsy_position_new(priv->path);
 	g_signal_connect(priv->position, "position-changed", G_CALLBACK (vehicle_gypsy_position_changed), NULL);
 
@@ -286,8 +280,8 @@ vehicle_gypsy_try_open(gpointer *data)
 	g_signal_connect(priv->device, "fix-status-changed", G_CALLBACK (vehicle_gypsy_fixstatus_changed), NULL);
 
 	gypsy_device_start(priv->device, &error);
-	if (error != NULL) { 
-		g_warning ("Error starting gypsy for %s: %s", source+8, error->message); 
+	if (error != NULL) {
+		g_warning ("Error starting gypsy for %s: %s", source+8, error->message);
 		return TRUE;
 	}
 
@@ -299,7 +293,7 @@ vehicle_gypsy_try_open(gpointer *data)
 
 /**
  * @brief Open a connection to gypsy. Will re-try the connection if it fails
- * 
+ *
  * @param priv
  * @returns nothing
  */
@@ -314,7 +308,7 @@ vehicle_gypsy_open(struct vehicle_priv *priv)
 
 /**
  * @brief Stop retry timer; Free alloced memory
- * 
+ *
  * @param priv
  * @returns nothing
  */
@@ -327,10 +321,10 @@ vehicle_gypsy_close(struct vehicle_priv *priv)
 	}
 	if (priv->path)
 		g_free(priv->path);
-	
+
 	if (priv->position)
 		g_free(priv->position);
-	
+
 	if (priv->satellite)
 		g_free(priv->satellite);
 
@@ -339,14 +333,14 @@ vehicle_gypsy_close(struct vehicle_priv *priv)
 
 	if (priv->device)
 		g_free(priv->device);
-	
+
 	if (priv->control)
 		g_object_unref(G_OBJECT (priv->control));
 }
 
 /**
  * @brief Free the gypsy_vehicle
- * 
+ *
  * @param priv
  * @returns nothing
  */
@@ -361,7 +355,7 @@ vehicle_gypsy_destroy(struct vehicle_priv *priv)
 
 /**
  * @brief Provide the outside with information
- * 
+ *
  * @param priv
  * @param type TODO: What can this be?
  * @param attr
@@ -369,7 +363,7 @@ vehicle_gypsy_destroy(struct vehicle_priv *priv)
  */
 static int
 vehicle_gypsy_position_attr_get(struct vehicle_priv *priv,
-			       enum attr_type type, struct attr *attr)
+                                enum attr_type type, struct attr *attr)
 {
 	struct attr * active=NULL;
 	switch (type) {
@@ -396,25 +390,24 @@ vehicle_gypsy_position_attr_get(struct vehicle_priv *priv,
 		if (!priv->have_cords)
 			return 0;
 		break;
-	case attr_position_time_iso8601:
-		{
+	case attr_position_time_iso8601: {
 		struct tm tm;
 		if (!priv->fix_time)
 			return 0;
 		if (gmtime_r(&priv->fix_time, &tm)) {
 			strftime(priv->fixiso8601, sizeof(priv->fixiso8601),
-					"%Y-%m-%dT%TZ", &tm);
+			         "%Y-%m-%dT%TZ", &tm);
 			attr->u.str=priv->fixiso8601;
 		} else
 			return 0;
-		}
+	}
 	case attr_active:
-	  active = attr_search(priv->attrs,NULL,attr_active);
-	  if(active != NULL && active->u.num == 1)
-	    return 1;
-	  else
-	    return 0;
-	       break;
+		active = attr_search(priv->attrs,NULL,attr_active);
+		if(active != NULL && active->u.num == 1)
+			return 1;
+		else
+			return 0;
+		break;
 
 	default:
 		return 0;
@@ -430,7 +423,7 @@ struct vehicle_methods vehicle_gypsy_methods = {
 
 /**
  * @brief Create gypsy_vehicle
- * 
+ *
  * @param meth
  * @param cbl
  * @param attrs
@@ -438,8 +431,8 @@ struct vehicle_methods vehicle_gypsy_methods = {
  */
 static struct vehicle_priv *
 vehicle_gypsy_new_gypsy(struct vehicle_methods *meth,
-	       		struct callback_list *cbl,
-		       	struct attr **attrs)
+                        struct callback_list *cbl,
+                        struct attr **attrs)
 {
 	struct vehicle_priv *ret;
 	struct attr *source, *retry_int;
@@ -492,7 +485,7 @@ vehicle_gypsy_new_gypsy(struct vehicle_methods *meth,
 
 /**
  * @brief register vehicle_gypsy
- * 
+ *
  * @returns nothing
  */
 void

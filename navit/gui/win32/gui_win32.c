@@ -38,42 +38,39 @@ static UINT_PTR menu_id = 0;
 #if 0
 static gboolean message_pump( gpointer data )
 {
-    MSG messages;
+	MSG messages;
 
 	Sleep( 1 );
 
-    if (GetMessage (&messages, NULL, 0, 0))
-    {
-        TranslateMessage(&messages);
-        DispatchMessage(&messages);
-    }
-    else{
-    	exit( 0 );
-    }
+	if (GetMessage (&messages, NULL, 0, 0)) {
+		TranslateMessage(&messages);
+		DispatchMessage(&messages);
+	} else {
+		exit( 0 );
+	}
 	return TRUE;
 }
 
 static BOOL CALLBACK EnumChildProc(HWND hwndChild, LPARAM lParam)
 {
-    LPRECT rcParent;
-    int idChild;
+	LPRECT rcParent;
+	int idChild;
 
-    idChild = GetWindowLong(hwndChild, GWL_ID);
+	idChild = GetWindowLong(hwndChild, GWL_ID);
 
-	if ( idChild == ID_CHILD_GFX )
-	{
+	if ( idChild == ID_CHILD_GFX ) {
 		rcParent = (LPRECT) lParam;
 
 		MoveWindow( hwndChild,  0, 0, rcParent->right, rcParent->bottom, TRUE );
 		PostMessage( hwndChild, WM_USER+1, 0, 0 );
 	}
 
-    return TRUE;
+	return TRUE;
 }
 #endif
 
 #ifndef GET_WHEEL_DELTA_WPARAM
-	#define GET_WHEEL_DELTA_WPARAM(wParam)  ((short)HIWORD(wParam))
+#define GET_WHEEL_DELTA_WPARAM(wParam)  ((short)HIWORD(wParam))
 #endif
 
 static void CreateToolBar(HWND hwnd)
@@ -85,7 +82,7 @@ static void CreateToolBar(HWND hwnd)
 #if 0 /* def _WIN32_WCE */
 	/* Have to initialize common controls under CE */
 	INITCOMMONCONTROLSEX iccex;
-  	iccex.dwSize = sizeof (INITCOMMONCONTROLSEX);
+	iccex.dwSize = sizeof (INITCOMMONCONTROLSEX);
 	iccex.dwICC = ICC_BAR_CLASSES;
 	InitCommonControlsEx (&iccex);
 #else
@@ -93,7 +90,7 @@ static void CreateToolBar(HWND hwnd)
 #endif
 
 	hTool = CreateWindowEx(0, TOOLBARCLASSNAME, NULL, WS_CHILD | WS_VISIBLE, 0, 0, 0, 0,
-		hwnd, (HMENU)ID_CHILD_TOOLBAR, GetModuleHandle(NULL), NULL);
+	                       hwnd, (HMENU)ID_CHILD_TOOLBAR, GetModuleHandle(NULL), NULL);
 
 	if(hTool == NULL)
 		MessageBox(hwnd, TEXT("Could not create tool bar."), TEXT("Error"), MB_OK | MB_ICONERROR);
@@ -189,8 +186,7 @@ static void window_layout( HWND hwnd )
 
 
 	hChild = GetDlgItem(hwnd, ID_CHILD_GFX);
-	if ( hChild )
-	{
+	if ( hChild ) {
 		MoveWindow( hChild,  rcClient.left, rcClient.top, rcClient.right- rcClient.left, rcClient.bottom - rcClient.top, TRUE );
 		PostMessage( hChild, WM_USER+1, 0, 0 );
 	}
@@ -202,7 +198,7 @@ static void toggle_fullscreen(HWND mWnd)
 	if (SHFullScreenPtr) {
 		if (!ce_fullscreen) {
 			(*SHFullScreenPtr)(mWnd, SHFS_HIDETASKBAR |
-			SHFS_HIDESTARTICON | SHFS_HIDESIPBUTTON);
+			                   SHFS_HIDESTARTICON | SHFS_HIDESIPBUTTON);
 		} else {
 			(*SHFullScreenPtr)(mWnd, SHFS_HIDESIPBUTTON);
 		}
@@ -215,193 +211,179 @@ static void toggle_backlight(void)
 	if (ce_backlight)
 		if (CeEnableBacklight(FALSE))
 			ce_backlight = 0;
-	else
-		if (CeEnableBacklight(TRUE))
+		else if (CeEnableBacklight(TRUE))
 			ce_backlight = 1;
 }
 #endif
 
 static LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 {
-    RECT rcClient;
+	RECT rcClient;
 
 //	printf( "PARENT %d %d %d \n", Message, wParam, lParam );
 
-	switch(Message)
-	{
-		case WM_CREATE:
-		{
-			HMENU hMenu, hSubMenu;
+	switch(Message) {
+	case WM_CREATE: {
+		HMENU hMenu, hSubMenu;
 
-			CreateToolBar( hwnd );
+		CreateToolBar( hwnd );
 
-			hMenu = CreateMenu();
-			// g_this_->hwnd = hwnd;
+		hMenu = CreateMenu();
+		// g_this_->hwnd = hwnd;
 
-			hSubMenu = CreatePopupMenu();
+		hSubMenu = CreatePopupMenu();
 
-			AppendMenuW(hSubMenu, MF_STRING, ID_DISPLAY_ZOOMIN, L"ZoomIn" );
-			AppendMenuW(hSubMenu, MF_STRING, ID_DISPLAY_ZOOMOUT, L"ZoomOut" );
-			AppendMenuW(hSubMenu, MF_STRING, ID_DISPLAY_REFRESH, L"Refresh" );
-			AppendMenuW(hSubMenu, MF_SEPARATOR, 0, NULL );
-			AppendMenuW(hSubMenu, MF_STRING, ID_FILE_EXIT, L"_Quit" );
+		AppendMenuW(hSubMenu, MF_STRING, ID_DISPLAY_ZOOMIN, L"ZoomIn" );
+		AppendMenuW(hSubMenu, MF_STRING, ID_DISPLAY_ZOOMOUT, L"ZoomOut" );
+		AppendMenuW(hSubMenu, MF_STRING, ID_DISPLAY_REFRESH, L"Refresh" );
+		AppendMenuW(hSubMenu, MF_SEPARATOR, 0, NULL );
+		AppendMenuW(hSubMenu, MF_STRING, ID_FILE_EXIT, L"_Quit" );
 
-			AppendMenuW(hMenu, MF_STRING | MF_POPUP, (UINT)hSubMenu, L"Display" );
-			hSubMenu = CreatePopupMenu();
-			AppendMenu(hSubMenu, MF_STRING, ID_STUFF_GO, TEXT("&Go"));
-			AppendMenu(hMenu, MF_STRING | MF_POPUP, (UINT)hSubMenu, TEXT("&Stuff"));
+		AppendMenuW(hMenu, MF_STRING | MF_POPUP, (UINT)hSubMenu, L"Display" );
+		hSubMenu = CreatePopupMenu();
+		AppendMenu(hSubMenu, MF_STRING, ID_STUFF_GO, TEXT("&Go"));
+		AppendMenu(hMenu, MF_STRING | MF_POPUP, (UINT)hSubMenu, TEXT("&Stuff"));
 
 #ifndef HAVE_API_WIN32_CE
-			SetMenu(hwnd, hMenu);
+		SetMenu(hwnd, hMenu);
 #endif
 
-			window_layout( hwnd );
+		window_layout( hwnd );
 
+	}
+	break;
+	case WM_COMMAND: {
+		printf( "WM_COMMAND %d\n", LOWORD(wParam) );
+		struct gui_priv* gui = (struct gui_priv*)GetWindowLongPtr( hwnd, DWLP_USER );
+
+
+		switch(LOWORD(wParam)) {
+		case ID_DISPLAY_ZOOMIN:
+			navit_zoom_in(gui->nav, 2, NULL);
+			return 0;
+			break;
+		case ID_DISPLAY_ZOOMOUT:
+			navit_zoom_out(gui->nav, 2, NULL);
+			return 0;
+			break;
+		case ID_DISPLAY_REFRESH:
+			navit_draw(gui->nav);
+			return 0;
+			break;
+		case ID_DISPLAY_CURSOR: {
+			struct attr attr;
+			attr.type=attr_cursor;
+			// TODO attr.u.num=gtk_toggle_action_get_active(GTK_TOGGLE_ACTION(w));
+			if(!navit_set_attr(gui->nav, &attr)) {
+				dbg(lvl_error, "Failed to set attr_cursor");
+			}
+			return 0;
 		}
 		break;
-		case WM_COMMAND:
-		{
-			printf( "WM_COMMAND %d\n", LOWORD(wParam) );
-			struct gui_priv* gui = (struct gui_priv*)GetWindowLongPtr( hwnd , DWLP_USER );
+		case ID_DISPLAY_ORIENT: {
+			struct attr attr;
 
-
-			switch(LOWORD(wParam))
-			{
-				case ID_DISPLAY_ZOOMIN:
-					navit_zoom_in(gui->nav, 2, NULL);
-					return 0;
-				break;
-				case ID_DISPLAY_ZOOMOUT:
-					navit_zoom_out(gui->nav, 2, NULL);
-					return 0;
-				break;
-				case ID_DISPLAY_REFRESH:
-					navit_draw(gui->nav);
-					return 0;
-				break;
-				case ID_DISPLAY_CURSOR:
-				{
-					struct attr attr;
-					attr.type=attr_cursor;
-					// TODO attr.u.num=gtk_toggle_action_get_active(GTK_TOGGLE_ACTION(w));
-					if(!navit_set_attr(gui->nav, &attr)) {
-						dbg(lvl_error, "Failed to set attr_cursor");
-					}
-					return 0;
-				}
-				break;
-				case ID_DISPLAY_ORIENT:
-				{
-					struct attr attr;
-
-					attr.type=attr_orientation;
-					// attr.u.num=gtk_toggle_action_get_active(GTK_TOGGLE_ACTION(w));
-					attr.u.num = 0; // TODO
-					if(!navit_set_attr(gui->nav, &attr)) {
-						dbg(lvl_error, "Failed to set attr_orientation");
-					}
-					return 0;
-				}
-
-				case ID_FILE_EXIT:
-					PostMessage(hwnd, WM_CLOSE, 0, 0);
-					return 0;
-				break;
+			attr.type=attr_orientation;
+			// attr.u.num=gtk_toggle_action_get_active(GTK_TOGGLE_ACTION(w));
+			attr.u.num = 0; // TODO
+			if(!navit_set_attr(gui->nav, &attr)) {
+				dbg(lvl_error, "Failed to set attr_orientation");
 			}
+			return 0;
+		}
+
+		case ID_FILE_EXIT:
+			PostMessage(hwnd, WM_CLOSE, 0, 0);
+			return 0;
+			break;
+		}
 #if HAVE_GLIB
-			if ( popup_menu_array )
-			{
-				struct menu_priv* priv = (struct menu_priv*)g_array_index( popup_menu_array, gint, LOWORD(wParam) - POPUP_MENU_OFFSET );
+		if ( popup_menu_array ) {
+			struct menu_priv* priv = (struct menu_priv*)g_array_index( popup_menu_array, gint, LOWORD(wParam) - POPUP_MENU_OFFSET );
 
-				if ( priv )
-				{
-					struct callback* cb = priv->cb;
-					if ( priv->cb )
-					{
-						callback_call_0( priv->cb );
-						return 0;
-					}
+			if ( priv ) {
+				struct callback* cb = priv->cb;
+				if ( priv->cb ) {
+					callback_call_0( priv->cb );
+					return 0;
 				}
 			}
+		}
 #endif
+	}
+	break;
+	case WM_USER+ 1:
+		GetClientRect(hwnd, &rcClient);
+		printf( "resize gui to: %d %d \n", rcClient.right, rcClient.bottom );
+
+		window_layout( hwnd );
+		//EnumChildWindows(hwnd, EnumChildProc, (LPARAM) &rcClient);
+		return 0;
+		break;
+	case WM_CLOSE:
+		DestroyWindow(hwnd);
+		break;
+	case WM_SIZE:
+		window_layout( hwnd );
+		return 0;
+		break;
+	case WM_DESTROY:
+		PostQuitMessage(0);
+		break;
+
+
+	case WM_MOUSEWHEEL: {
+		struct gui_priv* gui = (struct gui_priv*)GetWindowLongPtr( hwnd, DWLP_USER );
+
+		short delta = GET_WHEEL_DELTA_WPARAM( wParam );
+		if ( delta > 0 ) {
+			navit_zoom_in(gui->nav, 2, NULL);
+		} else {
+			navit_zoom_out(gui->nav, 2, NULL);
 		}
-		break;
-		case WM_USER+ 1:
-            GetClientRect(hwnd, &rcClient);
-			printf( "resize gui to: %d %d \n", rcClient.right, rcClient.bottom );
-
-			window_layout( hwnd );
-            //EnumChildWindows(hwnd, EnumChildProc, (LPARAM) &rcClient);
-            return 0;
-		break;
-		case WM_CLOSE:
-			DestroyWindow(hwnd);
-		break;
-		case WM_SIZE:
-			window_layout( hwnd );
-            return 0;
-		break;
-		case WM_DESTROY:
-			PostQuitMessage(0);
-		break;
-
-
-		case WM_MOUSEWHEEL:
-		{
-			struct gui_priv* gui = (struct gui_priv*)GetWindowLongPtr( hwnd , DWLP_USER );
-
-			short delta = GET_WHEEL_DELTA_WPARAM( wParam );
-			if ( delta > 0 )
-			{
-				navit_zoom_in(gui->nav, 2, NULL);
-			}
-			else{
-				navit_zoom_out(gui->nav, 2, NULL);
-			}
-		}
-		break;
+	}
+	break;
 #ifdef HAVE_API_WIN32_CE
-		case WM_KEYDOWN:
-			{
-			struct point p;
-			int w,h;
-			struct gui_priv* gui = (struct gui_priv*)GetWindowLongPtr( hwnd , DWLP_USER );
-			transform_get_size(navit_get_trans(gui->nav), &w, &h);
-			
-			if (wParam == VK_LEFT || wParam == '4') {
-				p.x=0;
-				p.y=h/2;
-				navit_set_center_screen(gui->nav, &p, 1);
-			} else if (wParam == VK_RIGHT || wParam == '6') {
-				p.x=w;
-				p.y=h/2;
-				navit_set_center_screen(gui->nav, &p, 1);
-			} else if (wParam == VK_UP || wParam == '2') {
-				p.x=w/2;
-				p.y=0;
-				navit_set_center_screen(gui->nav, &p, 1);
-			} else if (wParam == VK_DOWN || wParam == '8') {
-				p.x=w/2;
-				p.y=h;
-				navit_set_center_screen(gui->nav, &p, 1);
-			} else if (wParam == '1') {
-				navit_zoom_in(gui->nav, 2, NULL);
-			} else if (wParam == '3') {
-				navit_zoom_out(gui->nav, 2, NULL);
-			} else if (wParam == '7') {
+	case WM_KEYDOWN: {
+		struct point p;
+		int w,h;
+		struct gui_priv* gui = (struct gui_priv*)GetWindowLongPtr( hwnd, DWLP_USER );
+		transform_get_size(navit_get_trans(gui->nav), &w, &h);
+
+		if (wParam == VK_LEFT || wParam == '4') {
+			p.x=0;
+			p.y=h/2;
+			navit_set_center_screen(gui->nav, &p, 1);
+		} else if (wParam == VK_RIGHT || wParam == '6') {
+			p.x=w;
+			p.y=h/2;
+			navit_set_center_screen(gui->nav, &p, 1);
+		} else if (wParam == VK_UP || wParam == '2') {
+			p.x=w/2;
+			p.y=0;
+			navit_set_center_screen(gui->nav, &p, 1);
+		} else if (wParam == VK_DOWN || wParam == '8') {
+			p.x=w/2;
+			p.y=h;
+			navit_set_center_screen(gui->nav, &p, 1);
+		} else if (wParam == '1') {
+			navit_zoom_in(gui->nav, 2, NULL);
+		} else if (wParam == '3') {
+			navit_zoom_out(gui->nav, 2, NULL);
+		} else if (wParam == '7') {
 #if 0
-				toggle_backlight();
+			toggle_backlight();
 #endif
-			} else if (wParam == '9') {
+		} else if (wParam == '9') {
 #if 0
-				toggle_fullscreen(hwnd);
+			toggle_fullscreen(hwnd);
 #endif
-			}
-			}
-		break;
+		}
+	}
+	break;
 #endif
-		default:
-			return DefWindowProc(hwnd, Message, wParam, lParam);
+	default:
+		return DefWindowProc(hwnd, Message, wParam, lParam);
 	}
 	return 0;
 }
@@ -441,21 +423,20 @@ static HANDLE CreateWin32Window( void )
 	}
 
 	hwnd = CreateWindowEx(
-		WS_EX_CLIENTEDGE,
-		g_szClassName,
-		TEXT( "Navit" ),
+	               WS_EX_CLIENTEDGE,
+	               g_szClassName,
+	               TEXT( "Navit" ),
 #ifdef HAVE_API_WIN32_CE
-		WS_SYSMENU | WS_CLIPCHILDREN,
-		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+	               WS_SYSMENU | WS_CLIPCHILDREN,
+	               CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
 #else
 
-		WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
-		CW_USEDEFAULT, CW_USEDEFAULT, 800, 600,
+	               WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
+	               CW_USEDEFAULT, CW_USEDEFAULT, 800, 600,
 #endif
-		NULL, NULL, NULL, NULL);
+	               NULL, NULL, NULL, NULL);
 
-	if(hwnd == NULL)
-	{
+	if(hwnd == NULL) {
 		MessageBox(NULL, TEXT("Window Creation Failed!"), TEXT("Error!"), MB_ICONEXCLAMATION | MB_OK);
 		return 0;
 	}
@@ -488,7 +469,7 @@ static void win32_gui_add_bookmark_do(struct gui_priv *gui)
 
 static int win32_gui_add_bookmark(struct gui_priv *gui, struct pcoord *c, char *description)
 {
- 	return 1;
+	return 1;
 }
 
 
@@ -496,10 +477,10 @@ static struct menu_methods menu_methods;
 
 
 static struct menu_priv *add_menu(	struct menu_priv *menu,
-									struct menu_methods *meth,
-									char *name,
-									enum menu_type type,
-									struct callback *cb)
+                                        struct menu_methods *meth,
+                                        char *name,
+                                        enum menu_type type,
+                                        struct callback *cb)
 {
 	struct menu_priv* ret = NULL;
 
@@ -510,15 +491,12 @@ static struct menu_priv *add_menu(	struct menu_priv *menu,
 
 	TCHAR *menuname = newSysString(name);
 
-	if ( type == menu_type_submenu )
-	{
+	if ( type == menu_type_submenu ) {
 		HMENU hSubMenu = NULL;
 		hSubMenu = CreatePopupMenu();
 		AppendMenu(menu->hMenu, MF_STRING | MF_POPUP, (UINT)hSubMenu, menuname );
 		ret->hMenu = hSubMenu;
-	}
-	else
-	{
+	} else {
 		AppendMenu( menu->hMenu, MF_STRING, menu_id, name );
 	}
 
@@ -557,8 +535,7 @@ static void popup_activate(struct menu_priv *menu)
 	POINT pnt;
 	GetCursorPos( &pnt );
 
-	if (menu->hMenu)
-	{
+	if (menu->hMenu) {
 		TrackPopupMenu( menu->hMenu, 0, pnt.x, pnt.y, 0, menu->wnd_handle, NULL );
 		DestroyMenu( menu->hMenu );
 	}
@@ -580,8 +557,7 @@ static struct menu_priv* win32_gui_popup_new(struct gui_priv *this_, struct menu
 	menu_id = POPUP_MENU_OFFSET;
 
 #if HAVE_GLIB
-	if ( popup_menu_array )
-	{
+	if ( popup_menu_array ) {
 		g_array_free (popup_menu_array, TRUE);
 		popup_menu_array = NULL;
 	}
@@ -594,7 +570,7 @@ static struct menu_priv* win32_gui_popup_new(struct gui_priv *this_, struct menu
 	ret->wnd_handle = this_->hwnd;
 	meth->popup=popup_activate;
 
-printf( "create popup menu %d \n", ret->hMenu );
+	printf( "create popup menu %d \n", ret->hMenu );
 
 	return ret;
 }
@@ -632,7 +608,7 @@ static struct gui_priv *win32_gui_new( struct navit *nav, struct gui_methods *me
 	this_->nav=nav;
 
 	this_->hwnd = CreateWin32Window();
-	SetWindowLongPtr( this_->hwnd , DWLP_USER, (LONG_PTR)this_ );
+	SetWindowLongPtr( this_->hwnd, DWLP_USER, (LONG_PTR)this_ );
 
 	return this_;
 }

@@ -78,8 +78,8 @@ attr_new_py(PyObject *self, PyObject *args)
 {
 	attrObject *ret;
 	const char *name,*value;
-        if (!PyArg_ParseTuple(args, "ss", &name, &value))
-                return NULL;
+	if (!PyArg_ParseTuple(args, "ss", &name, &value))
+		return NULL;
 	ret=PyObject_NEW(attrObject, &attr_Type);
 	ret->attr=attr_new_from_text(name, value);
 	ret->ref=0;

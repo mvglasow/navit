@@ -27,8 +27,10 @@
 int coord_debug;
 
 #if 0
-static void street_name_numbers_get(struct street_name_numbers *name_numbers, unsigned char **p);
-static void street_name_number_get(struct street_name_number *name_number, unsigned char **p);
+static void
+street_name_numbers_get(struct street_name_numbers *name_numbers, unsigned char **p);
+static void
+street_name_number_get(struct street_name_number *name_number, unsigned char **p);
 
 static void
 street_name_debug(struct street_name *sn, FILE *out)
@@ -42,7 +44,8 @@ street_name_debug(struct street_name *sn, FILE *out)
 		unsigned char *pn,*pn_end;
 		struct street_name_number nn;
 		street_name_numbers_get(&nns, &p);
-		fprintf(out,"0x%x 0x%x type=town_label label=\"%s(%d):0x%x:%d%s-%d%s\" debug=\"len=0x%x\"",nns.c->x,nns.c->y,sn->name2, sn->segment_count, nns.tag, nns.first.number,nns.first.suffix,nns.last.number,nns.last.suffix,nns.len);
+		fprintf(out,"0x%x 0x%x type=town_label label=\"%s(%d):0x%x:%d%s-%d%s\" debug=\"len=0x%x\"",nns.c->x,nns.c->y,sn->name2,
+		        sn->segment_count, nns.tag, nns.first.number,nns.first.suffix,nns.last.number,nns.last.suffix,nns.len);
 		for (i = 0 ; i < sn->segment_count ; i++) {
 			fprintf(out," debug=\"segment(%d)=0x%x\"",i,sn->segments[i].segid);
 		}
@@ -51,7 +54,8 @@ street_name_debug(struct street_name *sn, FILE *out)
 		pn_end=nns.aux_data+nns.aux_len;
 		while (pn < pn_end) {
 			street_name_number_get(&nn, &pn);
-			fprintf(out,"0x%x 0x%x type=town_label label=\"%s:0x%x:%d%s-%d%s\" debug=\"len=0x%x\"\n", nn.c->x, nn.c->y, sn->name2, nn.tag, nn.first.number, nn.first.suffix, nn.last.number,nn.last.suffix,nn.len);
+			fprintf(out,"0x%x 0x%x type=town_label label=\"%s:0x%x:%d%s-%d%s\" debug=\"len=0x%x\"\n", nn.c->x, nn.c->y, sn->name2,
+			        nn.tag, nn.first.number, nn.first.suffix, nn.last.number,nn.last.suffix,nn.len);
 		}
 	}
 	fflush(out);
@@ -116,14 +120,14 @@ static void
 street_name_number_get(struct street_name_number *name_number, unsigned char **p)
 {
 	unsigned char *start=*p;
-        name_number->len=get_u16_unal(p);
-        name_number->tag=get_u8(p);
-        name_number->c=coord_get(p);
+	name_number->len=get_u16_unal(p);
+	name_number->tag=get_u8(p);
+	name_number->c=coord_get(p);
 	name_number->first.number=get_u16_unal(p);
 	name_number->first.suffix=get_string(p);
 	name_number->last.number=get_u16_unal(p);
 	name_number->last.suffix=get_string(p);
-        name_number->segment=(struct street_name_segment *)p;
+	name_number->segment=(struct street_name_segment *)p;
 	*p=start+name_number->len;
 }
 
@@ -140,16 +144,16 @@ street_name_get_by_id(struct street_name *name, struct file *file, unsigned long
 static int street_get_bytes(struct coord_rect *r)
 {
 	int bytes,dx,dy;
-        bytes=2;
-        dx=r->rl.x-r->lu.x;
-        dy=r->lu.y-r->rl.y;
+	bytes=2;
+	dx=r->rl.x-r->lu.x;
+	dy=r->lu.y-r->rl.y;
 	dbg_assert(dx > 0);
-	dbg_assert(dy > 0); 
-        if (dx > 32767 || dy > 32767)
-                bytes=3;
-        if (dx > 8388608 || dy > 8388608)
-                bytes=4;                  
-	
+	dbg_assert(dy > 0);
+	if (dx > 32767 || dy > 32767)
+		bytes=3;
+	if (dx > 8388608 || dy > 8388608)
+		bytes=4;
+
 	return bytes;
 }
 
@@ -157,17 +161,16 @@ static int street_get_coord(unsigned char **pos, int bytes, struct coord_rect *r
 {
 	unsigned char *p;
 	int x,y,flags=0;
-		
+
 	p=*pos;
-        x=*p++;
-        x|=(*p++) << 8;
-        if (bytes == 2) {
+	x=*p++;
+	x|=(*p++) << 8;
+	if (bytes == 2) {
 		if (   x > 0x7fff) {
 			x=0x10000-x;
 			flags=1;
 		}
-	}
-	else if (bytes == 3) {
+	} else if (bytes == 3) {
 		x|=(*p++) << 16;
 		if (   x > 0x7fffff) {
 			x=0x1000000-x;
@@ -215,7 +218,7 @@ street_coord_get_begin(unsigned char **p)
 static void
 street_coord_rewind(void *priv_data)
 {
-	struct street_priv *street=priv_data; 
+	struct street_priv *street=priv_data;
 
 	street->p=street->next=NULL;
 	street->status=street->status_rewind;
@@ -225,7 +228,7 @@ static int
 street_coord_get_helper(struct street_priv *street, struct coord *c)
 {
 	unsigned char *n;
-	if (street->p+street->bytes*2 >= street->end) 
+	if (street->p+street->bytes*2 >= street->end)
 		return 0;
 	if (street->status >= 4)
 		return 0;
@@ -287,7 +290,7 @@ street_coord_get(void *priv_data, struct coord *c, int count)
 	return ret;
 }
 
-	static void
+static void
 street_attr_rewind(void *priv_data)
 {
 	/* struct street_priv *street=priv_data; */
@@ -357,9 +360,13 @@ street_attr_get(void *priv_data, enum attr_type attr_type, struct attr *attr)
 	case attr_debug:
 		street->attr_next=attr_none;
 		{
-		struct street_str *str=street->str;
-		sprintf(street->debug,"order:0x%x\nsegid:0x%x\nlimit:0x%x\nunknown2:0x%x\nunknown3:0x%x\ntype:0x%x\nnameid:0x%x\ntownassoc:0x%x",street_header_get_order(street->header),street_str_get_segid(str),street_str_get_limit(str),street_str_get_unknown2(str),street_str_get_unknown3(str),street_str_get_type(str),street_str_get_nameid(str), street->name.len ? street->name.townassoc : 0);
-		attr->u.str=street->debug;
+			struct street_str *str=street->str;
+			sprintf(street->debug,
+			        "order:0x%x\nsegid:0x%x\nlimit:0x%x\nunknown2:0x%x\nunknown3:0x%x\ntype:0x%x\nnameid:0x%x\ntownassoc:0x%x",
+			        street_header_get_order(street->header),street_str_get_segid(str),street_str_get_limit(str),
+			        street_str_get_unknown2(str),street_str_get_unknown3(str),street_str_get_type(str),street_str_get_nameid(str),
+			        street->name.len ? street->name.townassoc : 0);
+			attr->u.str=street->debug;
 		}
 		return 1;
 	default:
@@ -381,16 +388,16 @@ street_get_data(struct street_priv *street, unsigned char **p)
 	street->header=(struct street_header *)(*p);
 	(*p)+=sizeof(struct street_header);
 	street->type_count=street_header_get_count(street->header);
-	street->type=(struct street_type *)(*p);	
+	street->type=(struct street_type *)(*p);
 	(*p)+=street->type_count*sizeof(struct street_type);
 }
 
-                            /*0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 */
-static unsigned char limit[]={0,0,1,1,1,2,2,4,6,6,12,13,14,20,20,20,20,20,20};
+/*0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 */
+static unsigned char limit[]= {0,0,1,1,1,2,2,4,6,6,12,13,14,20,20,20,20,20,20};
 
 int
 street_get(struct map_rect_priv *mr, struct street_priv *street, struct item *item)
-{	
+{
 	int *flags;
 	struct coord_rect r;
 	for (;;) {
@@ -411,7 +418,7 @@ street_get(struct map_rect_priv *mr, struct street_priv *street, struct item *it
 			street->coord_begin=mr->b.p;
 			street_coord_get_begin(&street->coord_begin);
 			street->p=street->coord_begin;
-			street->type--; 
+			street->type--;
 			item->meth=&street_meth;
 			item->priv_data=street;
 		} else {
@@ -425,10 +432,11 @@ street_get(struct map_rect_priv *mr, struct street_priv *street, struct item *it
 		street->next=NULL;
 		street->status_rewind=street->status=street_str_get_segid(&street->str[1]) >= 0 ? 0:1;
 		item->id_hi=street_type_get_country(street->type) | (mr->current_file << 16);
-		item->id_lo=street_str_get_segid(street->str) > 0 ? street_str_get_segid(street->str) : -street_str_get_segid(street->str);
+		item->id_lo=street_str_get_segid(street->str) > 0 ? street_str_get_segid(street->str) : -street_str_get_segid(
+		                    street->str);
 		switch(street_str_get_type(street->str) & 0x1f) {
 		case 0xf: /* very small street */
-			if (street_str_get_limit(street->str) == 0x33) 
+			if (street_str_get_limit(street->str) == 0x33)
 				item->type=type_street_nopass;
 			else
 				item->type=type_street_0;
@@ -443,9 +451,10 @@ street_get(struct map_rect_priv *mr, struct street_priv *street, struct item *it
 			item->type=type_street_2_city;
 			break;
 		case 0xa:
-			if ((street_str_get_limit(street->str) == 0x03 || street_str_get_limit(street->str) == 0x30) && street_header_get_order(street->header) < 4)
+			if ((street_str_get_limit(street->str) == 0x03 || street_str_get_limit(street->str) == 0x30)
+			                && street_header_get_order(street->header) < 4)
 				item->type=type_street_4_city;
-			else	
+			else
 				item->type=type_street_3_city;
 			break;
 		case 0x9:
@@ -460,7 +469,8 @@ street_get(struct map_rect_priv *mr, struct street_priv *street, struct item *it
 			item->type=type_street_2_land;
 			break;
 		case 0x7:
-			if ((street_str_get_limit(street->str) == 0x03 || street_str_get_limit(street->str) == 0x30) && street_header_get_order(street->header) < 4)
+			if ((street_str_get_limit(street->str) == 0x03 || street_str_get_limit(street->str) == 0x30)
+			                && street_header_get_order(street->header) < 4)
 				item->type=type_street_4_city;
 			else
 				item->type=type_street_3_land;
@@ -505,7 +515,7 @@ street_get(struct map_rect_priv *mr, struct street_priv *street, struct item *it
 		street->more=1;
 		street->housenumber=1;
 		street->hn_count=0;
-		if (!map_selection_contains_item(mr->cur_sel, 0, item->type)) 
+		if (!map_selection_contains_item(mr->cur_sel, 0, item->type))
 			continue;
 		item->meth=&street_meth;
 		item->priv_data=street;
@@ -516,16 +526,16 @@ street_get(struct map_rect_priv *mr, struct street_priv *street, struct item *it
 int
 street_get_byid(struct map_rect_priv *mr, struct street_priv *street, int id_hi, int id_lo, struct item *item)
 {
-        int country=id_hi & 0xffff;
-        int res;
+	int country=id_hi & 0xffff;
+	int res;
 	struct coord_rect r;
 	dbg(lvl_debug,"enter(%p,%p,0x%x,0x%x,%p)", mr, street, id_hi, id_lo, item);
 	if (! country)
 		return 0;
-        if (! tree_search_hv(mr->m->dirname, "street", (id_lo >> 8) | (country << 24), id_lo & 0xff, &res))
+	if (! tree_search_hv(mr->m->dirname, "street", (id_lo >> 8) | (country << 24), id_lo & 0xff, &res))
 		return 0;
 	dbg(lvl_debug,"res=0x%x (blk=0x%x)", res, res >> 12);
-        block_get_byindex(mr->m->file[mr->current_file], res >> 12, &mr->b);
+	block_get_byindex(mr->m->file[mr->current_file], res >> 12, &mr->b);
 	street_get_data(street, &mr->b.p);
 	street->name_file=mr->m->file[file_strname_stn];
 	street->end=mr->b.end;
@@ -546,12 +556,12 @@ street_get_byid(struct map_rect_priv *mr, struct street_priv *street, int id_hi,
 
 struct street_name_index {
 	int block;
-        unsigned short country;
-        int town_assoc;
-        char name[0];
+	unsigned short country;
+	int town_assoc;
+	char name[0];
 } __attribute__((packed));
 
-static unsigned char 
+static unsigned char
 latin1_tolower(unsigned char c)
 {
 	if (c >= 'A' && c <= 'Z')
@@ -616,7 +626,7 @@ strncasecmp_latin1_ascii(char *str1, char *str2, int len)
 static int
 street_search_compare_do(struct map_rect_priv *mr, int country, int town_assoc, char *name)
 {
-        int d,len;
+	int d,len;
 
 	dbg(lvl_debug,"enter");
 	dbg(lvl_debug,"country 0x%x town_assoc 0x%x name '%s'", country, town_assoc, name);
@@ -639,7 +649,7 @@ street_search_compare_do(struct map_rect_priv *mr, int country, int town_assoc, 
 		}
 	}
 	dbg(lvl_debug,"d=%d", d);
-	return d;	
+	return d;
 }
 
 static int
@@ -653,7 +663,7 @@ street_search_compare(unsigned char **p, struct map_rect_priv *mr)
 	*p+=sizeof(*i)+strlen(i->name)+1;
 
 	dbg(lvl_debug,"block 0x%x", i->block);
-	
+
 	ret=street_search_compare_do(mr, i->country, i->town_assoc, i->name);
 	if (ret <= 0)
 		mr->search_block=i->block;
@@ -687,7 +697,7 @@ street_name_coord_get(void *priv_data, struct coord *c, int count)
 		street_name_numbers_get_coord(&snns, c);
 		return 1;
 	}
-	
+
 	return 0;
 }
 
@@ -695,43 +705,43 @@ street_name_coord_get(void *priv_data, struct coord *c, int count)
 static void
 debug(struct map_rect_priv *mr)
 {
-			int i;
-			struct street_name_numbers nns;
-			unsigned char *p=mr->street.name.aux_data;
-			unsigned char *end=p+mr->street.name.aux_len;
-			printf("len=0x%x\n", mr->street.name.aux_len);
-			for (i = 0 ; i < mr->street.name.aux_len ; i++) {
-				printf("%02x ",mr->street.name.aux_data[i]);
+	int i;
+	struct street_name_numbers nns;
+	unsigned char *p=mr->street.name.aux_data;
+	unsigned char *end=p+mr->street.name.aux_len;
+	printf("len=0x%x\n", mr->street.name.aux_len);
+	for (i = 0 ; i < mr->street.name.aux_len ; i++) {
+		printf("%02x ",mr->street.name.aux_data[i]);
+	}
+	printf("\n");
+	{
+		while (p < end) {
+			unsigned char *pn,*pn_end;
+			struct street_name_number nn;
+			street_name_numbers_get(&nns, &p);
+			printf("name_numbers:\n");
+			printf("  len 0x%x\n", nns.len);
+			printf("  tag 0x%x\n", nns.tag);
+			printf("  dist 0x%x\n", nns.dist);
+			printf("  country 0x%x\n", nns.country);
+			printf("  coord 0x%x,0x%x\n", nns.c->x, nns.c->y);
+			printf("  first %d\n", nns.first.number);
+			printf("  last %d\n", nns.last.number);
+			printf("  segment count 0x%x\n", nns.segment_count);
+			printf("  aux_len 0x%x\n", nns.aux_len);
+			pn=nns.aux_data;
+			pn_end=nns.aux_data+nns.aux_len;
+			while (pn < pn_end) {
+				printf("  number:\n");
+				street_name_number_get(&nn, &pn);
+				printf("    len 0x%x\n", nn.len);
+				printf("    tag 0x%x\n", nn.tag);
+				printf("    coord 0x%x,0x%x\n", nn.c->x, nn.c->y);
+				printf("    first %d\n", nn.first.number);
+				printf("    last %d\n", nn.last.number);
 			}
-			printf("\n");
-			{
-				while (p < end) {
-					unsigned char *pn,*pn_end;
-					struct street_name_number nn;
-					street_name_numbers_get(&nns, &p);
-					printf("name_numbers:\n");
-					printf("  len 0x%x\n", nns.len);
-					printf("  tag 0x%x\n", nns.tag);
-					printf("  dist 0x%x\n", nns.dist);
-					printf("  country 0x%x\n", nns.country);
-					printf("  coord 0x%x,0x%x\n", nns.c->x, nns.c->y);
-					printf("  first %d\n", nns.first.number);
-					printf("  last %d\n", nns.last.number);
-					printf("  segment count 0x%x\n", nns.segment_count);
-					printf("  aux_len 0x%x\n", nns.aux_len);
-					pn=nns.aux_data;
-					pn_end=nns.aux_data+nns.aux_len;
-					while (pn < pn_end) {
-						printf("  number:\n");
-						street_name_number_get(&nn, &pn);
-						printf("    len 0x%x\n", nn.len);
-						printf("    tag 0x%x\n", nn.tag);
-						printf("    coord 0x%x,0x%x\n", nn.c->x, nn.c->y);
-						printf("    first %d\n", nn.first.number);
-						printf("    last %d\n", nn.last.number);
-					}
-				}
-			}
+		}
+	}
 }
 #endif
 
@@ -752,7 +762,8 @@ street_name_attr_get(void *priv_data, enum attr_type attr_type, struct attr *att
 	case attr_district_name:
 	case attr_postal:
 		if (!mr->search_item_tmp)
-			mr->search_item_tmp=map_rect_get_item_byid_mg(mr->search_mr_tmp, mr->street.name_numbers.country | (file_town_twn << 16), mr->street.name_numbers.dist);
+			mr->search_item_tmp=map_rect_get_item_byid_mg(mr->search_mr_tmp,
+			                    mr->street.name_numbers.country | (file_town_twn << 16), mr->street.name_numbers.dist);
 		if (!mr->search_item_tmp)
 			return 0;
 		return item_attr_get(mr->search_item_tmp, attr_type, attr);
@@ -786,7 +797,8 @@ street_name_get_byid(struct map_rect_priv *mr, struct street_priv *street, int i
 	item->map=NULL;
 	item->priv_data=mr;
 	mr->b.p=street->name_file->begin+item->id_lo;
-	dbg(lvl_debug,"last %p map %p file %d begin %p", mr->b.p, mr->m, mr->current_file, mr->m->file[mr->current_file]->begin);
+	dbg(lvl_debug,"last %p map %p file %d begin %p", mr->b.p, mr->m, mr->current_file,
+	    mr->m->file[mr->current_file]->begin);
 	street_name_get(&street->name, &mr->b.p);
 	return 1;
 }
@@ -829,18 +841,22 @@ street_search_get_item_street_name(struct map_rect_priv *mr)
 			last=mr->b.p;
 			street_name_get(&mr->street.name, &mr->b.p);
 			dir=street_search_compare_do(mr, mr->street.name.country, mr->street.name.townassoc, mr->street.name.name2);
-			dbg(lvl_debug,"country 0x%x assoc 0x%x name1 '%s' name2 '%s' dir=%d", mr->street.name.country, mr->street.name.townassoc, mr->street.name.name1, mr->street.name.name2, dir);
+			dbg(lvl_debug,"country 0x%x assoc 0x%x name1 '%s' name2 '%s' dir=%d", mr->street.name.country,
+			    mr->street.name.townassoc, mr->street.name.name1, mr->street.name.name2, dir);
 			if (dir < 0) {
 				dbg(lvl_debug,"end of data");
 				mr->search_blk_count=0;
 				return NULL;
 			}
 			if (!dir) {
-				dbg(lvl_debug,"result country 0x%x assoc 0x%x name1 '%s' name2 '%s' dir=%d aux_data=%p len=0x%x", mr->street.name.country, mr->street.name.townassoc, mr->street.name.name1, mr->street.name.name2, dir, mr->street.name.aux_data, mr->street.name.aux_len);
+				dbg(lvl_debug,"result country 0x%x assoc 0x%x name1 '%s' name2 '%s' dir=%d aux_data=%p len=0x%x",
+				    mr->street.name.country, mr->street.name.townassoc, mr->street.name.name1, mr->street.name.name2, dir,
+				    mr->street.name.aux_data, mr->street.name.aux_len);
 				mr->item.type = type_street_name;
 				mr->item.id_hi=(file_strname_stn << 16);
 				mr->item.id_lo=last-mr->m->file[file_strname_stn]->begin;
-				dbg(lvl_debug,"id 0x%x 0x%x last %p map %p file %d begin %p", mr->item.id_hi, mr->item.id_lo, last, mr->m, mr->current_file, mr->m->file[mr->current_file]->begin);
+				dbg(lvl_debug,"id 0x%x 0x%x last %p map %p file %d begin %p", mr->item.id_hi, mr->item.id_lo, last, mr->m,
+				    mr->current_file, mr->m->file[mr->current_file]->begin);
 				mr->item.meth=&street_name_meth;
 				mr->item.map=NULL;
 				mr->item.priv_data=mr;
@@ -926,7 +942,8 @@ housenumber_attr_get(void *priv_data, enum attr_type attr_type, struct attr *att
 	case attr_district_name:
 	case attr_postal:
 		if (!mr->search_item_tmp)
-			mr->search_item_tmp=map_rect_get_item_byid_mg(mr->search_mr_tmp, mr->street.name_numbers.country | (file_town_twn << 16), mr->street.name_numbers.dist);
+			mr->search_item_tmp=map_rect_get_item_byid_mg(mr->search_mr_tmp,
+			                    mr->street.name_numbers.country | (file_town_twn << 16), mr->street.name_numbers.dist);
 		if (!mr->search_item_tmp)
 			return 0;
 		return item_attr_get(mr->search_item_tmp, attr_type, attr);
@@ -968,8 +985,9 @@ housenumber_search_setup(struct map_rect_priv *mr)
 	if (!id)
 		mr->item.id_hi+=1;
 	mr->item.id_lo=mr->search_item.id_lo;
-	dbg(lvl_debug,"getting name_number %p vs %p + %d",mr->street.name_numbers.tmp_data,mr->street.name_numbers.aux_data, mr->street.name_numbers.aux_len);
-	if (!street_name_number_next(mr)) 
+	dbg(lvl_debug,"getting name_number %p vs %p + %d",mr->street.name_numbers.tmp_data,mr->street.name_numbers.aux_data,
+	    mr->street.name_numbers.aux_len);
+	if (!street_name_number_next(mr))
 		return 0;
 	dbg(lvl_debug,"enter");
 	// debug(mr);
@@ -996,7 +1014,7 @@ house_number_next(char *number, char *first, char *last, int interpolation, int 
 		delta=current-firstn;
 	}
 	if (percentage) {
-		if (len) 
+		if (len)
 			*percentage=delta*100/len;
 		else
 			*percentage=50;
@@ -1017,11 +1035,11 @@ housenumber_search_get_item(struct map_rect_priv *mr)
 		}
 		if (mr->search_partial)
 			d=strncasecmp(mr->search_str, mr->street.current_number, strlen(mr->search_str));
-                else
+		else
 			d=strcasecmp(mr->search_str, mr->street.current_number);
 		if (!d) {
 			mr->search_item_tmp=NULL;
 			return &mr->item;
 		}
 	}
-} 
+}

@@ -18,127 +18,131 @@ import java.io.ObjectInputStream;
 import java.util.Map;
 import java.util.Map.Entry;
 
-public class NavitRestoreTask extends AsyncTask<Void, Void, String> {
+public class NavitRestoreTask extends AsyncTask<Void, Void, String>
+{
 
-    private Navit mActivity;
+	private Navit mActivity;
 
-    private ProgressDialog mDialog;
+	private ProgressDialog mDialog;
 
-    private String mTimestamp;
+	private String mTimestamp;
 
-    public NavitRestoreTask(Navit context, String timestamp) {
-        mActivity = context;
-        mTimestamp = timestamp;
-    }
+	public NavitRestoreTask(Navit context, String timestamp)
+	{
+		mActivity = context;
+		mTimestamp = timestamp;
+	}
 
-    @Override
-    protected void onPreExecute() {
-        super.onPreExecute();
+	@Override
+	protected void onPreExecute()
+	{
+		super.onPreExecute();
 
-        /* Create a Wait Progress Dialog to inform the User that we are working */
-        mDialog = new ProgressDialog(mActivity);
-        mDialog.setIndeterminate(true);
-        mDialog.setMessage(mActivity.getString(R.string.restoring));
-        mDialog.show();
-    }
+		/* Create a Wait Progress Dialog to inform the User that we are working */
+		mDialog = new ProgressDialog(mActivity);
+		mDialog.setIndeterminate(true);
+		mDialog.setMessage(mActivity.getString(R.string.restoring));
+		mDialog.show();
+	}
 
-    @SuppressWarnings("unchecked")
-    @Override
-    protected String doInBackground(Void... v) {
+	@SuppressWarnings("unchecked")
+	@Override
+	protected String doInBackground(Void... v)
+	{
 
-        /* This is the Directory where all Subdirectories are stored by date */
-        File backupDir = new File(Environment.getExternalStorageDirectory().getPath() + "/navit/backup/" + mTimestamp);
-        
-        /* Check if there is a Backup Directory */
-        if (!backupDir.isDirectory())
-            return mActivity.getString(R.string.backup_not_found);
+		/* This is the Directory where all Subdirectories are stored by date */
+		File backupDir = new File(Environment.getExternalStorageDirectory().getPath() + "/navit/backup/" + mTimestamp);
 
-        ObjectInputStream preferenceOIS = null;
-        try {
-            /* Delete all old Files in Home */
-            mActivity.removeFileIfExists(Navit.NAVIT_DATA_DIR + "/home/bookmark.txt");
-            mActivity.removeFileIfExists(Navit.NAVIT_DATA_DIR + "/home/destination.txt");
-            mActivity.removeFileIfExists(Navit.NAVIT_DATA_DIR + "/home/gui_internal.txt");
+		/* Check if there is a Backup Directory */
+		if (!backupDir.isDirectory())
+			return mActivity.getString(R.string.backup_not_found);
 
-            
-            /* Restore Files in home */
-            mActivity.copyFileIfExists(backupDir.getPath() + "/bookmark.txt", Navit.NAVIT_DATA_DIR + "/home/bookmark.txt");
-            mActivity.copyFileIfExists(backupDir.getPath() + "/destination.txt", Navit.NAVIT_DATA_DIR + "/home/destination.txt");
-            mActivity.copyFileIfExists(backupDir.getPath() + "/gui_internal.txt", Navit.NAVIT_DATA_DIR + "/home/gui_internal.txt");
+		ObjectInputStream preferenceOIS = null;
+		try {
+			/* Delete all old Files in Home */
+			mActivity.removeFileIfExists(Navit.NAVIT_DATA_DIR + "/home/bookmark.txt");
+			mActivity.removeFileIfExists(Navit.NAVIT_DATA_DIR + "/home/destination.txt");
+			mActivity.removeFileIfExists(Navit.NAVIT_DATA_DIR + "/home/gui_internal.txt");
 
-            /* Restore Shared Preferences */
-            preferenceOIS = new ObjectInputStream(new FileInputStream(backupDir.getPath() + "/preferences.bak"));
-            Map<String, ?> entries = (Map<String, ?>) preferenceOIS.readObject();
 
-            Editor prefEditor = mActivity.getSharedPreferences(Navit.NAVIT_PREFS, Context.MODE_PRIVATE).edit();
+			/* Restore Files in home */
+			mActivity.copyFileIfExists(backupDir.getPath() + "/bookmark.txt", Navit.NAVIT_DATA_DIR + "/home/bookmark.txt");
+			mActivity.copyFileIfExists(backupDir.getPath() + "/destination.txt", Navit.NAVIT_DATA_DIR + "/home/destination.txt");
+			mActivity.copyFileIfExists(backupDir.getPath() + "/gui_internal.txt", Navit.NAVIT_DATA_DIR + "/home/gui_internal.txt");
 
-            /* Remove all old Preferences */
-            prefEditor.clear();
+			/* Restore Shared Preferences */
+			preferenceOIS = new ObjectInputStream(new FileInputStream(backupDir.getPath() + "/preferences.bak"));
+			Map<String, ?> entries = (Map<String, ?>) preferenceOIS.readObject();
 
-            /* Iterate through all Entries and add them to our Preferences */
-            for (Entry<String, ?> entry : entries.entrySet()) {
-                Object value = entry.getValue();
-                String key = entry.getKey();
+			Editor prefEditor = mActivity.getSharedPreferences(Navit.NAVIT_PREFS, Context.MODE_PRIVATE).edit();
 
-                if (value instanceof Boolean)
-                    prefEditor.putBoolean(key, ((Boolean) value).booleanValue());
-                else if (value instanceof Float)
-                    prefEditor.putFloat(key, ((Float) value).floatValue());
-                else if (value instanceof Integer)
-                    prefEditor.putInt(key, ((Integer) value).intValue());
-                else if (value instanceof Long)
-                    prefEditor.putLong(key, ((Long) value).longValue());
-                else if (value instanceof String)
-                    prefEditor.putString(key, (String) value);
-            }
+			/* Remove all old Preferences */
+			prefEditor.clear();
 
-            if (!prefEditor.commit())
-                return mActivity.getString(R.string.failed_to_restore);
+			/* Iterate through all Entries and add them to our Preferences */
+			for (Entry<String, ?> entry : entries.entrySet()) {
+				Object value = entry.getValue();
+				String key = entry.getKey();
 
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            return mActivity.getString(R.string.failed_to_restore);
-        }
-        finally {
-            try {
-                /* Close Stream to prevent Resource leak */
-                if (preferenceOIS != null)
-                    preferenceOIS.close();
-            }
-            catch (IOException e) {
+				if (value instanceof Boolean)
+					prefEditor.putBoolean(key, ((Boolean) value).booleanValue());
+				else if (value instanceof Float)
+					prefEditor.putFloat(key, ((Float) value).floatValue());
+				else if (value instanceof Integer)
+					prefEditor.putInt(key, ((Integer) value).intValue());
+				else if (value instanceof Long)
+					prefEditor.putLong(key, ((Long) value).longValue());
+				else if (value instanceof String)
+					prefEditor.putString(key, (String) value);
+			}
 
-            }
-        }
+			if (!prefEditor.commit())
+				return mActivity.getString(R.string.failed_to_restore);
 
-        return null;
-    }
+		} catch (Exception e) {
+			e.printStackTrace();
+			return mActivity.getString(R.string.failed_to_restore);
+		} finally {
+			try {
+				/* Close Stream to prevent Resource leak */
+				if (preferenceOIS != null)
+					preferenceOIS.close();
+			} catch (IOException e) {
 
-    @Override
-    protected void onPostExecute(String result) {
-        super.onPostExecute(result);
+			}
+		}
 
-        /* Dismiss the Wait Progress Dialog */
-        mDialog.dismiss();
+		return null;
+	}
 
-        /* If result is non null an Error occured */
-        if (result != null) {
-            Toast.makeText(mActivity, result, Toast.LENGTH_LONG).show();
-            return;
-        }
+	@Override
+	protected void onPostExecute(String result)
+	{
+		super.onPostExecute(result);
 
-        /* Navit needs to be restarted. Currently the User has to restart it by himself */
-        Toast.makeText(mActivity, mActivity.getString(R.string.restore_successful_please_restart_navit), Toast.LENGTH_LONG).show();
-        NotificationManager nm = (NotificationManager) mActivity.getSystemService(Context.NOTIFICATION_SERVICE);
-        nm.cancel(R.string.app_name);
-        NavitVehicle.removeListener();
-        mActivity.finish();
-    }
+		/* Dismiss the Wait Progress Dialog */
+		mDialog.dismiss();
 
-    @Override
-    protected void onCancelled() {
-        super.onCancelled();
-        Toast.makeText(mActivity, mActivity.getString(R.string.restore_failed), Toast.LENGTH_LONG).show();
-        mDialog.dismiss();
-    }    
+		/* If result is non null an Error occured */
+		if (result != null) {
+			Toast.makeText(mActivity, result, Toast.LENGTH_LONG).show();
+			return;
+		}
+
+		/* Navit needs to be restarted. Currently the User has to restart it by himself */
+		Toast.makeText(mActivity, mActivity.getString(R.string.restore_successful_please_restart_navit),
+		               Toast.LENGTH_LONG).show();
+		NotificationManager nm = (NotificationManager) mActivity.getSystemService(Context.NOTIFICATION_SERVICE);
+		nm.cancel(R.string.app_name);
+		NavitVehicle.removeListener();
+		mActivity.finish();
+	}
+
+	@Override
+	protected void onCancelled()
+	{
+		super.onCancelled();
+		Toast.makeText(mActivity, mActivity.getString(R.string.restore_failed), Toast.LENGTH_LONG).show();
+		mDialog.dismiss();
+	}
 }

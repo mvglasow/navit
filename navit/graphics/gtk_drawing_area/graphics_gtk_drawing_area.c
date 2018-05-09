@@ -195,12 +195,13 @@ static struct graphics_gc_priv *gc_new(struct graphics_priv *gr, struct graphics
 
 
 static struct graphics_image_priv *
-image_new(struct graphics_priv *gr, struct graphics_image_methods *meth, char *name, int *w, int *h, struct point *hot, int rotation)
+image_new(struct graphics_priv *gr, struct graphics_image_methods *meth, char *name, int *w, int *h, struct point *hot,
+          int rotation)
 {
 	GdkPixbuf *pixbuf;
 	struct graphics_image_priv *ret;
 	const char *option;
-	
+
 	if (!strcmp(name,"buffer:")) {
 		struct graphics_image_buffer *buffer=(struct graphics_image_buffer *)name;
 		GdkPixbufLoader *loader=gdk_pixbuf_loader_new();
@@ -270,7 +271,7 @@ image_new(struct graphics_priv *gr, struct graphics_image_methods *meth, char *n
 	return ret;
 }
 
-static void 
+static void
 image_free(struct graphics_priv *gr, struct graphics_image_priv *priv)
 {
 	g_object_unref(priv->pixbuf);
@@ -340,28 +341,29 @@ draw_circle(struct graphics_priv *gr, struct graphics_gc_priv *gc, struct point 
 }
 
 static void
-draw_rgb_image_buffer(cairo_t *cairo, int buffer_width, int buffer_height, int draw_pos_x, int draw_pos_y, int stride, unsigned char *buffer)
+draw_rgb_image_buffer(cairo_t *cairo, int buffer_width, int buffer_height, int draw_pos_x, int draw_pos_y, int stride,
+                      unsigned char *buffer)
 {
 	cairo_surface_t *buffer_surface = cairo_image_surface_create_for_data(
-			buffer, CAIRO_FORMAT_ARGB32, buffer_width, buffer_height, stride);
+	                buffer, CAIRO_FORMAT_ARGB32, buffer_width, buffer_height, stride);
 	cairo_set_source_surface(cairo, buffer_surface, draw_pos_x, draw_pos_y);
 	cairo_paint(cairo);
 	cairo_surface_destroy(buffer_surface);
 }
 
 static void
-display_text_draw(struct font_freetype_text *text, struct graphics_priv *gr, struct graphics_gc_priv *fg, struct graphics_gc_priv *bg, struct point *p)
+display_text_draw(struct font_freetype_text *text, struct graphics_priv *gr, struct graphics_gc_priv *fg,
+                  struct graphics_gc_priv *bg, struct point *p)
 {
 	int i,x,y,stride;
 	struct font_freetype_glyph *g, **gp;
-	struct color transparent={0x0,0x0,0x0,0x0};
+	struct color transparent= {0x0,0x0,0x0,0x0};
 
 	gp=text->glyph;
 	i=text->glyph_count;
 	x=p->x << 6;
 	y=p->y << 6;
-	while (i-- > 0)
-	{
+	while (i-- > 0) {
 		g=*gp++;
 		if (g->w && g->h && bg ) {
 			unsigned char *shadow;
@@ -378,8 +380,7 @@ display_text_draw(struct font_freetype_text *text, struct graphics_priv *gr, str
 	y=p->y << 6;
 	gp=text->glyph;
 	i=text->glyph_count;
-	while (i-- > 0)
-	{
+	while (i-- > 0) {
 		g=*gp++;
 		if (g->w && g->h) {
 			unsigned char *glyph;
@@ -395,17 +396,17 @@ display_text_draw(struct font_freetype_text *text, struct graphics_priv *gr, str
 }
 
 static void
-draw_text(struct graphics_priv *gr, struct graphics_gc_priv *fg, struct graphics_gc_priv *bg, struct graphics_font_priv *font, char *text, struct point *p, int dx, int dy)
+draw_text(struct graphics_priv *gr, struct graphics_gc_priv *fg, struct graphics_gc_priv *bg,
+          struct graphics_font_priv *font, char *text, struct point *p, int dx, int dy)
 {
 	struct font_freetype_text *t;
 
-	if (! font)
-	{
+	if (! font) {
 		dbg(lvl_error,"no font, returning");
 		return;
 	}
 #if 0 /* Temporarily disabled because it destroys text rendering of overlays and in gui internal in some places */
-	/* 
+	/*
 	 This needs an improvement, no one checks if the strings are visible
 	*/
 	if (p->x > gr->width-50 || p->y > gr->height-50) {
@@ -431,7 +432,8 @@ draw_image(struct graphics_priv *gr, struct graphics_gc_priv *fg, struct point *
 
 #ifdef HAVE_IMLIB2
 static unsigned char*
-create_buffer_with_stride_if_required(unsigned char *input_buffer, int w, int h, size_t bytes_per_pixel, size_t output_stride)
+create_buffer_with_stride_if_required(unsigned char *input_buffer, int w, int h, size_t bytes_per_pixel,
+                                      size_t output_stride)
 {
 	int line;
 	size_t input_offset, output_offset;
@@ -451,7 +453,8 @@ create_buffer_with_stride_if_required(unsigned char *input_buffer, int w, int h,
 }
 
 static void
-draw_image_warp(struct graphics_priv *gr, struct graphics_gc_priv *fg, struct point *p, int count, struct graphics_image_priv *img)
+draw_image_warp(struct graphics_priv *gr, struct graphics_gc_priv *fg, struct point *p, int count,
+                struct graphics_image_priv *img)
 {
 	int w,h;
 	DATA32 *intermediate_buffer;
@@ -488,7 +491,7 @@ draw_image_warp(struct graphics_priv *gr, struct graphics_gc_priv *fg, struct po
 		} else {
 			dbg(lvl_error,"implement me");
 		}
-		
+
 	}
 
 	intermediate_buffer = g_malloc0(gr->width*gr->height*4);
@@ -498,27 +501,28 @@ draw_image_warp(struct graphics_priv *gr, struct graphics_gc_priv *fg, struct po
 
 	if (count == 3) {
 		/* 0 1
-        	   2   */
-		imlib_blend_image_onto_image_skewed(img->image, 1, 0, 0, w, h, p[0].x, p[0].y, p[1].x-p[0].x, p[1].y-p[0].y, p[2].x-p[0].x, p[2].y-p[0].y);
+		   2   */
+		imlib_blend_image_onto_image_skewed(img->image, 1, 0, 0, w, h, p[0].x, p[0].y, p[1].x-p[0].x, p[1].y-p[0].y,
+		                                    p[2].x-p[0].x, p[2].y-p[0].y);
 	}
 	if (count == 2) {
 		/* 0
-        	     1 */
+		     1 */
 		imlib_blend_image_onto_image_skewed(img->image, 1, 0, 0, w, h, p[0].x, p[0].y, p[1].x-p[0].x, 0, 0, p[1].y-p[0].y);
 	}
 	if (count == 1) {
 		/*
-                   0
-        	     */
+		   0
+		     */
 		imlib_blend_image_onto_image_skewed(img->image, 1, 0, 0, w, h, p[0].x-w/2, p[0].y-h/2, w, 0, 0, h);
 	}
 
 	stride = cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32, gr->width);
 	intermediate_buffer_aligned = create_buffer_with_stride_if_required(
-			(unsigned char* )intermediate_buffer, gr->width, gr->height, sizeof(DATA32), stride);
+	                                      (unsigned char* )intermediate_buffer, gr->width, gr->height, sizeof(DATA32), stride);
 	cairo_surface_t *buffer_surface = cairo_image_surface_create_for_data(
-			intermediate_buffer_aligned ? intermediate_buffer_aligned : (unsigned char*)intermediate_buffer,
-			CAIRO_FORMAT_ARGB32, gr->width, gr->height, stride);
+	                intermediate_buffer_aligned ? intermediate_buffer_aligned : (unsigned char*)intermediate_buffer,
+	                CAIRO_FORMAT_ARGB32, gr->width, gr->height, stride);
 	cairo_set_source_surface(gr->cairo, buffer_surface, 0, 0);
 	cairo_paint(gr->cairo);
 
@@ -752,7 +756,7 @@ delete(GtkWidget *widget, GdkEventKey *event, gpointer user_data)
 	struct graphics_priv *this=user_data;
 	dbg(lvl_debug,"enter this->win=%p",this->win);
 	if (this->delay & 2) {
-		if (this->win) 
+		if (this->win)
 			this->win=NULL;
 	} else {
 		callback_list_call_attr_0(this->cbl, attr_window_closed);
@@ -769,7 +773,7 @@ keypress(GtkWidget *widget, GdkEventKey *event, gpointer user_data)
 	ucode=gdk_keyval_to_unicode(event->keyval);
 	len=g_unichar_to_utf8(ucode, key);
 	key[len]='\0';
-	
+
 	switch (event->keyval) {
 	case GDK_Up:
 		key[0]=NAVIT_KEY_UP;
@@ -835,11 +839,12 @@ keypress(GtkWidget *widget, GdkEventKey *event, gpointer user_data)
 		callback_list_call_attr_1(this->cbl, attr_keypress, (void *)key);
 	else
 		dbg(lvl_debug,"keyval 0x%x", event->keyval);
-	
+
 	return FALSE;
 }
 
-static struct graphics_priv *graphics_gtk_drawing_area_new_helper(struct graphics_methods *meth);
+static struct graphics_priv *
+graphics_gtk_drawing_area_new_helper(struct graphics_methods *meth);
 
 static void
 overlay_disable(struct graphics_priv *gr, int disabled)
@@ -913,20 +918,20 @@ get_data_window(struct graphics_priv *this, unsigned int xid)
 		this->win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	else
 		this->win = gtk_plug_new(xid);
-	if (!gtk_widget_get_parent(this->widget)) 
+	if (!gtk_widget_get_parent(this->widget))
 		gtk_widget_ref(this->widget);
 	gtk_window_set_default_size(GTK_WINDOW(this->win), this->win_w, this->win_h);
 	dbg(lvl_debug,"h= %i, w= %i",this->win_h, this->win_w);
 	gtk_window_set_title(GTK_WINDOW(this->win), this->window_title);
 	gtk_window_set_wmclass (GTK_WINDOW (this->win), "navit", this->window_title);
 	gtk_widget_realize(this->win);
-	if (gtk_widget_get_parent(this->widget)) 
+	if (gtk_widget_get_parent(this->widget))
 		gtk_widget_reparent(this->widget, this->win);
 	else
 		gtk_container_add(GTK_CONTAINER(this->win), this->widget);
 	gtk_widget_show_all(this->win);
 	GTK_WIDGET_SET_FLAGS (this->widget, GTK_CAN_FOCUS);
-       	gtk_widget_set_sensitive(this->widget, TRUE);
+	gtk_widget_set_sensitive(this->widget, TRUE);
 	gtk_widget_grab_focus(this->widget);
 	g_signal_connect(G_OBJECT(this->widget), "key-press-event", G_CALLBACK(keypress), this);
 	g_signal_connect(G_OBJECT(this->win), "delete_event", G_CALLBACK(delete), this);
@@ -987,7 +992,7 @@ overlay_new(struct graphics_priv *gr, struct graphics_methods *meth, struct poin
 }
 
 static int gtk_argc;
-static char **gtk_argv={NULL};
+static char **gtk_argv= {NULL};
 
 
 static int
@@ -995,11 +1000,11 @@ graphics_gtk_drawing_area_fullscreen(struct window *w, int on)
 {
 	struct graphics_priv *gr=w->priv;
 	if (on)
-                gtk_window_fullscreen(GTK_WINDOW(gr->win));
+		gtk_window_fullscreen(GTK_WINDOW(gr->win));
 	else
-                gtk_window_unfullscreen(GTK_WINDOW(gr->win));
+		gtk_window_unfullscreen(GTK_WINDOW(gr->win));
 	return 1;
-}		
+}
 
 static void
 graphics_gtk_drawing_area_disable_suspend(struct window *w)
@@ -1010,7 +1015,7 @@ graphics_gtk_drawing_area_disable_suspend(struct window *w)
 	if (gr->pid)
 		kill(gr->pid, SIGWINCH);
 #else
-    dbg(lvl_warning, "failed to kill() under Windows");
+	dbg(lvl_warning, "failed to kill() under Windows");
 #endif
 }
 
@@ -1028,7 +1033,7 @@ get_data(struct graphics_priv *this, char const *type)
 	if (!strcmp(type,"window")) {
 		char *cp = getenv("NAVIT_XID");
 		unsigned xid = 0;
-		if (cp) 
+		if (cp)
 			xid = strtol(cp, NULL, 0);
 		if (!(this->delay & 1))
 			get_data_window(this, xid);
@@ -1040,8 +1045,8 @@ get_data(struct graphics_priv *this, char const *type)
 		if (f) {
 			int fscanf_result;
 			fscanf_result = fscanf(f,"%d",&this->pid);
-			if ((fscanf_result == EOF) || (fscanf_result == 0)){
-				dbg(lvl_warning, "Failed to open iPaq sleep file. Error-Code: %d" , errno);
+			if ((fscanf_result == EOF) || (fscanf_result == 0)) {
+				dbg(lvl_warning, "Failed to open iPaq sleep file. Error-Code: %d", errno);
 			}
 			dbg(lvl_debug,"ipaq_sleep pid=%d", this->pid);
 			pclose(f);
@@ -1053,7 +1058,7 @@ get_data(struct graphics_priv *this, char const *type)
 }
 
 static struct graphics_methods graphics_methods = {
- 	graphics_destroy,
+	graphics_destroy,
 	draw_mode,
 	draw_lines,
 	draw_polygon,
@@ -1092,13 +1097,16 @@ graphics_gtk_drawing_area_new_helper(struct graphics_methods *meth)
 	struct graphics_priv *this=g_new0(struct graphics_priv,1);
 	font_freetype_new(&this->freetype_methods);
 	*meth=graphics_methods;
-	meth->font_new=(struct graphics_font_priv *(*)(struct graphics_priv *, struct graphics_font_methods *, char *,  int, int))this->freetype_methods.font_new;
-	meth->get_text_bbox=(void(*)(struct graphics_priv*, struct graphics_font_priv *, char *, int, int, struct point *, int))this->freetype_methods.get_text_bbox;
+	meth->font_new=(struct graphics_font_priv *(*)(struct graphics_priv *, struct graphics_font_methods *, char *,  int,
+	                int))this->freetype_methods.font_new;
+	meth->get_text_bbox=(void(*)(struct graphics_priv*, struct graphics_font_priv *, char *, int, int, struct point *,
+	                             int))this->freetype_methods.get_text_bbox;
 	return this;
 }
 
 static struct graphics_priv *
-graphics_gtk_drawing_area_new(struct navit *nav, struct graphics_methods *meth, struct attr **attrs, struct callback_list *cbl)
+graphics_gtk_drawing_area_new(struct navit *nav, struct graphics_methods *meth, struct attr **attrs,
+                              struct callback_list *cbl)
 {
 	int i;
 	GtkWidget *draw;
@@ -1112,25 +1120,25 @@ graphics_gtk_drawing_area_new(struct navit *nav, struct graphics_methods *meth, 
 	this->nav = nav;
 	this->widget=draw;
 	this->win_w=792;
-	if ((attr=attr_search(attrs, NULL, attr_w))) 
+	if ((attr=attr_search(attrs, NULL, attr_w)))
 		this->win_w=attr->u.num;
 	this->win_h=547;
-	if ((attr=attr_search(attrs, NULL, attr_h))) 
+	if ((attr=attr_search(attrs, NULL, attr_h)))
 		this->win_h=attr->u.num;
 	this->timeout=100;
-	if ((attr=attr_search(attrs, NULL, attr_timeout))) 
+	if ((attr=attr_search(attrs, NULL, attr_timeout)))
 		this->timeout=attr->u.num;
 	this->delay=0;
-	if ((attr=attr_search(attrs, NULL, attr_delay))) 
+	if ((attr=attr_search(attrs, NULL, attr_delay)))
 		this->delay=attr->u.num;
-	if ((attr=attr_search(attrs, NULL, attr_window_title))) 
+	if ((attr=attr_search(attrs, NULL, attr_window_title)))
 		this->window_title=g_strdup(attr->u.str);
 	else
 		this->window_title=g_strdup("Navit");
 	this->cbl=cbl;
 	gtk_widget_set_events(draw, GDK_BUTTON_PRESS_MASK|GDK_BUTTON_RELEASE_MASK|GDK_POINTER_MOTION_MASK|GDK_KEY_PRESS_MASK);
 	g_signal_connect(G_OBJECT(draw), "expose_event", G_CALLBACK(expose), this);
-        g_signal_connect(G_OBJECT(draw), "configure_event", G_CALLBACK(configure), this);
+	g_signal_connect(G_OBJECT(draw), "configure_event", G_CALLBACK(configure), this);
 	g_signal_connect(G_OBJECT(draw), "button_press_event", G_CALLBACK(button_press), this);
 	g_signal_connect(G_OBJECT(draw), "button_release_event", G_CALLBACK(button_release), this);
 	g_signal_connect(G_OBJECT(draw), "scroll_event", G_CALLBACK(scroll), this);

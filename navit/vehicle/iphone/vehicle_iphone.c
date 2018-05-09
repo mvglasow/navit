@@ -66,7 +66,7 @@ vehicle_iphone_destroy(struct vehicle_priv *priv)
 
 static int
 vehicle_iphone_position_attr_get(struct vehicle_priv *priv,
-			       enum attr_type type, struct attr *attr)
+                                 enum attr_type type, struct attr *attr)
 {
 	switch (type) {
 	case attr_position_speed:
@@ -110,14 +110,14 @@ struct vehicle_methods vehicle_iphone_methods = {
 };
 
 void
-vehicle_iphone_update(void *arg, 
-	double lat,
-	double lng,
-	double dir,
-	double spd,
-	char * str_time,
-	double radius
-	)
+vehicle_iphone_update(void *arg,
+                      double lat,
+                      double lng,
+                      double dir,
+                      double spd,
+                      char * str_time,
+                      double radius
+                     )
 {
 	struct vehicle_priv * priv = arg;
 	priv->geo.lat = lat;
@@ -127,7 +127,8 @@ vehicle_iphone_update(void *arg,
 	strcpy(priv->str_time, str_time);
 	priv->radius = radius;
 
-	dbg(lvl_debug,"position_get lat:%f lng:%f (spd:%f dir:%f time:%s)", priv->geo.lat, priv->geo.lng, priv->speed, priv->direction, priv->str_time);
+	dbg(lvl_debug,"position_get lat:%f lng:%f (spd:%f dir:%f time:%s)", priv->geo.lat, priv->geo.lng, priv->speed,
+	    priv->direction, priv->str_time);
 	callback_list_call_attr_0(priv->cbl, attr_position_coord_geo);
 }
 
@@ -135,8 +136,8 @@ vehicle_iphone_update(void *arg,
 
 static struct vehicle_priv *
 vehicle_iphone_new(struct vehicle_methods
-		 *meth, struct callback_list
-		 *cbl, struct attr **attrs)
+                   *meth, struct callback_list
+                   *cbl, struct attr **attrs)
 {
 	struct vehicle_priv *ret;
 	struct attr *interval,*speed,*position_coord_geo;

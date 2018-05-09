@@ -171,8 +171,8 @@ struct navit {
 	int radius;
 	struct bookmarks *bookmarks;
 	int flags;
-		 /* 1=No graphics ok */
-		 /* 2=No gui ok */
+	/* 1=No graphics ok */
+	/* 2=No gui ok */
 	int border;
 	int imperial;
 	int waypoints_flag;
@@ -190,18 +190,30 @@ struct attr_iter {
 	} u;
 };
 
-static void navit_vehicle_update_position(struct navit *this_, struct navit_vehicle *nv);
-static void navit_vehicle_draw(struct navit *this_, struct navit_vehicle *nv, struct point *pnt);
-static int navit_add_vehicle(struct navit *this_, struct vehicle *v);
-static int navit_set_attr_do(struct navit *this_, struct attr *attr, int init);
-static int navit_get_cursor_pnt(struct navit *this_, struct point *p, int keep_orientation, int *dir);
-static void navit_set_cursors(struct navit *this_);
-static void navit_cmd_zoom_to_route(struct navit *this);
-static void navit_cmd_set_center_cursor(struct navit *this_);
-static void navit_cmd_announcer_toggle(struct navit *this_);
-static void navit_set_vehicle(struct navit *this_, struct navit_vehicle *nv);
-static int navit_set_vehicleprofile(struct navit *this_, struct vehicleprofile *vp);
-static void navit_cmd_switch_layout_day_night(struct navit *this_, char *function, struct attr **in, struct attr ***out, int valid);
+static void
+navit_vehicle_update_position(struct navit *this_, struct navit_vehicle *nv);
+static void
+navit_vehicle_draw(struct navit *this_, struct navit_vehicle *nv, struct point *pnt);
+static int
+navit_add_vehicle(struct navit *this_, struct vehicle *v);
+static int
+navit_set_attr_do(struct navit *this_, struct attr *attr, int init);
+static int
+navit_get_cursor_pnt(struct navit *this_, struct point *p, int keep_orientation, int *dir);
+static void
+navit_set_cursors(struct navit *this_);
+static void
+navit_cmd_zoom_to_route(struct navit *this);
+static void
+navit_cmd_set_center_cursor(struct navit *this_);
+static void
+navit_cmd_announcer_toggle(struct navit *this_);
+static void
+navit_set_vehicle(struct navit *this_, struct navit_vehicle *nv);
+static int
+navit_set_vehicleprofile(struct navit *this_, struct vehicleprofile *vp);
+static void
+navit_cmd_switch_layout_day_night(struct navit *this_, char *function, struct attr **in, struct attr ***out, int valid);
 struct object_func navit_func;
 
 struct navit *global_navit;
@@ -215,7 +227,7 @@ navit_add_mapset(struct navit *this_, struct mapset *ms)
 struct mapset *
 navit_get_mapset(struct navit *this_)
 {
-	if(this_->mapsets){
+	if(this_->mapsets) {
 		return this_->mapsets->data;
 	} else {
 		dbg(lvl_error,"No mapsets enabled! Is it on purpose? Navit can't draw a map. Please check your navit.xml");
@@ -240,7 +252,8 @@ navit_get_tracking(struct navit *this_)
  *
  */
 char*
-navit_get_user_data_directory(int create) {
+navit_get_user_data_directory(int create)
+{
 	char *dir;
 	dir = getenv("NAVIT_USER_DATADIR");
 	if (create && !file_exists(dir)) {
@@ -263,7 +276,8 @@ navit_draw_async(struct navit *this_, int async)
 		return;
 	}
 	transform_setup_source_rect(this_->trans);
-	graphics_draw(this_->gra, this_->displaylist, this_->mapsets->data, this_->trans, this_->layout_current, async, NULL, this_->graphics_flags|1);
+	graphics_draw(this_->gra, this_->displaylist, this_->mapsets->data, this_->trans, this_->layout_current, async, NULL,
+	              this_->graphics_flags|1);
 }
 
 void
@@ -350,7 +364,7 @@ navit_handle_resize(struct navit *this_, int w, int h)
 	transform_set_screen_selection(this_->trans, &sel);
 	graphics_init(this_->gra);
 	graphics_set_rect(this_->gra, &sel.u.p_rect);
-	if (callback) 
+	if (callback)
 		callback_list_call_attr_1(this_->attr_cbl, attr_graphics_ready, this_);
 	if (this_->ready == 3)
 		navit_draw_async(this_, 1);
@@ -417,7 +431,8 @@ navit_ignore_graphics_events(struct navit *this_, int ignore)
 }
 
 static int
-navit_restrict_to_range(int value, int min, int max){
+navit_restrict_to_range(int value, int min, int max)
+{
 	if (value>max) {
 		value = max;
 	}
@@ -428,7 +443,8 @@ navit_restrict_to_range(int value, int min, int max){
 }
 
 static void
-navit_restrict_map_center_to_world_boundingbox(struct transformation *tr, struct coord *new_center){
+navit_restrict_map_center_to_world_boundingbox(struct transformation *tr, struct coord *new_center)
+{
 	new_center->x = navit_restrict_to_range(new_center->x, WORLD_BOUNDINGBOX_MIN_X, WORLD_BOUNDINGBOX_MAX_X);
 	new_center->y = navit_restrict_to_range(new_center->y, WORLD_BOUNDINGBOX_MIN_Y, WORLD_BOUNDINGBOX_MAX_Y);
 }
@@ -439,7 +455,7 @@ navit_restrict_map_center_to_world_boundingbox(struct transformation *tr, struct
 static void
 update_transformation(struct transformation *tr, struct point *old, struct point *new)
 {
-        /* Code for rotation was removed in rev. 5252; see Trac #1078. */
+	/* Code for rotation was removed in rev. 5252; see Trac #1078. */
 	struct coord coord_old,coord_new;
 	struct coord center_new,*center_old;
 	if (!transform_reverse(tr, old, &coord_old))
@@ -517,7 +533,7 @@ navit_handle_button(struct navit *this_, int pressed, int button, struct point *
 			graphics_draw_drag(this_->gra, NULL);
 			transform_copy(this_->trans, this_->trans_cursor);
 			graphics_overlay_disable(this_->gra, 0);
-			if (!this_->zoomed) 
+			if (!this_->zoomed)
 				navit_set_timeout(this_);
 			navit_draw(this_);
 		} else
@@ -555,7 +571,7 @@ navit_motion_timeout(struct navit *this_)
 			this_->motion_timeout=NULL;
 			return;
 		}
-	} 
+	}
 	dx=(this_->current.x-this_->last.x);
 	dy=(this_->current.y-this_->last.y);
 	if (dx || dy) {
@@ -600,7 +616,7 @@ static void
 navit_motion(void *data, struct point *p)
 {
 	struct navit *this=data;
-	if (!this->ignore_graphics_events) 
+	if (!this->ignore_graphics_events)
 		navit_handle_motion(this, p);
 }
 
@@ -662,29 +678,29 @@ navit_autozoom(struct navit *this_, struct coord *center, int speed, int draw)
 		return;
 	}
 
-	if(this_->autozoom_paused){
+	if(this_->autozoom_paused) {
 		this_->autozoom_paused--;
 		return;
 	}
-	
+
 	distance = speed * this_->autozoom_secs;
 
 	transform_get_size(this_->trans, &w, &h);
 	transform(this_->trans, transform_get_projection(this_->trans), center, &pc, 1, 0, 0, NULL);
 	scale = transform_get_scale(this_->trans);
-	
+
 	/* We make sure that the point we want to see is within a certain range
 	 * around the vehicle. The radius of this circle is the size of the
 	 * screen. This doesn't necessarily mean the point is visible because of
 	 * perspective etc. Quite rough, but should be enough. */
-	
+
 	if (w > h) {
-		new_scale = (double)distance / h * 16; 
+		new_scale = (double)distance / h * 16;
 	} else {
-		new_scale = (double)distance / w * 16; 
+		new_scale = (double)distance / w * 16;
 	}
 
-	if (abs(new_scale - scale) < 2) { 
+	if (abs(new_scale - scale) < 2) {
 		return; // Smoothing
 	}
 	if (new_scale > this_->autozoom_max)
@@ -707,7 +723,7 @@ void
 navit_zoom_in(struct navit *this_, int factor, struct point *p)
 {
 	long scale=transform_get_scale(this_->trans)/factor;
-	if(this_->autozoom_active){
+	if(this_->autozoom_active) {
 		this_->autozoom_paused = 10;
 	}
 	if (scale < 1)
@@ -727,7 +743,7 @@ void
 navit_zoom_out(struct navit *this_, int factor, struct point *p)
 {
 	long scale=transform_get_scale(this_->trans)*factor;
-	if(this_->autozoom_active){
+	if(this_->autozoom_active) {
 		this_->autozoom_paused = 10;
 	}
 	navit_scale(this_, scale, p, 1);
@@ -758,7 +774,7 @@ navit_zoom_out_cursor(struct navit *this_, int factor)
 static int
 navit_cmd_zoom_in(struct navit *this_)
 {
-	
+
 	navit_zoom_in_cursor(this_, 2);
 	return 0;
 }
@@ -774,7 +790,7 @@ navit_cmd_zoom_out(struct navit *this_)
 static void
 navit_cmd_say(struct navit *this, char *function, struct attr **in, struct attr ***out, int *valid)
 {
-	if (in && in[0] && ATTR_IS_STRING(in[0]->type) && in[0]->u.str) 
+	if (in && in[0] && ATTR_IS_STRING(in[0]->type) && in[0]->u.str)
 		navit_say(this, in[0]->u.str);
 }
 
@@ -787,8 +803,8 @@ static GHashTable *cmd_attr_var_hash = NULL;
  * @param navit The navit instance
  * @param function unused (needed to match command function signature)
  * @param in input attributes in[0] is the key string, in[1] is the integer value to store
- * @param out output attributes, unused 
- * @param valid unused 
+ * @param out output attributes, unused
+ * @param valid unused
  * @returns nothing
  */
 static void
@@ -801,12 +817,12 @@ navit_cmd_set_int_var(struct navit *this, char *function, struct attr **in, stru
 	}
 
 	if ( (in && in[0] && ATTR_IS_STRING(in[0]->type) && in[0]->u.str) &&
-	     (in && in[1] && ATTR_IS_NUMERIC(in[1]->type))) {
+	                (in && in[1] && ATTR_IS_NUMERIC(in[1]->type))) {
 		val = g_new(struct attr,1);
 		attr_dup_content(in[1],val);
 		key = g_strdup(in[0]->u.str);
 		g_hash_table_insert(cmd_int_var_hash, key, val);
-        }
+	}
 }
 
 
@@ -816,8 +832,8 @@ navit_cmd_set_int_var(struct navit *this, char *function, struct attr **in, stru
  * @param navit The navit instance
  * @param function unused (needed to match command function signature)
  * @param in input attributes in[0] is the key string, in[1] is the attr* value to store
- * @param out output attributes, unused 
- * @param valid unused 
+ * @param out output attributes, unused
+ * @param valid unused
  * @returns nothing
  */
 static void
@@ -830,11 +846,11 @@ navit_cmd_set_attr_var(struct navit *this, char *function, struct attr **in, str
 	}
 
 	if ( (in && in[0] && ATTR_IS_STRING(in[0]->type) && in[0]->u.str) &&
-	     (in && in[1] )) {
+	                (in && in[1] )) {
 		val = attr_dup(in[1]);
 		key = g_strdup(in[0]->u.str);
 		g_hash_table_insert(cmd_attr_var_hash, key, val);
-        } else {
+	} else {
 		dbg(lvl_warning, "Wrong parameters for set_attr_var() command function");
 	}
 }
@@ -848,7 +864,7 @@ navit_cmd_set_attr_var(struct navit *this, char *function, struct attr **in, str
  * @param function unused (needed to match command function signature)
  * @param in input attribute in[0] is the name of the layer
  * @param out output unused
- * @param valid unused 
+ * @param valid unused
  * @returns nothing
  */
 static void
@@ -867,7 +883,7 @@ navit_cmd_toggle_layer(struct navit *this, char *function, struct attr **in, str
 				layers=g_list_next(layers);
 			}
 		}
-        }
+	}
 }
 
 /**
@@ -875,9 +891,9 @@ navit_cmd_toggle_layer(struct navit *this, char *function, struct attr **in, str
  *
  * @param navit The navit instance
  * @param function unused (needed to match command function signature)
- * @param in input attribute in[0] is the name of the map 
+ * @param in input attribute in[0] is the name of the map
  * @param out output attribute, 0 on error or the id of the created item on success
- * @param valid unused 
+ * @param valid unused
  * @returns nothing
  */
 static void
@@ -893,16 +909,16 @@ navit_cmd_map_add_curr_pos(struct navit *this, char *function, struct attr **in,
 	struct map* curr_map = NULL;
 	struct coord curr_coord;
 	struct map_rect *mr;
-	
+
 	//return invalid item on error
 	val->type   = attr_none;
-	val->u.item  = NULL;	
+	val->u.item  = NULL;
 	list[0]     = val;
 	list[1]     = NULL;
 	*out = list;
 	if (
-		in && in[0] && ATTR_IS_STRING(in[0]->type) && in[0]->u.str && //map name
-		      in[1] && ATTR_IS_STRING(in[1]->type) && in[1]->u.str    //item type
+	        in && in[0] && ATTR_IS_STRING(in[0]->type) && in[0]->u.str && //map name
+	        in[1] && ATTR_IS_STRING(in[1]->type) && in[1]->u.str    //item type
 	) {
 
 		if(!(ms=navit_get_mapset(this))) {
@@ -922,7 +938,7 @@ navit_cmd_map_add_curr_pos(struct navit *this, char *function, struct attr **in,
 			dbg(lvl_error, "Command function map_add_curr_pos(): map not found");
 			return;
 		}
-	
+
 		if(this->vehicle && this->vehicle->vehicle ) {
 			struct attr pos_attr;
 			if(vehicle_get_attr(this->vehicle->vehicle,attr_position_coord_geo,&pos_attr,NULL)) {
@@ -944,10 +960,10 @@ navit_cmd_map_add_curr_pos(struct navit *this, char *function, struct attr **in,
 		sel.u.c_rect.lu.y=curr_coord.y+selection_range;
 		sel.u.c_rect.rl.x=curr_coord.x+selection_range;
 		sel.u.c_rect.rl.y=curr_coord.y-selection_range;
- 
+
 		mr = map_rect_new(curr_map, &sel);
 		if(mr) {
-			
+
 			it = map_rect_create_item( mr, item_type);
 			if (it) {
 				struct attr attr;
@@ -958,7 +974,7 @@ navit_cmd_map_add_curr_pos(struct navit *this, char *function, struct attr **in,
 			}
 		}
 		map_rect_destroy(mr);
-        }
+	}
 }
 
 /**
@@ -968,33 +984,31 @@ navit_cmd_map_add_curr_pos(struct navit *this, char *function, struct attr **in,
  * @param function unused (needed to match command function signature)
  * @param in input attribute in[0] - name of the map  ; in[1] - item  ; in[2] - attr name ; in[3] - attr value
  * @param out output attribute, 0 on error, 1 on success
- * @param valid unused 
+ * @param valid unused
  * @returns nothing
  */
 static void
 navit_cmd_map_item_set_attr(struct navit *this, char *function, struct attr **in, struct attr ***out, int *valid)
 {
 	if (
-		in && in[0] && ATTR_IS_STRING(in[0]->type) && in[0]->u.str  &&//map name
-		      in[1] && ATTR_IS_ITEM(in[1]->type)   && in[2]->u.item &&//item
-		      in[2] && ATTR_IS_STRING(in[2]->type) && in[2]->u.str && //attr_type str
-		      in[3] && ATTR_IS_STRING(in[3]->type) && in[3]->u.str    //attr_value str
+	        in && in[0] && ATTR_IS_STRING(in[0]->type) && in[0]->u.str  &&//map name
+	        in[1] && ATTR_IS_ITEM(in[1]->type)   && in[2]->u.item &&//item
+	        in[2] && ATTR_IS_STRING(in[2]->type) && in[2]->u.str && //attr_type str
+	        in[3] && ATTR_IS_STRING(in[3]->type) && in[3]->u.str    //attr_value str
 	) {
 		struct attr attr_to_set;
 		struct map* curr_map = NULL;
 		struct mapset *ms;
 		struct item *it;
 		struct map_rect *mr;
-		
+
 		if(ATTR_IS_STRING(attr_from_name(in[2]->u.str))) {
 			attr_to_set.u.str = in[3]->u.str;
 			attr_to_set.type = attr_from_name(in[2]->u.str);
-		}
-		else if(ATTR_IS_INT(attr_from_name(in[2]->u.str))) {
+		} else if(ATTR_IS_INT(attr_from_name(in[2]->u.str))) {
 			attr_to_set.u.num = atoi(in[3]->u.str);
 			attr_to_set.type = attr_from_name(in[2]->u.str);
-		}
-		else if(ATTR_IS_DOUBLE(attr_from_name(in[2]->u.str))) {
+		} else if(ATTR_IS_DOUBLE(attr_from_name(in[2]->u.str))) {
 			double* val = g_new0(double,1);
 			*val = atof(in[3]->u.str);
 			attr_to_set.u.numd = val;
@@ -1008,21 +1022,24 @@ navit_cmd_map_item_set_attr(struct navit *this, char *function, struct attr **in
 		if( ! curr_map) {
 			return;
 		}
-		
+
 		mr=map_rect_new(curr_map,NULL);
 		it=in[1]->u.item;
 		it=map_rect_get_item_byid(mr,it->id_hi,it->id_lo);
-		
+
 		if(it) {
 			item_attr_set(it, &attr_to_set, change_mode_modify);
 		}
 		map_rect_destroy(mr);
 	} else {
 		dbg(lvl_debug,"Error in command function item_set_attr()");
-		dbg(lvl_debug,"Command function item_set_attr(): map cond:       %d",(in[0] && ATTR_IS_STRING(in[0]->type) && in[0]->u.str)?1:0);
+		dbg(lvl_debug,"Command function item_set_attr(): map cond:       %d",(in[0] && ATTR_IS_STRING(in[0]->type)
+		                && in[0]->u.str)?1:0);
 		dbg(lvl_debug,"Command function item_set_attr(): item cond:      %d",(in[1] && ATTR_IS_ITEM(in[1]->type))?1:0);
-		dbg(lvl_debug,"Command function item_set_attr(): attr type cond: %d",(in[2] && ATTR_IS_STRING(in[2]->type) && in[2]->u.str)?1:0);
-		dbg(lvl_debug,"Command function item_set_attr(): attr val cond:  %d",(in[3] && ATTR_IS_STRING(in[3]->type) && in[3]->u.str)?1:0);
+		dbg(lvl_debug,"Command function item_set_attr(): attr type cond: %d",(in[2] && ATTR_IS_STRING(in[2]->type)
+		                && in[2]->u.str)?1:0);
+		dbg(lvl_debug,"Command function item_set_attr(): attr val cond:  %d",(in[3] && ATTR_IS_STRING(in[3]->type)
+		                && in[3]->u.str)?1:0);
 	}
 }
 
@@ -1032,8 +1049,8 @@ navit_cmd_map_item_set_attr(struct navit *this, char *function, struct attr **in
  * @param navit The navit instance
  * @param function unused (needed to match command function signature)
  * @param in input attribute in[0] is the key string
- * @param out output attribute, the attr for the given key string if exists or NULL  
- * @param valid unused 
+ * @param out output attribute, the attr for the given key string if exists or NULL
+ * @param valid unused
  * @returns nothing
  */
 static void
@@ -1051,16 +1068,15 @@ navit_cmd_get_attr_var(struct navit *this, char *function, struct attr **in, str
 	}
 	if (in && in[0] && ATTR_IS_STRING(in[0]->type) && in[0]->u.str) {
 		struct attr*ret = g_hash_table_lookup(cmd_attr_var_hash, in[0]->u.str);
-                if(ret) {
+		if(ret) {
 			list[0] = attr_dup(ret);
-		}
-		else {
+		} else {
 			struct attr*val = g_new0(struct attr,1);
 			val->type   = attr_type_int_begin;
 			val->u.item = NULL;
 			list[0]   = val;
 		}
-        }
+	}
 }
 
 
@@ -1070,8 +1086,8 @@ navit_cmd_get_attr_var(struct navit *this, char *function, struct attr **in, str
  * @param navit The navit instance
  * @param function unused (needed to match command function signature)
  * @param in input attribute in[0] is the key string
- * @param out output attribute, the value for the given key string if exists or 0  
- * @param valid unused 
+ * @param out output attribute, the value for the given key string if exists or 0
+ * @param valid unused
  * @returns nothing
  */
 static void
@@ -1089,16 +1105,15 @@ navit_cmd_get_int_var(struct navit *this, char *function, struct attr **in, stru
 	}
 	if (in && in[0] && ATTR_IS_STRING(in[0]->type) && in[0]->u.str) {
 		struct attr*ret = g_hash_table_lookup(cmd_int_var_hash, in[0]->u.str);
-                if(ret) {
+		if(ret) {
 			list[0] = attr_dup(ret);
-		}
-		else {
+		} else {
 			struct attr*val = g_new0(struct attr,1);
 			val->type   = attr_type_int_begin;
 			val->u.num  = 0;
 			list[0]   = val;
 		}
-        }
+	}
 }
 
 GList *cmd_int_var_stack = NULL;
@@ -1109,8 +1124,8 @@ GList *cmd_int_var_stack = NULL;
  * @param navit The navit instance
  * @param function unused (needed to match command function signature)
  * @param in input attribute in[0] is the integer attibute to push
- * @param out output attributes, unused 
- * @param valid unused 
+ * @param out output attributes, unused
+ * @param valid unused
  * @returns nothing
  */
 static void
@@ -1130,7 +1145,7 @@ navit_cmd_push_int(struct navit *this, char *function, struct attr **in, struct 
  * @param function unused (needed to match command function signature)
  * @param in input attributes unused
  * @param out output attribute, the value popped if stack isn't empty or 0
- * @param valid unused 
+ * @param valid unused
  * @returns nothing
  */
 static void
@@ -1142,8 +1157,7 @@ navit_cmd_pop_int(struct navit *this, char *function, struct attr **in, struct a
 		val->type = attr_type_int_begin;
 		val->u.num  = 0;
 		list[0]   = val;
-	}
-	else {
+	} else {
 		list[0] = cmd_int_var_stack->data;
 		cmd_int_var_stack = g_list_remove_link(cmd_int_var_stack,cmd_int_var_stack);
 	}
@@ -1158,20 +1172,19 @@ navit_cmd_pop_int(struct navit *this, char *function, struct attr **in, struct a
  * @param function unused (needed to match command function signature)
  * @param in input attributes unused
  * @param out output attribute, the size of stack
- * @param valid unused 
+ * @param valid unused
  * @returns nothing
  */
 static void
 navit_cmd_int_stack_size(struct navit *this, char *function, struct attr **in, struct attr ***out, int *valid)
 {
 	struct attr **list;
-	struct attr *attr  = g_new0(struct attr  ,1);
+	struct attr *attr  = g_new0(struct attr,1);
 	attr->type  = attr_type_int_begin;
 	if(!cmd_int_var_stack) {
-		attr->u.num = 0; 
-	}
-	else {
-		attr->u.num = g_list_length(cmd_int_var_stack); 
+		attr->u.num = 0;
+	} else {
+		attr->u.num = g_list_length(cmd_int_var_stack);
 	}
 	list = g_new0(struct attr *,2);
 	list[0] = attr;
@@ -1193,7 +1206,7 @@ navit_get_coord(struct navit *this, struct attr **in, struct pcoord *pc)
 		coord_parse(in[0]->u.str, pc->pro, &c);
 		pc->x=c.x;
 		pc->y=c.y;
-		in++;	
+		in++;
 	} else if (ATTR_IS_COORD(in[0]->type)) {
 		pc->x=in[0]->u.coord->x;
 		pc->y=in[0]->u.coord->y;
@@ -1230,14 +1243,16 @@ navit_cmd_set_destination(struct navit *this, char *function, struct attr **in, 
 
 
 static void
-navit_cmd_route_remove_next_waypoint(struct navit *this, char *function, struct attr **in, struct attr ***out, int *valid)
+navit_cmd_route_remove_next_waypoint(struct navit *this, char *function, struct attr **in, struct attr ***out,
+                                     int *valid)
 {
 	navit_remove_waypoint(this);
 }
 
 
 static void
-navit_cmd_route_remove_last_waypoint(struct navit *this, char *function, struct attr **in, struct attr ***out, int *valid)
+navit_cmd_route_remove_last_waypoint(struct navit *this, char *function, struct attr **in, struct attr ***out,
+                                     int *valid)
 {
 	navit_remove_nth_waypoint(this, navit_get_destination_count(this)-1);
 }
@@ -1286,7 +1301,7 @@ navit_cmd_fmt_coordinates(struct navit *this, char *function, struct attr **in, 
  * @param function unused (needed to match command function signature)
  * @param in input attributes in[0] - separator, in[1..] - attributes to join
  * @param out output attribute joined attribute as string
- * @param valid unused 
+ * @param valid unused
  * @returns nothing
  */
 static void
@@ -1300,7 +1315,7 @@ navit_cmd_strjoin(struct navit *this, char *function, struct attr **in, struct a
 	if(in[0] && in[1]) {
 		sep=attr_to_text(in[0],NULL,1);
 		ret=attr_to_text(in[1],NULL,1);
-		for(i=2;in[i];i++) {
+		for(i=2; in[i]; i++) {
 			gchar *in_i=attr_to_text(in[i],NULL,1);
 			gchar *r=g_strjoin(sep,ret,in_i,NULL);
 			g_free(in_i);
@@ -1323,7 +1338,7 @@ navit_cmd_strjoin(struct navit *this, char *function, struct attr **in, struct a
  * @param function unused (needed to match command function signature)
  * @param in input attributes in[0] - name of executable, in[1..] - parameters
  * @param out output attribute unused
- * @param valid unused 
+ * @param valid unused
  * @returns nothing
  */
 static void
@@ -1337,15 +1352,15 @@ navit_cmd_spawn(struct navit *this, char *function, struct attr **in, struct att
 	nvalid=0;
 	if(in) {
 		while(in[nparms]) {
-			if (in[nparms]->type!=attr_none) 
+			if (in[nparms]->type!=attr_none)
 				nvalid++;
 			nparms++;
 		}
 	}
-	
+
 	if(nvalid>0) {
 		argv=g_new(char*,nvalid+1);
-		for(i=0,j=0;in[i];i++) {
+		for(i=0,j=0; in[i]; i++) {
 			if(in[i]->type!=attr_none ) {
 				argv[j++]=attr_to_text(in[i],NULL,1);
 			} else {
@@ -1354,7 +1369,7 @@ navit_cmd_spawn(struct navit *this, char *function, struct attr **in, struct att
 		}
 		argv[j]=NULL;
 		pi=spawn_process(argv);
-		
+
 		// spawn_process() testing suite - uncomment following code to test.
 		//sleep(3);
 		// example of non-blocking wait
@@ -1367,10 +1382,10 @@ navit_cmd_spawn(struct navit *this, char *function, struct attr **in, struct att
 		// example of wait after process is finished and status is
 		// already tested - unblocked
 		//st=spawn_process_check_status(pi,0);dbg(lvl_debug,"status %i",st);
-		
+
 		// End testing suite
 		spawn_process_info_free(pi);
-		for(i=0;argv[i];i++)
+		for(i=0; argv[i]; i++)
 			g_free(argv[i]);
 		g_free(argv);
 	}
@@ -1405,11 +1420,11 @@ static struct command_table commands[] = {
 	{"get_attr_var",command_cast(navit_cmd_get_attr_var)},
 	{"switch_layout_day_night",command_cast(navit_cmd_switch_layout_day_night)},
 };
-	
-void 
+
+void
 navit_command_add_table(struct navit*this_, struct command_table *commands, int count)
 {
-  command_add_table(this_->attr_cbl, commands, count, this_);
+	command_add_table(this_->attr_cbl, commands, count, this_);
 }
 
 struct navit *
@@ -1461,7 +1476,7 @@ navit_new(struct attr *parent, struct attr **attrs)
 
 	this_->prevTs=0;
 
-	for (;*attrs; attrs++) {
+	for (; *attrs; attrs++) {
 		navit_set_attr_do(this_, *attrs, 1);
 	}
 	this_->displaylist=graphics_displaylist_new();
@@ -1470,7 +1485,7 @@ navit_new(struct attr *parent, struct attr **attrs)
 	this_->messages = messagelist_new(attrs);
 
 	dbg(lvl_debug,"return %p",this_);
-	
+
 	return this_;
 }
 
@@ -1491,7 +1506,7 @@ navit_set_gui(struct navit *this_, struct gui *gui)
 	return 1;
 }
 
-void 
+void
 navit_add_message(struct navit *this_, const char *message)
 {
 	message_new(this_->messages, message);
@@ -1553,13 +1568,14 @@ navit_projection_set(struct navit *this_, enum projection pro, int draw)
 }
 
 static void
-navit_mark_navigation_stopped(char *former_destination_file){
-        FILE *f;
+navit_mark_navigation_stopped(char *former_destination_file)
+{
+	FILE *f;
 	f=fopen(former_destination_file, "a");
 	if (f) {
 		fprintf(f,"%s", TEXTFILE_COMMENT_NAVI_STOPPED);
 		fclose(f);
-	}else{
+	} else {
 		dbg(lvl_error, "Error setting mark in destination file %s: %s", former_destination_file, strerror(errno));
 	}
 }
@@ -1584,10 +1600,12 @@ navit_set_destination(struct navit *this_, struct pcoord *c, const char *descrip
 		this_->destination_valid=1;
 
 		dbg(lvl_debug, "c=(%i,%i)", c->x,c->y);
-		bookmarks_append_destinations(this_->former_destination, destination_file, c, 1, type_former_destination, description, this_->recentdest_count);
+		bookmarks_append_destinations(this_->former_destination, destination_file, c, 1, type_former_destination, description,
+		                              this_->recentdest_count);
 	} else {
 		this_->destination_valid=0;
-		bookmarks_append_destinations(this_->former_destination, destination_file, NULL, 0, type_former_destination, NULL, this_->recentdest_count);
+		bookmarks_append_destinations(this_->former_destination, destination_file, NULL, 0, type_former_destination, NULL,
+		                              this_->recentdest_count);
 		navit_mark_navigation_stopped(destination_file);
 	}
 	g_free(destination_file);
@@ -1598,11 +1616,11 @@ navit_set_destination(struct navit *this_, struct pcoord *c, const char *descrip
 		struct attr attr;
 		int dstcount;
 		struct pcoord *pc;
-	
+
 		navit_get_attr(this_, attr_waypoints_flag, &attr, NULL);
-		if (this_->waypoints_flag==0 || route_get_destination_count(this_->route)==0){
+		if (this_->waypoints_flag==0 || route_get_destination_count(this_->route)==0) {
 			route_set_destination(this_->route, c, async);
-		}else{
+		} else {
 			route_append_destination(this_->route, c, async);
 		}
 
@@ -1611,7 +1629,8 @@ navit_set_destination(struct navit *this_, struct pcoord *c, const char *descrip
 			destination_file = bookmarks_get_destination_file(TRUE);
 			pc=g_new(struct pcoord,dstcount);
 			route_get_destinations(this_->route,pc,dstcount);
-			bookmarks_append_destinations(this_->former_destination, destination_file, pc, dstcount, type_former_itinerary, description, this_->recentdest_count);
+			bookmarks_append_destinations(this_->former_destination, destination_file, pc, dstcount, type_former_itinerary,
+			                              description, this_->recentdest_count);
 			g_free(pc);
 			g_free(destination_file);
 		}
@@ -1635,7 +1654,8 @@ navit_add_destination_description(struct navit *this_, struct pcoord *c, const c
 	char *destination_file;
 	if (c) {
 		destination_file = bookmarks_get_destination_file(TRUE);
-		bookmarks_append_destinations(this_->former_destination, destination_file, c, 1, type_former_destination, description, this_->recentdest_count);
+		bookmarks_append_destinations(this_->former_destination, destination_file, c, 1, type_former_destination, description,
+		                              this_->recentdest_count);
 		g_free(destination_file);
 	}
 }
@@ -1659,7 +1679,8 @@ navit_set_destinations(struct navit *this_, struct pcoord *c, int count, const c
 		this_->destination_valid=1;
 
 		destination_file = bookmarks_get_destination_file(TRUE);
-		bookmarks_append_destinations(this_->former_destination, destination_file, c, count, type_former_itinerary, description, this_->recentdest_count);
+		bookmarks_append_destinations(this_->former_destination, destination_file, c, count, type_former_itinerary, description,
+		                              this_->recentdest_count);
 		g_free(destination_file);
 	} else
 		this_->destination_valid=0;
@@ -1677,7 +1698,7 @@ navit_get_destinations(struct navit *this_, struct pcoord *pc, int count)
 {
 	if(!this_->route)
 		return 0;
- 	return route_get_destinations(this_->route, pc, count);
+	return route_get_destinations(this_->route, pc, count);
 
 }
 
@@ -1702,9 +1723,9 @@ navit_remove_nth_waypoint(struct navit *this_, int n)
 {
 	if(!this_->route)
 		return;
-	if (route_get_destination_count(this_->route)>1){
+	if (route_get_destination_count(this_->route)>1) {
 		route_remove_nth_waypoint(this_->route, n);
-	}else{
+	} else {
 		navit_set_destination(this_, NULL, NULL, 0);
 	}
 }
@@ -1714,9 +1735,9 @@ navit_remove_waypoint(struct navit *this_)
 {
 	if(!this_->route)
 		return;
-	if (route_get_destination_count(this_->route)>1){
+	if (route_get_destination_count(this_->route)>1) {
 		route_remove_waypoint(this_->route);
-	}else{
+	} else {
 		navit_set_destination(this_, NULL, NULL, 0);
 	}
 }
@@ -1750,7 +1771,7 @@ navit_former_destinations_active(struct navit *this_)
 	if (destination_file) {
 		while(fgets(lastline, sizeof(lastline), destination_file));
 		fclose(destination_file);
-		if ((lastline != NULL) && (strcmp(lastline, TEXTFILE_COMMENT_NAVI_STOPPED))){
+		if ((lastline != NULL) && (strcmp(lastline, TEXTFILE_COMMENT_NAVI_STOPPED))) {
 			active=1;
 		}
 	}
@@ -1759,7 +1780,8 @@ navit_former_destinations_active(struct navit *this_)
 }
 
 
-struct map* read_former_destinations_from_file(){
+struct map* read_former_destinations_from_file()
+{
 	struct attr type, data, no_warn, flags, *attrs[5];
 	char *destination_file = bookmarks_get_destination_file(FALSE);
 	struct map *m;
@@ -1776,8 +1798,11 @@ struct map* read_former_destinations_from_file(){
 	flags.type=attr_flags;
 	flags.u.num=1;
 
-	attrs[0]=&type; attrs[1]=&data; attrs[2]=&flags;
-	attrs[3]=&no_warn; attrs[4]=NULL;
+	attrs[0]=&type;
+	attrs[1]=&data;
+	attrs[2]=&flags;
+	attrs[3]=&no_warn;
+	attrs[4]=NULL;
 
 	m=map_new(NULL, attrs);
 	g_free(destination_file);
@@ -1795,7 +1820,7 @@ navit_add_former_destinations_from_file(struct navit *this_)
 
 	this_->former_destination=read_former_destinations_from_file();
 	if (!this_->route || !navit_former_destinations_active(this_) || !this_->vehicle)
-		return;	
+		return;
 	mr=map_rect_new(this_->former_destination, NULL);
 	while ((item=map_rect_get_item(mr))) {
 		if (item->type == type_former_itinerary || item->type == type_former_itinerary_part) {
@@ -1806,7 +1831,7 @@ navit_add_former_destinations_from_file(struct navit *this_)
 				count+=item_coord_get(item, &c[count], maxcount-count);
 			}
 			if(count)
-			valid=1;
+				valid=1;
 		}
 	}
 	map_rect_destroy(mr);
@@ -1837,12 +1862,13 @@ navit_textfile_debug_log(struct navit *this_, const char *fmt, ...)
 	va_start(ap, fmt);
 	if (this_->textfile_debug_log && this_->vehicle) {
 		str1=g_strdup_vprintf(fmt, ap);
-		str2=g_strdup_printf("0x%x 0x%x%s%s\n", this_->vehicle->coord.x, this_->vehicle->coord.y, strlen(str1) ? " " : "", str1);
+		str2=g_strdup_printf("0x%x 0x%x%s%s\n", this_->vehicle->coord.x, this_->vehicle->coord.y, strlen(str1) ? " " : "",
+		                     str1);
 		log_write(this_->textfile_debug_log, str2, strlen(str2), 0);
 		g_free(str2);
 		g_free(str1);
 	}
-       	va_end(ap);
+	va_end(ap);
 }
 
 void
@@ -1858,7 +1884,7 @@ navit_textfile_debug_log_at(struct navit *this_, struct pcoord *pc, const char *
 		g_free(str2);
 		g_free(str1);
 	}
-       	va_end(ap);
+	va_end(ap);
 }
 
 void
@@ -1881,27 +1907,27 @@ navit_say(struct navit *this_, const char *text)
 static void
 navit_cmd_announcer_toggle(struct navit *this_)
 {
-    struct attr attr, speechattr;
+	struct attr attr, speechattr;
 
-    // search for the speech attribute
-    if(!navit_get_attr(this_, attr_speech, &speechattr, NULL))
-        return;
-    // find out if the corresponding attribute attr_active has been set
-    if(speech_get_attr(speechattr.u.speech, attr_active, &attr, NULL)) {
-        // flip it then...
-        attr.u.num = !attr.u.num;
-    } else {
-        // otherwise disable it because voice is enabled by default
-        attr.type = attr_active;
-        attr.u.num = 0;
-    }
+	// search for the speech attribute
+	if(!navit_get_attr(this_, attr_speech, &speechattr, NULL))
+		return;
+	// find out if the corresponding attribute attr_active has been set
+	if(speech_get_attr(speechattr.u.speech, attr_active, &attr, NULL)) {
+		// flip it then...
+		attr.u.num = !attr.u.num;
+	} else {
+		// otherwise disable it because voice is enabled by default
+		attr.type = attr_active;
+		attr.u.num = 0;
+	}
 
-    // apply the new state
-    if(!speech_set_attr(speechattr.u.speech, &attr))
-        return;
+	// apply the new state
+	if(!speech_set_attr(speechattr.u.speech, &attr))
+		return;
 
-    // announce that the speech attribute has changed
-    callback_list_call_attr_1(this_->attr_cbl, attr_speech, this_);
+	// announce that the speech attribute has changed
+	callback_list_call_attr_1(this_->attr_cbl, attr_speech, this_);
 }
 
 void
@@ -1913,11 +1939,11 @@ navit_speak(struct navit *this_)
 	struct item *item;
 	struct attr attr;
 
-    if (!speech_get_attr(this_->speech, attr_active, &attr, NULL))
-        attr.u.num = 1;
-    dbg(lvl_debug, "this_.speech->active %ld", attr.u.num);
-    if(!attr.u.num)
-        return;
+	if (!speech_get_attr(this_->speech, attr_active, &attr, NULL))
+		attr.u.num = 1;
+	dbg(lvl_debug, "this_.speech->active %ld", attr.u.num);
+	if(!attr.u.num)
+		return;
 
 	if (nav)
 		map=navigation_get_map(nav);
@@ -1947,10 +1973,10 @@ navit_window_roadbook_update(struct navit *this_)
 	struct param_list param[5];
 	int secs;
 
-        /* Respect the Imperial attribute as we enlighten the user. */
-        int imperial = FALSE;  /* default to using metric measures. */
-        if (navit_get_attr(this_, attr_imperial, &attr, NULL))
-            imperial=attr.u.num;
+	/* Respect the Imperial attribute as we enlighten the user. */
+	int imperial = FALSE;  /* default to using metric measures. */
+	if (navit_get_attr(this_, attr_imperial, &attr, NULL))
+		imperial=attr.u.num;
 
 	dbg(lvl_debug,"enter");
 	datawindow_mode(this_->roadbook_window, 1);
@@ -1975,70 +2001,58 @@ navit_window_roadbook_update(struct navit *this_)
 				param[0].value=_("Position");
 			param[0].name=_("Command");
 
-                        /* Distance to the next maneuver. */
+			/* Distance to the next maneuver. */
 			item_attr_get(item, attr_length, &attr);
 			dbg(lvl_info, "Length=%ld in meters", attr.u.num);
 			param[1].name=_("Length");
 
-			if ( attr.u.num >= 2000 )
-			{
-                                param[1].value=g_strdup_printf("%5.1f %s",
-                                                               imperial == TRUE ? (float)attr.u.num * METERS_TO_MILES : (float)attr.u.num / 1000,
-                                                               imperial == TRUE ? _("mi") : _("km")
-                                        );
-			}
-			else
-			{
-                                param[1].value=g_strdup_printf("%7.0f %s",
-                                                               imperial == TRUE ? (attr.u.num * FEET_PER_METER) : attr.u.num,
-                                                               imperial == TRUE ? _("feet") : _("m")
-                                        );
+			if ( attr.u.num >= 2000 ) {
+				param[1].value=g_strdup_printf("%5.1f %s",
+				                               imperial == TRUE ? (float)attr.u.num * METERS_TO_MILES : (float)attr.u.num / 1000,
+				                               imperial == TRUE ? _("mi") : _("km")
+				                              );
+			} else {
+				param[1].value=g_strdup_printf("%7.0f %s",
+				                               imperial == TRUE ? (attr.u.num * FEET_PER_METER) : attr.u.num,
+				                               imperial == TRUE ? _("feet") : _("m")
+				                              );
 			}
 
-                        /* Time to next maneuver. */
+			/* Time to next maneuver. */
 			item_attr_get(item, attr_time, &attr);
 			dbg(lvl_info, "Time=%ld", attr.u.num);
 			secs=attr.u.num/10;
 			param[2].name=_("Time");
-			if ( secs >= 3600 )
-			{
-                                param[2].value=g_strdup_printf("%d:%02d:%02d",secs / 60, ( secs / 60 ) % 60 , secs % 60);
-			}
-			else
-			{
-                                param[2].value=g_strdup_printf("%d:%02d",secs / 60, secs % 60);
+			if ( secs >= 3600 ) {
+				param[2].value=g_strdup_printf("%d:%02d:%02d",secs / 60, ( secs / 60 ) % 60, secs % 60);
+			} else {
+				param[2].value=g_strdup_printf("%d:%02d",secs / 60, secs % 60);
 			}
 
-                        /* Distance from next maneuver to destination. */
+			/* Distance from next maneuver to destination. */
 			item_attr_get(item, attr_destination_length, &attr);
 			dbg(lvl_info, "Destlength=%ld in meters.", attr.u.num);
 			param[3].name=_("Destination Length");
-			if ( attr.u.num >= 2000 )
-			{
-                                param[3].value=g_strdup_printf("%5.1f %s",
-                                                               imperial == TRUE ? (float)attr.u.num * METERS_TO_MILES : (float)attr.u.num / 1000,
-                                                               imperial == TRUE ? _("mi") : _("km")
-                                        );
-			}
-			else
-			{
-                                param[3].value=g_strdup_printf("%7.0f %s",
-                                                               imperial == TRUE ? (attr.u.num * FEET_PER_METER) : attr.u.num,
-                                                               imperial == TRUE ? _("feet") : _("m")
-                                        );
+			if ( attr.u.num >= 2000 ) {
+				param[3].value=g_strdup_printf("%5.1f %s",
+				                               imperial == TRUE ? (float)attr.u.num * METERS_TO_MILES : (float)attr.u.num / 1000,
+				                               imperial == TRUE ? _("mi") : _("km")
+				                              );
+			} else {
+				param[3].value=g_strdup_printf("%7.0f %s",
+				                               imperial == TRUE ? (attr.u.num * FEET_PER_METER) : attr.u.num,
+				                               imperial == TRUE ? _("feet") : _("m")
+				                              );
 			}
 
-                        /* Time from next maneuver to destination. */
+			/* Time from next maneuver to destination. */
 			item_attr_get(item, attr_destination_time, &attr);
 			dbg(lvl_info, "Desttime=%ld", attr.u.num);
 			secs=attr.u.num/10;
 			param[4].name=_("Destination Time");
-			if ( secs >= 3600 )
-			{
-				param[4].value=g_strdup_printf("%d:%02d:%02d",secs / 3600, (secs / 60 ) % 60 , secs % 60);
-			}
-			else
-			{
+			if ( secs >= 3600 ) {
+				param[4].value=g_strdup_printf("%d:%02d:%02d",secs / 3600, (secs / 60 ) % 60, secs % 60);
+			} else {
 				param[4].value=g_strdup_printf("%d:%02d",secs / 60, secs % 60);
 			}
 			datawindow_add(this_->roadbook_window, param, 5);
@@ -2066,7 +2080,8 @@ navit_window_roadbook_new(struct navit *this_)
 
 	this_->roadbook_callback=callback_new_1(callback_cast(navit_window_roadbook_update), this_);
 	navigation_register_callback(this_->navigation, attr_navigation_long, this_->roadbook_callback);
-	this_->roadbook_window=gui_datawindow_new(this_->gui, _("Roadbook"), NULL, callback_new_1(callback_cast(navit_window_roadbook_destroy), this_));
+	this_->roadbook_window=gui_datawindow_new(this_->gui, _("Roadbook"), NULL,
+	                       callback_new_1(callback_cast(navit_window_roadbook_destroy), this_));
 	navit_window_roadbook_update(this_);
 }
 
@@ -2095,7 +2110,7 @@ navit_init(struct navit *this_)
 		graphics_get_attr(this_->gra, attr_type, &attr_type_graphics, NULL);
 		dbg(lvl_error,"FATAL: Failed to connect graphics '%s' to gui '%s'", attr_type_graphics.u.str, attr_type_gui.u.str);
 		dbg(lvl_error,"Please see http://wiki.navit-project.org/index.php/Failed_to_connect_graphics_to_gui "
-			"for explanations and solutions\n");
+		    "for explanations and solutions\n");
 		exit(1);
 	}
 	if (this_->speech && this_->navigation) {
@@ -2119,7 +2134,7 @@ navit_init(struct navit *this_)
 			map_add_callback(map, pcb);
 		}
 		mapset_close(msh);
-		
+
 		if (this_->route) {
 			if ((map=route_get_map(this_->route))) {
 				struct attr map_a;
@@ -2226,11 +2241,11 @@ navit_zoom_to_rect(struct navit *this_, struct coord_rect *r)
 		transform(this_->trans, transform_get_projection(this_->trans), &r->rl, &p2, 1, 0, 0, NULL);
 		dbg(lvl_debug,"%d,%d-%d,%d",p1.x,p1.y,p2.x,p2.y);
 		if (p1.x < 0 || p2.x < 0 || p1.x > w || p2.x > w ||
-		    p1.y < 0 || p2.y < 0 || p1.y > h || p2.y > h)
+		                p1.y < 0 || p2.y < 0 || p1.y > h || p2.y > h)
 			scale*=2;
 		else
 			break;
-	
+
 	}
 	dbg(lvl_debug,"scale=%d (0x%x) of %d (0x%x)",scale,scale,1<<20,1<<20);
 	if (this_->ready == 3)
@@ -2259,10 +2274,10 @@ navit_zoom_to_route(struct navit *this_, int orientation)
 			dbg(lvl_debug,"item=%s", item_to_name(item->type));
 			while (item_coord_get(item, &c, 1)) {
 				dbg(lvl_debug,"coord");
-				if (!count) 
+				if (!count)
 					r.lu=r.rl=c;
 				else
-					coord_rect_extend(&r, &c);	
+					coord_rect_extend(&r, &c);
 				count++;
 			}
 		}
@@ -2304,7 +2319,7 @@ navit_set_center(struct navit *this_, struct pcoord *center, int set_timeout)
 		c2.y = center->y;
 	}
 	*c=c2;
-	if (set_timeout) 
+	if (set_timeout)
 		navit_set_timeout(this_);
 	if (this_->ready == 3)
 		navit_draw(this_);
@@ -2377,20 +2392,20 @@ navit_get_cursor_pnt(struct navit *this_, struct point *p, int keep_orientation,
 	struct navit_vehicle *nv=this_->vehicle;
 	struct padding *padding = NULL;
 
-        float offset=this_->radius;      // Cursor offset from the center of the screen (percent).
+	float offset=this_->radius;      // Cursor offset from the center of the screen (percent).
 #if 0 /* Better improve track.c to get that issue resolved or make it configurable with being off the default, the jumping back to the center is a bit annoying */
-        float min_offset = 0.;      // Percent offset at min_offset_speed.
-        float max_offset = 30.;     // Percent offset at max_offset_speed.
-        int min_offset_speed = 2;   // Speed in km/h
-        int max_offset_speed = 50;  // Speed in km/h
-        // Calculate cursor offset from the center of the screen, upon speed.
-        if (nv->speed <= min_offset_speed) {
-            offset = min_offset;
-        } else if (nv->speed > max_offset_speed) {
-            offset = max_offset;
-        } else {
-            offset = (max_offset - min_offset) / (max_offset_speed - min_offset_speed) * (nv->speed - min_offset_speed);
-        }
+	float min_offset = 0.;      // Percent offset at min_offset_speed.
+	float max_offset = 30.;     // Percent offset at max_offset_speed.
+	int min_offset_speed = 2;   // Speed in km/h
+	int max_offset_speed = 50;  // Speed in km/h
+	// Calculate cursor offset from the center of the screen, upon speed.
+	if (nv->speed <= min_offset_speed) {
+		offset = min_offset;
+	} else if (nv->speed > max_offset_speed) {
+		offset = max_offset;
+	} else {
+		offset = (max_offset - min_offset) / (max_offset_speed - min_offset_speed) * (nv->speed - min_offset_speed);
+	}
 #endif
 
 	if (this_->gra) {
@@ -2410,7 +2425,7 @@ navit_get_cursor_pnt(struct navit *this_, struct point *p, int keep_orientation,
 	if (this_->orientation == -1 || keep_orientation) {
 		p->x=50*width/100;
 		p->y=(50 + offset)*height/100;
-		if (dir) 
+		if (dir)
 			*dir=keep_orientation?this_->orientation:nv->dir;
 	} else {
 		int mdir;
@@ -2580,7 +2595,7 @@ navit_set_attr_do(struct navit *this_, struct attr *attr, int init)
 				return navit_set_attr_do(this_, &attr, init);
 			}
 			l=g_list_next(l);
-		} 		
+		}
 		return 0;
 	case attr_map_border:
 		if (this_->border != attr->u.num) {
@@ -2617,7 +2632,8 @@ navit_set_attr_do(struct navit *this_, struct attr *attr, int init)
 	case attr_pitch:
 		attr_updated=(this_->pitch != attr->u.num);
 		this_->pitch=attr->u.num;
-		transform_set_pitch(this_->trans, round(this_->pitch*sqrt(240*320)/sqrt(this_->w*this_->h))); // Pitch corrected for window resolution
+		transform_set_pitch(this_->trans, round(this_->pitch*sqrt(240*320)/sqrt(
+		                this_->w*this_->h))); // Pitch corrected for window resolution
 		if (!init && attr_updated && this_->ready == 3)
 			navit_draw(this_);
 		break;
@@ -2636,10 +2652,10 @@ navit_set_attr_do(struct navit *this_, struct attr *attr, int init)
 		this_->recentdest_count=attr->u.num;
 		break;
 	case attr_speech:
-        	if(this_->speech && this_->speech != attr->u.speech) {
+		if(this_->speech && this_->speech != attr->u.speech) {
 			attr_updated=1;
 			this_->speech = attr->u.speech;
-        	}
+		}
 		break;
 	case attr_timeout:
 		attr_updated=(this_->center_timeout != attr->u.num);
@@ -2688,7 +2704,7 @@ navit_set_attr_do(struct navit *this_, struct attr *attr, int init)
 		zoom=transform_get_scale(this_->trans);
 		attr_updated=(zoom != attr->u.num);
 		transform_set_scale(this_->trans, attr->u.num);
-		if (attr_updated && !init) 
+		if (attr_updated && !init)
 			navit_draw(this_);
 		break;
 	case attr_zoom_min:
@@ -2743,7 +2759,7 @@ navit_get_attr(struct navit *this_, enum attr_type type, struct attr *attr, stru
 	switch (type) {
 	case attr_message:
 		msg = navit_get_messages(this_);
-		
+
 		if (!msg) {
 			return 0;
 		}
@@ -2754,7 +2770,7 @@ navit_get_attr(struct navit *this_, enum attr_type type, struct attr *attr, stru
 			msg = msg->next;
 		}
 		attr->u.str = g_malloc(len + 1);
-		
+
 		msg = navit_get_messages(this_);
 		offset = 0;
 		while (msg) {
@@ -2768,9 +2784,9 @@ navit_get_attr(struct navit *this_, enum attr_type type, struct attr *attr, stru
 
 		attr->u.str[len] = '\0';
 		break;
-        case attr_imperial: 
-                attr->u.num=this_->imperial; 
-                break; 
+	case attr_imperial:
+		attr->u.num=this_->imperial;
+		break;
 	case attr_bookmark_map:
 		attr->u.map=bookmarks_get_map(this_->bookmarks);
 		break;
@@ -2816,7 +2832,7 @@ navit_get_attr(struct navit *this_, enum attr_type type, struct attr *attr, stru
 		if (iter) {
 			if (iter->u.list) {
 				iter->u.list=g_list_next(iter->u.list);
-			} else { 
+			} else {
 				iter->u.list=this_->layouts;
 			}
 			if (!iter->u.list)
@@ -2857,7 +2873,8 @@ navit_get_attr(struct navit *this_, enum attr_type type, struct attr *attr, stru
 		attr->u.num=this_->osd_configuration;
 		break;
 	case attr_pitch:
-		attr->u.num=round(transform_get_pitch(this_->trans)*sqrt(this_->w*this_->h)/sqrt(240*320)); // Pitch corrected for window resolution
+		attr->u.num=round(transform_get_pitch(this_->trans)*sqrt(this_->w*this_->h)/sqrt(
+		                          240*320)); // Pitch corrected for window resolution
 		break;
 	case attr_projection:
 		if(this_->trans) {
@@ -2870,12 +2887,12 @@ navit_get_attr(struct navit *this_, enum attr_type type, struct attr *attr, stru
 		attr->u.route=this_->route;
 		break;
 	case attr_speech:
-                if(this_->speech) {
-                        attr->u.speech=this_->speech;
+		if(this_->speech) {
+			attr->u.speech=this_->speech;
 		} else {
-                        return  0;
-                }
-	        break;
+			return  0;
+		}
+		break;
 	case attr_timeout:
 		attr->u.num=this_->center_timeout;
 		break;
@@ -2892,7 +2909,7 @@ navit_get_attr(struct navit *this_, enum attr_type type, struct attr *attr, stru
 		if(iter) {
 			if(iter->u.list) {
 				iter->u.list=g_list_next(iter->u.list);
-			} else { 
+			} else {
 				iter->u.list=this_->vehicles;
 			}
 			if(!iter->u.list)
@@ -2910,7 +2927,7 @@ navit_get_attr(struct navit *this_, enum attr_type type, struct attr *attr, stru
 		if (iter) {
 			if(iter->u.list) {
 				iter->u.list=g_list_next(iter->u.list);
-			} else { 
+			} else {
 				iter->u.list=this_->vehicleprofiles;
 			}
 			if(!iter->u.list)
@@ -2963,7 +2980,7 @@ navit_add_layout(struct navit *this_, struct layout *layout)
 	struct attr active;
 	this_->layouts = g_list_append(this_->layouts, layout);
 	layout_get_attr(layout, attr_active, &active, NULL);
-	if(active.u.num || !this_->layout_current) { 
+	if(active.u.num || !this_->layout_current) {
 		this_->layout_current=layout;
 		return 1;
 	}
@@ -3077,7 +3094,8 @@ navit_remove_callback(struct navit *this_, struct callback *cb)
 }
 
 static int
-coord_not_set(struct coord c){
+coord_not_set(struct coord c)
+{
 	return !(c.x || c.y);
 }
 
@@ -3131,7 +3149,8 @@ navit_vehicle_draw(struct navit *this_, struct navit_vehicle *nv, struct point *
  * @param nv The {@code navit_vehicle} which reported a new position
  */
 static void
-navit_vehicle_update_position(struct navit *this_, struct navit_vehicle *nv) {
+navit_vehicle_update_position(struct navit *this_, struct navit_vehicle *nv)
+{
 	struct attr attr_valid, attr_dir, attr_speed, attr_pos;
 	struct pcoord cursor_pc;
 	struct point cursor_pnt, *pnt=&cursor_pnt;
@@ -3161,8 +3180,8 @@ navit_vehicle_update_position(struct navit *this_, struct navit_vehicle *nv) {
 		if (!attr_valid.u.num != attr_position_valid_invalid)
 			return;
 	if (! get_attr(attr_object, attr_position_direction, &attr_dir, NULL) ||
-	    ! get_attr(attr_object, attr_position_speed, &attr_speed, NULL) ||
-	    ! get_attr(attr_object, attr_position_coord_geo, &attr_pos, NULL)) {
+	                ! get_attr(attr_object, attr_position_speed, &attr_speed, NULL) ||
+	                ! get_attr(attr_object, attr_position_coord_geo, &attr_pos, NULL)) {
 		profile(0,"return 2\n");
 		return;
 	}
@@ -3191,8 +3210,8 @@ navit_vehicle_update_position(struct navit *this_, struct navit_vehicle *nv) {
 			navit_disable_suspend();
 
 		transform(this_->trans_cursor, pro, &nv->coord, &cursor_pnt, 1, 0, 0, NULL);
-		if (this_->button_pressed != 1 && this_->follow_cursor && nv->follow_curr <= nv->follow && 
-			(nv->follow_curr == 1 || !transform_within_border(this_->trans_cursor, &cursor_pnt, this_->border)))
+		if (this_->button_pressed != 1 && this_->follow_cursor && nv->follow_curr <= nv->follow &&
+		                (nv->follow_curr == 1 || !transform_within_border(this_->trans_cursor, &cursor_pnt, this_->border)))
 			navit_set_center_cursor_draw(this_);
 		else
 			navit_vehicle_draw(this_, nv, pnt);
@@ -3214,13 +3233,15 @@ navit_vehicle_update_position(struct navit *this_, struct navit_vehicle *nv) {
 			pc=g_alloca(sizeof(*pc)*count);
 			route_get_destinations(this_->route, pc, count);
 			destination_file = bookmarks_get_destination_file(TRUE);
-			bookmarks_append_destinations(this_->former_destination, destination_file, pc, count, type_former_itinerary_part, description, this_->recentdest_count);
+			bookmarks_append_destinations(this_->former_destination, destination_file, pc, count, type_former_itinerary_part,
+			                              description, this_->recentdest_count);
 			g_free(destination_file);
 			g_free(description);
-			break;	
+			break;
 		case 2:
 			destination_file = bookmarks_get_destination_file(TRUE);
-			bookmarks_append_destinations(this_->former_destination, destination_file, NULL, 0, type_former_itinerary_part, NULL, this_->recentdest_count);
+			bookmarks_append_destinations(this_->former_destination, destination_file, NULL, 0, type_former_itinerary_part, NULL,
+			                              this_->recentdest_count);
 			navit_set_destination(this_, NULL, NULL, 0);
 			g_free(destination_file);
 			break;
@@ -3246,7 +3267,8 @@ navit_vehicle_update_position(struct navit *this_, struct navit_vehicle *nv) {
  * @param type The type of attribute with has changed
  */
 static void
-navit_vehicle_update_status(struct navit *this_, struct navit_vehicle *nv, enum attr_type type) {
+navit_vehicle_update_status(struct navit *this_, struct navit_vehicle *nv, enum attr_type type)
+{
 	if (this_->vehicle != nv)
 		return;
 	switch(type) {
@@ -3324,13 +3346,12 @@ navit_set_vehicle(struct navit *this_, struct navit_vehicle *nv)
 			GList *l;
 			l=this_->vehicleprofiles;
 			if (l) {
-		    		this_->vehicleprofile=l->data;
-		    		if (this_->route)
-				route_set_profile(this_->route, this_->vehicleprofile);
+				this_->vehicleprofile=l->data;
+				if (this_->route)
+					route_set_profile(this_->route, this_->vehicleprofile);
 			}
 		}
-	}
-	else {
+	} else {
 		if (this_->route)
 			route_set_profile(this_->route, this_->vehicleprofile);
 	}
@@ -3362,13 +3383,17 @@ navit_add_vehicle(struct navit *this_, struct vehicle *v)
 	if ((vehicle_get_attr(v, attr_animate, &animate, NULL)))
 		nv->animate_cursor=animate.u.num;
 	nv->callback.type=attr_callback;
-	nv->callback.u.callback=callback_new_attr_2(callback_cast(navit_vehicle_update_position), attr_position_coord_geo, this_, nv);
+	nv->callback.u.callback=callback_new_attr_2(callback_cast(navit_vehicle_update_position), attr_position_coord_geo,
+	                        this_, nv);
 	vehicle_add_attr(nv->vehicle, &nv->callback);
-	nv->callback.u.callback=callback_new_attr_3(callback_cast(navit_vehicle_update_status), attr_position_fix_type, this_, nv, attr_position_fix_type);
+	nv->callback.u.callback=callback_new_attr_3(callback_cast(navit_vehicle_update_status), attr_position_fix_type, this_,
+	                        nv, attr_position_fix_type);
 	vehicle_add_attr(nv->vehicle, &nv->callback);
-	nv->callback.u.callback=callback_new_attr_3(callback_cast(navit_vehicle_update_status), attr_position_sats_used, this_, nv, attr_position_sats_used);
+	nv->callback.u.callback=callback_new_attr_3(callback_cast(navit_vehicle_update_status), attr_position_sats_used, this_,
+	                        nv, attr_position_sats_used);
 	vehicle_add_attr(nv->vehicle, &nv->callback);
-	nv->callback.u.callback=callback_new_attr_3(callback_cast(navit_vehicle_update_status), attr_position_hdop, this_, nv, attr_position_hdop);
+	nv->callback.u.callback=callback_new_attr_3(callback_cast(navit_vehicle_update_status), attr_position_hdop, this_, nv,
+	                        attr_position_hdop);
 	vehicle_add_attr(nv->vehicle, &nv->callback);
 	vehicle_set_attr(nv->vehicle, &this_->self);
 	return 1;
@@ -3409,7 +3434,7 @@ navit_get_displaylist(struct navit *this_)
 
 /*todo : make it switch to nightlayout when we are in a tunnel */
 void
-navit_layout_switch(struct navit *n) 
+navit_layout_switch(struct navit *n)
 {
 
 	int currTs=0;
@@ -3428,8 +3453,8 @@ navit_layout_switch(struct navit *n)
 	l=layout_attr.u.layout;
 
 	if (l->dayname || l->nightname) {
-	//Ok, we know that we have profile to switch
-	
+		//Ok, we know that we have profile to switch
+
 		//Check that we aren't calculating too fast
 		if (vehicle_get_attr(n->vehicle->vehicle, attr_position_time_iso8601,&iso8601_attr,NULL)==1) {
 			currTs=iso8601_to_secs(iso8601_attr.u.str);
@@ -3441,18 +3466,19 @@ navit_layout_switch(struct navit *n)
 			return;
 
 		if (currTs-(n->prevTs)<60) {
-				//We've have to wait a little
-				return;
-			}
+			//We've have to wait a little
+			return;
+		}
 
 		if (sscanf(iso8601_attr.u.str,"%d-%02d-%02dT",&year,&month,&day) != 3)
 			return;
-		if (vehicle_get_attr(n->vehicle->vehicle, attr_position_valid, &valid_attr,NULL) && valid_attr.u.num==attr_position_valid_invalid) {
+		if (vehicle_get_attr(n->vehicle->vehicle, attr_position_valid, &valid_attr,NULL)
+		                && valid_attr.u.num==attr_position_valid_invalid) {
 			return; //No valid fix yet
 		}
 		if (vehicle_get_attr(n->vehicle->vehicle, attr_position_coord_geo,&geo_attr,NULL)!=1) {
-		//No position - no sun
-		return;
+			//No position - no sun
+			return;
 		}
 		//We calculate sunrise anyway, cause it is needed both for day and for night
 		if (__sunriset__(year,month,day,geo_attr.u.coord_geo->lng,geo_attr.u.coord_geo->lat,-5,1,&trise,&tset)!=0) {
@@ -3470,18 +3496,18 @@ navit_layout_switch(struct navit *n)
 		if (HOURS(trise)*60+MINUTES(trise)<(currTs%86400)/60) {
 			after_sunrise = TRUE;
 		}
-	
+
 		if (((HOURS(tset)*60+MINUTES(tset)<(currTs%86400)/60)) ||
-				((HOURS(trise_actual)*60+MINUTES(trise_actual)>(currTs%86400)/60))) {
+		                ((HOURS(trise_actual)*60+MINUTES(trise_actual)>(currTs%86400)/60))) {
 			after_sunset = TRUE;
 		}
 		if (after_sunrise && !after_sunset && l->dayname) {
 			navit_set_layout_by_name(n,l->dayname);
 			dbg(lvl_debug,"layout set to day");
-		}else if (after_sunset && l->nightname) {
+		} else if (after_sunset && l->nightname) {
 			navit_set_layout_by_name(n,l->nightname);
 			dbg(lvl_debug,"layout set to night");
-			}
+		}
 		n->prevTs=currTs;
 	}
 }
@@ -3507,7 +3533,8 @@ navit_layout_switch(struct navit *n)
  * the version of the active layout (day/night/undefined)
  */
 static
-void navit_cmd_switch_layout_day_night(struct navit *this_, char *function, struct attr **in, struct attr ***out, int valid)
+void navit_cmd_switch_layout_day_night(struct navit *this_, char *function, struct attr **in, struct attr ***out,
+                                       int valid)
 {
 
 	if (!(in && in[0] && ATTR_IS_STRING(in[0]->type))) {
@@ -3519,35 +3546,30 @@ void navit_cmd_switch_layout_day_night(struct navit *this_, char *function, stru
 	if (!this_->layout_current)
 		return;
 
-    if (!this_->vehicle)
-    	return;
+	if (!this_->vehicle)
+		return;
 
 	if (!strcmp(in[0]->u.str,"manual")) {
 		this_->auto_switch = FALSE;
-	}
-	else if (!strcmp(in[0]->u.str,"auto")) {
+	} else if (!strcmp(in[0]->u.str,"auto")) {
 		this_->auto_switch = TRUE;
 		this_->prevTs = 0;
 		navit_layout_switch(this_);
-	}
-	else if (!strcmp(in[0]->u.str,"manual_toggle")) {
+	} else if (!strcmp(in[0]->u.str,"manual_toggle")) {
 		if (this_->layout_current->dayname) {
 			navit_set_layout_by_name(this_,this_->layout_current->dayname);
 			this_->auto_switch = FALSE;
 			dbg(lvl_debug,"toggeled layout to = %s",this_->layout_current->name);
-		}
-		else if (this_->layout_current->nightname) {
+		} else if (this_->layout_current->nightname) {
 			navit_set_layout_by_name(this_,this_->layout_current->nightname);
 			this_->auto_switch = FALSE;
 			dbg(lvl_debug,"toggeled layout to = %s",this_->layout_current->name);
 		}
-	}
-	else if (!strcmp(in[0]->u.str,"manual_day") && this_->layout_current->dayname) {
+	} else if (!strcmp(in[0]->u.str,"manual_day") && this_->layout_current->dayname) {
 		navit_set_layout_by_name(this_,this_->layout_current->dayname);
 		this_->auto_switch = FALSE;
 		dbg(lvl_debug,"switched layout to = %s",this_->layout_current->name);
-	}
-	else if (!strcmp(in[0]->u.str,"manual_night") && this_->layout_current->nightname) {
+	} else if (!strcmp(in[0]->u.str,"manual_night") && this_->layout_current->nightname) {
 		navit_set_layout_by_name(this_,this_->layout_current->nightname);
 		this_->auto_switch = FALSE;
 		dbg(lvl_debug,"switched layout to = %s",this_->layout_current->name);
@@ -3557,66 +3579,67 @@ void navit_cmd_switch_layout_day_night(struct navit *this_, char *function, stru
 	return;
 }
 
-int 
-navit_set_vehicle_by_name(struct navit *n,const char *name) 
+int
+navit_set_vehicle_by_name(struct navit *n,const char *name)
 {
-    struct vehicle *v;
-    struct attr_iter *iter;
-    struct attr vehicle_attr, name_attr;
+	struct vehicle *v;
+	struct attr_iter *iter;
+	struct attr vehicle_attr, name_attr;
 
 	iter=navit_attr_iter_new();
 
-    while (navit_get_attr(n,attr_vehicle,&vehicle_attr,iter)) {
+	while (navit_get_attr(n,attr_vehicle,&vehicle_attr,iter)) {
 		v=vehicle_attr.u.vehicle;
 		vehicle_get_attr(v,attr_name,&name_attr,NULL);
 		if (name_attr.type==attr_name) {
 			if (!strcmp(name,name_attr.u.str)) {
-				navit_set_attr(n,&vehicle_attr);				
+				navit_set_attr(n,&vehicle_attr);
 				navit_attr_iter_destroy(iter);
 				return 1;
 			}
 		}
 	}
-    navit_attr_iter_destroy(iter);
-    return 0;
+	navit_attr_iter_destroy(iter);
+	return 0;
 }
 
-int 
-navit_set_layout_by_name(struct navit *n,const char *name) 
+int
+navit_set_layout_by_name(struct navit *n,const char *name)
 {
-    struct layout *l;
-    struct attr_iter iter;
-    struct attr layout_attr;
+	struct layout *l;
+	struct attr_iter iter;
+	struct attr layout_attr;
 
-    iter.u.list=0x00;
+	iter.u.list=0x00;
 
-    if (navit_get_attr(n,attr_layout,&layout_attr,&iter)!=1) {
-	return 0; //No layouts - nothing to do
-    }
-    if (iter.u.list==NULL) {
-	return 0;
-    }
-    
-    iter.u.list=g_list_first(iter.u.list);
-    
-    while(iter.u.list) {
-	l=(struct layout*)iter.u.list->data;
-	if (!strcmp(name,l->name)) {
-	    layout_attr.u.layout=l;
-	    layout_attr.type=attr_layout;
-	    navit_set_attr(n,&layout_attr);
-	    iter.u.list=g_list_first(iter.u.list);
-	    return 1;
+	if (navit_get_attr(n,attr_layout,&layout_attr,&iter)!=1) {
+		return 0; //No layouts - nothing to do
 	}
-	iter.u.list=g_list_next(iter.u.list);
-    }
+	if (iter.u.list==NULL) {
+		return 0;
+	}
 
-    iter.u.list=g_list_first(iter.u.list);
-    return 0;
+	iter.u.list=g_list_first(iter.u.list);
+
+	while(iter.u.list) {
+		l=(struct layout*)iter.u.list->data;
+		if (!strcmp(name,l->name)) {
+			layout_attr.u.layout=l;
+			layout_attr.type=attr_layout;
+			navit_set_attr(n,&layout_attr);
+			iter.u.list=g_list_first(iter.u.list);
+			return 1;
+		}
+		iter.u.list=g_list_next(iter.u.list);
+	}
+
+	iter.u.list=g_list_first(iter.u.list);
+	return 0;
 }
 
 void
-navit_disable_suspend() {
+navit_disable_suspend()
+{
 	gui_disable_suspend(global_navit->gui);
 	callback_list_call_attr_0(global_navit->attr_cbl,attr_unsuspend);
 }
@@ -3701,23 +3724,23 @@ navit_destroy(struct navit *this_)
 	callback_destroy(this_->progress_cb);
 
 	if(this_->gra) {
-	  graphics_remove_callback(this_->gra, this_->resize_callback);
-	  graphics_remove_callback(this_->gra, this_->button_callback);
-	  graphics_remove_callback(this_->gra, this_->motion_callback);
-	  graphics_remove_callback(this_->gra, this_->predraw_callback);
-        }
+		graphics_remove_callback(this_->gra, this_->resize_callback);
+		graphics_remove_callback(this_->gra, this_->button_callback);
+		graphics_remove_callback(this_->gra, this_->motion_callback);
+		graphics_remove_callback(this_->gra, this_->predraw_callback);
+	}
 
 	callback_destroy(this_->resize_callback);
 	callback_destroy(this_->motion_callback);
 	callback_destroy(this_->predraw_callback);
 
-        callback_destroy(this_->route_cb);
+	callback_destroy(this_->route_cb);
 	if (this_->route)
 		route_destroy(this_->route);
 
-        map_destroy(this_->former_destination);
+	map_destroy(this_->former_destination);
 
-        graphics_displaylist_destroy(this_->displaylist);
+	graphics_displaylist_destroy(this_->displaylist);
 
 	graphics_free(this_->gra);
 

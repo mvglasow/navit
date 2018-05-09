@@ -59,17 +59,18 @@ static void
 print_usage(void)
 {
 	printf("%s",_("navit usage:\n"
-	"navit [options] [configfile]\n"
-	"\t-c <file>: use <file> as config file, instead of using the default file.\n"
-	"\t-d <n>: set the global debug output level to <n> (0=error, 1=warning, 2=info, 3=debug).\n"
-	"\tSettings from config file will still take effect where they set a higher level.\n"
-	"\t-h: print this usage info and exit.\n"
-	"\t-v: print the version and exit.\n"));
+	              "navit [options] [configfile]\n"
+	              "\t-c <file>: use <file> as config file, instead of using the default file.\n"
+	              "\t-d <n>: set the global debug output level to <n> (0=error, 1=warning, 2=info, 3=debug).\n"
+	              "\tSettings from config file will still take effect where they set a higher level.\n"
+	              "\t-h: print this usage info and exit.\n"
+	              "\t-v: print the version and exit.\n"));
 }
 
 
 #ifndef USE_PLUGINS
-extern void builtin_init(void);
+extern void
+builtin_init(void);
 #endif /* USE_PLUGINS*/
 
 int main_real(int argc, char * const* argv)
@@ -99,7 +100,7 @@ int main_real(int argc, char * const* argv)
 		debug_set_logfile(cp);
 	}
 #ifdef HAVE_API_WIN32_CE
-	else {	
+	else {
 		debug_set_logfile("/Storage Card/navit.log");
 	}
 #endif
@@ -134,7 +135,7 @@ int main_real(int argc, char * const* argv)
 				break;
 			case 'c':
 				printf("config file n is set to `%s'\n", optarg);
-	            config_file = optarg;
+				config_file = optarg;
 				break;
 			case 'd':
 				debug_set_global_level(atoi(optarg), 1);
@@ -157,7 +158,7 @@ int main_real(int argc, char * const* argv)
 				exit(3);
 #endif
 			}
-	  }
+		}
 		// use 1st cmd line option that is left for the config file
 		if (optind < argc) config_file = argv[optind];
 	}
@@ -166,11 +167,11 @@ int main_real(int argc, char * const* argv)
 	if (config_file) {
 		list = g_list_append(list,g_strdup(config_file));
 	} else {
-		list = g_list_append(list,g_strjoin(NULL,getenv("NAVIT_USER_DATADIR"), "/navit.xml" , NULL));
+		list = g_list_append(list,g_strjoin(NULL,getenv("NAVIT_USER_DATADIR"), "/navit.xml", NULL));
 		list = g_list_append(list,g_strdup("navit.xml.local"));
 		list = g_list_append(list,g_strdup("navit.xml"));
-		list = g_list_append(list,g_strjoin(NULL,getenv("NAVIT_SHAREDIR"), "/navit.xml.local" , NULL));
-		list = g_list_append(list,g_strjoin(NULL,getenv("NAVIT_SHAREDIR"), "/navit.xml" , NULL));
+		list = g_list_append(list,g_strjoin(NULL,getenv("NAVIT_SHAREDIR"), "/navit.xml.local", NULL));
+		list = g_list_append(list,g_strjoin(NULL,getenv("NAVIT_SHAREDIR"), "/navit.xml", NULL));
 #ifndef _WIN32
 		list = g_list_append(list,g_strdup("/etc/navit/navit.xml"));
 #endif
@@ -182,7 +183,7 @@ int main_real(int argc, char * const* argv)
 			dbg(lvl_error, "%s", _("No config file navit.xml, navit.xml.local found"));
 			return 4;
 		}
-        // Try the next config file possibility from the list
+		// Try the next config file possibility from the list
 		config_file = li->data;
 		dbg(lvl_debug,"trying %s",config_file);
 		if (file_exists(config_file)) {
@@ -200,7 +201,7 @@ int main_real(int argc, char * const* argv)
 	}
 	if (! config) {
 		dbg(lvl_error, _("Error: No configuration found in config file '%s'"), config_file);
-        }
+	}
 	while (li) {
 		g_free(li->data);
 		li = g_list_next(li);
@@ -220,13 +221,13 @@ int main_real(int argc, char * const* argv)
 			while(fgets(buffer, sizeof(buffer), f)) {
 				command_evaluate(&conf, buffer);
 			}
-                        fclose_ret = fclose(f);
-                        if (fclose_ret != 0) {
+			fclose_ret = fclose(f);
+			if (fclose_ret != 0) {
 				dbg(lvl_error, "Could not close the specified startup file: %s", startup_file);
 			}
 		} else {
 			dbg(lvl_error, "Could not open the specified startup file: %s", startup_file);
-                }
+		}
 	}
 	if (command) {
 		command_evaluate(&conf, command);

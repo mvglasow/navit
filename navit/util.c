@@ -57,7 +57,7 @@ strtolower(char *dest, const char *src)
 int
 navit_utf8_strcasecmp(const char *s1, const char *s2)
 {
-        char *s1_folded,*s2_folded;
+	char *s1_folded,*s2_folded;
 	int cmpres;
 	s1_folded=g_utf8_casefold(s1,-1);
 	s2_folded=g_utf8_casefold(s2,-1);
@@ -107,8 +107,8 @@ g_strconcat_printf(gchar *buffer, gchar *fmt, ...)
 	va_list ap;
 
 	va_start(ap, fmt);
-        str=g_strdup_vprintf(fmt, ap);
-        va_end(ap);
+	str=g_strdup_vprintf(fmt, ap);
+	va_end(ap);
 	if (! buffer)
 		return str;
 	ret=g_strconcat(buffer, str, NULL);
@@ -118,7 +118,8 @@ g_strconcat_printf(gchar *buffer, gchar *fmt, ...)
 }
 
 #ifndef HAVE_GLIB
-int g_utf8_strlen_force_link(gchar *buffer, int max);
+int
+g_utf8_strlen_force_link(gchar *buffer, int max);
 int
 g_utf8_strlen_force_link(gchar *buffer, int max)
 {
@@ -134,31 +135,29 @@ g_utf8_strlen_force_link(gchar *buffer, int max)
 #if defined(_WIN32) || defined(__CEGCC__) || defined (__APPLE__) || defined(HAVE_API_ANDROID)
 char *stristr(const char *String, const char *Pattern)
 {
-      char *pptr, *sptr, *start;
+	char *pptr, *sptr, *start;
 
-      for (start = (char *)String; *start != (int)NULL; start++)
-      {
-            /* find start of pattern in string */
-            for ( ; ((*start!=(int)NULL) && (toupper(*start) != toupper(*Pattern))); start++)
-                  ;
-            if ((int)NULL == *start)
-                  return NULL;
+	for (start = (char *)String; *start != (int)NULL; start++) {
+		/* find start of pattern in string */
+		for ( ; ((*start!=(int)NULL) && (toupper(*start) != toupper(*Pattern))); start++)
+			;
+		if ((int)NULL == *start)
+			return NULL;
 
-            pptr = (char *)Pattern;
-            sptr = (char *)start;
+		pptr = (char *)Pattern;
+		sptr = (char *)start;
 
-            while (toupper(*sptr) == toupper(*pptr))
-            {
-                  sptr++;
-                  pptr++;
+		while (toupper(*sptr) == toupper(*pptr)) {
+			sptr++;
+			pptr++;
 
-                  /* if end of pattern then pattern was found */
+			/* if end of pattern then pattern was found */
 
-                  if ((int)NULL == *pptr)
-                        return (start);
-            }
-      }
-      return NULL;
+			if ((int)NULL == *pptr)
+				return (start);
+		}
+	}
+	return NULL;
 }
 
 #ifndef SIZE_MAX
@@ -185,88 +184,80 @@ char *stristr(const char *String, const char *Pattern)
 #ifndef HAVE_GETDELIM
 /**
  * @brief Reads the part of a file up to a delimiter to a string.
- * <p> 
+ * <p>
  * Read up to (and including) a DELIMITER from FP into *LINEPTR (and NUL-terminate it).
  *
  * @param lineptr Pointer to a pointer returned from malloc (or NULL), pointing to a buffer. It is
  * realloc'ed as necessary and will receive the data read.
- * @param n Size of the buffer.  
+ * @param n Size of the buffer.
  *
  * @return Number of characters read (not including the null terminator), or -1 on error or EOF.
 */
 ssize_t
 getdelim (char **lineptr, size_t *n, int delimiter, FILE *fp)
 {
-  int result;
-  size_t cur_len = 0;
+	int result;
+	size_t cur_len = 0;
 
-  if (lineptr == NULL || n == NULL || fp == NULL)
-    {
-      return -1;
-    }
-
-  flockfile (fp);
-
-  if (*lineptr == NULL || *n == 0)
-    {
-      *n = 120;
-      *lineptr = (char *) realloc (*lineptr, *n);
-      if (*lineptr == NULL)
-	{
-	  result = -1;
-	  goto unlock_return;
-	}
-    }
-
-  for (;;)
-    {
-      int i;
-
-      i = getc (fp);
-      if (i == EOF)
-	{
-	  result = -1;
-	  break;
+	if (lineptr == NULL || n == NULL || fp == NULL) {
+		return -1;
 	}
 
-      /* Make enough space for len+1 (for final NUL) bytes.  */
-      if (cur_len + 1 >= *n)
-	{
-	  size_t needed_max=SIZE_MAX;
-	  size_t needed = 2 * *n + 1;   /* Be generous. */
-	  char *new_lineptr;
-	  if (needed_max < needed)
-	    needed = needed_max;
-	  if (cur_len + 1 >= needed)
-	    {
-	      result = -1;
-	      goto unlock_return;
-	    }
+	flockfile (fp);
 
-	  new_lineptr = (char *) realloc (*lineptr, needed);
-	  if (new_lineptr == NULL)
-	    {
-	      result = -1;
-	      goto unlock_return;
-	    }
-
-	  *lineptr = new_lineptr;
-	  *n = needed;
+	if (*lineptr == NULL || *n == 0) {
+		*n = 120;
+		*lineptr = (char *) realloc (*lineptr, *n);
+		if (*lineptr == NULL) {
+			result = -1;
+			goto unlock_return;
+		}
 	}
 
-      (*lineptr)[cur_len] = i;
-      cur_len++;
+	for (;;) {
+		int i;
 
-      if (i == delimiter)
-	break;
-    }
-  (*lineptr)[cur_len] = '\0';
-  result = cur_len ? cur_len : result;
+		i = getc (fp);
+		if (i == EOF) {
+			result = -1;
+			break;
+		}
 
- unlock_return:
-  funlockfile (fp); /* doesn't set errno */
+		/* Make enough space for len+1 (for final NUL) bytes.  */
+		if (cur_len + 1 >= *n) {
+			size_t needed_max=SIZE_MAX;
+			size_t needed = 2 * *n + 1;   /* Be generous. */
+			char *new_lineptr;
+			if (needed_max < needed)
+				needed = needed_max;
+			if (cur_len + 1 >= needed) {
+				result = -1;
+				goto unlock_return;
+			}
 
-  return result;
+			new_lineptr = (char *) realloc (*lineptr, needed);
+			if (new_lineptr == NULL) {
+				result = -1;
+				goto unlock_return;
+			}
+
+			*lineptr = new_lineptr;
+			*n = needed;
+		}
+
+		(*lineptr)[cur_len] = i;
+		cur_len++;
+
+		if (i == delimiter)
+			break;
+	}
+	(*lineptr)[cur_len] = '\0';
+	result = cur_len ? cur_len : result;
+
+unlock_return:
+	funlockfile (fp); /* doesn't set errno */
+
+	return result;
 }
 #endif
 
@@ -274,7 +265,7 @@ getdelim (char **lineptr, size_t *n, int delimiter, FILE *fp)
 ssize_t
 getline (char **lineptr, size_t *n, FILE *stream)
 {
-  return getdelim (lineptr, n, '\n', stream);
+	return getdelim (lineptr, n, '\n', stream);
 }
 #endif
 
@@ -301,12 +292,12 @@ char * newSysString(const char *toconvert)
  */
 int gettimeofday(struct timeval *time, void *local)
 {
-  int milliseconds = GetTickCount();
+	int milliseconds = GetTickCount();
 
-  time->tv_sec = milliseconds/1000;
-  time->tv_usec = (milliseconds - (time->tv_sec * 1000)) * 1000;
+	time->tv_sec = milliseconds/1000;
+	time->tv_usec = (milliseconds - (time->tv_sec * 1000)) * 1000;
 
-  return 0;
+	return 0;
 }
 #endif
 /**
@@ -326,11 +317,11 @@ iso8601_to_secs(char *iso8601)
 			val[i++]=atoi(start);
 			pos++;
 			start=pos;
-		} 
+		}
 		if(*pos)
 			pos++;
 	}
-	
+
 	a=val[0]/100;
 	b=2-a+a/4;
 
@@ -365,7 +356,7 @@ current_to_iso8601(void)
 	tm = gmtime(&tnow);
 	if (tm) {
 		strftime(buffer, sizeof(buffer), "%Y-%m-%dT%TZ", tm);
-		timep=g_strdup(buffer);	
+		timep=g_strdup(buffer);
 	}
 #endif
 	return timep;
@@ -389,7 +380,7 @@ struct spawn_process_info {
  * @returns escaped string
  */
 char *
-shell_escape(char *arg) 
+shell_escape(char *arg)
 {
 	char *r;
 	int arglen=strlen(arg);
@@ -400,14 +391,14 @@ shell_escape(char *arg)
 		rlen=arglen+3;
 		r=g_new(char,rlen);
 		r[0]='"';
-		for(i=0,j=1;i<arglen;i++) {
+		for(i=0,j=1; i<arglen; i++) {
 			if(arg[i]=='\\') {
 				bscount++;
 				if(i==(arglen-1)) {
-					// Most special case - last char is 
+					// Most special case - last char is
 					// backslash. We can't escape it inside
-					// quoted string due to Win unescaping 
-					// rules so quote should be closed 
+					// quoted string due to Win unescaping
+					// rules so quote should be closed
 					// before backslashes and these
 					// backslashes shouldn't be doubled
 					rlen+=bscount;
@@ -419,7 +410,7 @@ shell_escape(char *arg)
 			} else {
 				//Any preceeding backslashes will be doubled.
 				bscount*=2;
-				// Double quote needs to be preceeded by 
+				// Double quote needs to be preceeded by
 				// at least one backslash
 				if(arg[i]=='"')
 					bscount++;
@@ -445,7 +436,7 @@ shell_escape(char *arg)
 		rlen=arglen+3;
 		r=g_new(char,rlen);
 		r[0]='\'';
-		for(i=0,j=1;i<arglen;i++) {
+		for(i=0,j=1; i<arglen; i++) {
 			if(arg[i]=='\'') {
 				rlen+=3;
 				r=g_realloc(r,rlen);
@@ -467,7 +458,7 @@ spawn_process_compose_cmdline(char **argv)
 {
 	int i,j;
 	char *cmdline=shell_escape(argv[0]);
-	for(i=1,j=strlen(cmdline);argv[i];i++) {
+	for(i=1,j=strlen(cmdline); argv[i]; i++) {
 		char *arg=shell_escape(argv[i]);
 		int arglen=strlen(arg);
 		cmdline[j]=' ';
@@ -507,7 +498,7 @@ spawn_process(char **argv)
 #ifdef _POSIX_C_SOURCE
 	{
 		pid_t pid;
-		
+
 		sigset_t set, old;
 		dbg(lvl_debug,"spawning process for '%s'", argv[0]);
 		sigemptyset(&set);
@@ -586,9 +577,9 @@ spawn_process(char **argv)
  *
  * @param in *pi pointer to spawn_process_info structure
  * @param in block =0 do not block =1 block until child terminated
- * @returns -1 - still running, >=0 program exited, 
+ * @returns -1 - still running, >=0 program exited,
  *     =255 trminated abnormally or wasn't run at all.
- * 
+ *
  */
 int spawn_process_check_status(struct spawn_process_info *pi, int block)
 {
@@ -597,8 +588,9 @@ int spawn_process_check_status(struct spawn_process_info *pi, int block)
 		return 255;
 	}
 #ifdef HAVE_API_WIN32_BASE
-	{int failcount=0;
-		while(1){
+	{
+		int failcount=0;
+		while(1) {
 			DWORD dw;
 			if(GetExitCodeProcess(pi->pr.hProcess,&dw)) {
 				if(dw!=STILL_ACTIVE) {
@@ -611,7 +603,7 @@ int spawn_process_check_status(struct spawn_process_info *pi, int block)
 			}
 			if(!block)
 				return -1;
-		
+
 			dw=WaitForSingleObject(pi->pr.hProcess,INFINITE);
 			if(dw==WAIT_FAILED && failcount++==1) {
 				dbg(lvl_error,"WaitForSingleObject failed twice. Assuming the process is terminated.");
@@ -631,7 +623,7 @@ int spawn_process_check_status(struct spawn_process_info *pi, int block)
 		if(w>0) {
 			if(WIFEXITED(status))
 				pi->status=WEXITSTATUS(status);
-				return pi->status;
+			return pi->status;
 			if(WIFSTOPPED(status)) {
 				dbg(lvl_debug,"child is stopped by %i signal",WSTOPSIG(status));
 			} else if (WIFSIGNALED(status)) {

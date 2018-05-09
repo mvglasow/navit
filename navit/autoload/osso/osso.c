@@ -26,8 +26,8 @@ osso_display_on(struct navit *this_)
 	err = osso_display_blanking_pause(osso_context);
 	dbg(lvl_warning, "Unblank result: ",
 	    err == OSSO_OK ? "Ok" : (err ==
-				     OSSO_ERROR ? "Error" :
-				     "Invalid context"));
+	                             OSSO_ERROR ? "Error" :
+	                             "Invalid context"));
 }
 
 static gboolean
@@ -40,7 +40,7 @@ osso_cb_hw_state_idle(struct cb_hw_state_trail * params)
 
 	if (params->state->shutdown_ind) {
 		/* we  are going  down, down,  down */
-		navit_destroy(params->nav);		
+		navit_destroy(params->nav);
 	}
 
 	g_free(params->state);
@@ -50,10 +50,10 @@ osso_cb_hw_state_idle(struct cb_hw_state_trail * params)
 }
 
 /**
- * * Handle osso events  
- * * @param state Osso hardware state  
- * * @param  data ptr to private data  
- * * @returns nothing  
+ * * Handle osso events
+ * * @param state Osso hardware state
+ * * @param  data ptr to private data
+ * * @returns nothing
  **/
 static void
 osso_cb_hw_state(osso_hw_state_t * state, gpointer data)

@@ -25,8 +25,7 @@
 #include "command.h"
 #include "xmlconfig.h"
 
-struct script
-{
+struct script {
 	NAVIT_OBJECT
 	struct attr parent;
 	struct callback *cb;
@@ -77,7 +76,7 @@ script_new(struct attr *parent, struct attr **attrs)
 	attrs=scr->attrs;
 	scr->cb=callback_new_1(callback_cast(script_run), scr);
 	scr->parent=*parent;
-	while (attrs && *attrs) 
+	while (attrs && *attrs)
 		script_set_attr_int(scr, *attrs++);
 	dbg(lvl_debug,"return %p",scr);
 	return scr;

@@ -16,10 +16,10 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA  02110-1301, USA.
  */
- 
+
 /** @file attr.c
  * @brief Attribute handling code
- * 
+ *
  * Structures and functions for working with attributes.
  *
  * @author Navit Team
@@ -51,7 +51,7 @@ struct attr_name {
 
 
 /** List of attr_types with their names as strings. */
-static struct attr_name attr_names[]={
+static struct attr_name attr_names[]= {
 #define ATTR2(x,y) ATTR(y)
 #define ATTR(x) { attr_##x, #x },
 
@@ -84,7 +84,7 @@ attr_destroy_hash(void)
 	attr_hash=NULL;
 }
 
-/** 
+/**
  * @brief Converts a string to an attr_type
  *
  * This function reads a string and returns the corresponding attr_type.
@@ -93,13 +93,13 @@ attr_destroy_hash(void)
  * @return The corresponding {@code attr_type}, or {@code attr_none} if the string specifies a nonexistent or invalid attribute type.
  */
 enum attr_type
-attr_from_name(const char *name)
-{
+attr_from_name(const char *name) {
 	int i;
 
 	if (attr_hash)
 		return GPOINTER_TO_INT(g_hash_table_lookup(attr_hash, name));
-	for (i=0 ; i < sizeof(attr_names)/sizeof(struct attr_name) ; i++) {
+	for (i=0 ; i < sizeof(attr_names)/sizeof(struct attr_name) ; i++)
+	{
 		if (! strcmp(attr_names[i].name, name))
 			return attr_names[i].attr;
 	}
@@ -107,11 +107,12 @@ attr_from_name(const char *name)
 }
 
 
-static int attr_match(enum attr_type search, enum attr_type found);
+static int
+attr_match(enum attr_type search, enum attr_type found);
 
 
 
-/** 
+/**
  * @brief Converts an attr_type to a string
  *
  * @param attr The attribute type to be converted.
@@ -128,10 +129,10 @@ attr_to_name(enum attr_type attr)
 		if (attr_names[i].attr == attr)
 			return attr_names[i].name;
 	}
-	return NULL; 
+	return NULL;
 }
 
-/** 
+/**
  * @brief Creates an attribute from text information
  *
  * This function creates an attribute from two strings specifying the name and
@@ -174,7 +175,7 @@ attr_new_from_text(const char *name, const char *value)
 				dbg(lvl_error,"Unknown item type '%s' ignored.",tok);
 			}
 			str=NULL;
-        	}
+		}
 		g_free(type_str);
 		break;
 	case attr_attr_types:
@@ -185,8 +186,8 @@ attr_new_from_text(const char *name, const char *value)
 			ret->u.attr_types=g_realloc(ret->u.attr_types, (count+2)*sizeof(enum attr_type));
 			ret->u.attr_types[count++]=attr_from_name(tok);
 			ret->u.attr_types[count]=attr_none;
-        	        str=NULL;
-        	}
+			str=NULL;
+		}
 		g_free(type_str);
 		break;
 	case attr_dash:
@@ -197,8 +198,8 @@ attr_new_from_text(const char *name, const char *value)
 			ret->u.dash=g_realloc(ret->u.dash, (count+2)*sizeof(int));
 			ret->u.dash[count++]=g_ascii_strtoull(tok,NULL,0);
 			ret->u.dash[count]=0;
-        	        str=NULL;
-        	}
+			str=NULL;
+		}
 		g_free(type_str);
 		break;
 	case attr_order:
@@ -209,12 +210,12 @@ attr_new_from_text(const char *name, const char *value)
 		min=0;
 		max=32767;
 		if (! pos) {
-                	sscanf(value,"%d",&min);
-                	max=min;
+			sscanf(value,"%d",&min);
+			max=min;
 		} else if (pos == value)
 			sscanf(value,"-%d",&max);
 		else
-                	sscanf(value,"%d-%d",&min, &max);
+			sscanf(value,"%d-%d",&min, &max);
 		ret->u.range.min=min;
 		ret->u.range.max=max;
 		break;
@@ -231,7 +232,7 @@ attr_new_from_text(const char *name, const char *value)
 				ret->u.num=strtol(value, &tail, 0);
 			if (*tail) {
 				dbg(lvl_error, "Incorrect value '%s' for attribute '%s';  expected a number. "
-					"Defaulting to 0.\n", value, name);
+				    "Defaulting to 0.\n", value, name);
 				ret->u.num=0;
 			}
 			break;
@@ -245,7 +246,7 @@ attr_new_from_text(const char *name, const char *value)
 					value_is_relative=1;
 				} else {
 					dbg(lvl_error, "Incorrect value '%s' for attribute '%s';  expected a number or a relative value in percent. "
-						"Defaulting to 0.\n", value, name);
+					    "Defaulting to 0.\n", value, name);
 					ret->u.num=0;
 				}
 			}
@@ -269,7 +270,7 @@ attr_new_from_text(const char *name, const char *value)
 				ret->u.num=1;
 			else {
 				dbg(lvl_error, "Incorrect value '%s' for attribute '%s';  expected a boolean (no/0/false or yes/1/true). "
-					"Defaulting to 'true'.\n", value, name);
+				    "Defaulting to 'true'.\n", value, name);
 				ret->u.num=1;
 			}
 			break;
@@ -278,13 +279,13 @@ attr_new_from_text(const char *name, const char *value)
 			struct color *color=g_new0(struct color, 1);
 			int r,g,b,a;
 			ret->u.color=color;
-			if(strlen(value)==7){
+			if(strlen(value)==7) {
 				sscanf(value,"#%02x%02x%02x", &r, &g, &b);
 				color->r = (r << 8) | r;
 				color->g = (g << 8) | g;
 				color->b = (b << 8) | b;
 				color->a = (65535);
-			} else if(strlen(value)==9){
+			} else if(strlen(value)==9) {
 				sscanf(value,"#%02x%02x%02x%02x", &r, &g, &b, &a);
 				color->r = (r << 8) | r;
 				color->g = (g << 8) | g;
@@ -309,7 +310,7 @@ attr_new_from_text(const char *name, const char *value)
 	return ret;
 }
 
-/** 
+/**
  * @brief Converts access flags to a human-readable string.
  *
  * @param flags The flags as a number
@@ -335,9 +336,9 @@ flags_to_text(int flags)
 	if (flags & AF_FORD) ret=g_strconcat_printf(ret,"%sAF_FORD",ret?"|":"");
 	if (flags & AF_UNDERGROUND) ret=g_strconcat_printf(ret,"%sAF_UNDERGROUND",ret?"|":"");
 	if (flags & AF_DANGEROUS_GOODS) ret=g_strconcat_printf(ret,"%sAF_DANGEROUS_GOODS",ret?"|":"");
-	if ((flags & AF_ALL) == AF_ALL) 
+	if ((flags & AF_ALL) == AF_ALL)
 		return g_strconcat_printf(ret,"%sAF_ALL",ret?"|":"");
-	if ((flags & AF_ALL) == AF_MOTORIZED_FAST) 
+	if ((flags & AF_ALL) == AF_MOTORIZED_FAST)
 		return g_strconcat_printf(ret,"%sAF_MOTORIZED_FAST",ret?"|":"");
 	if (flags & AF_EMERGENCY_VEHICLES) ret=g_strconcat_printf(ret,"%sAF_EMERGENCY_VEHICLES",ret?"|":"");
 	if (flags & AF_TRANSPORT_TRUCK) ret=g_strconcat_printf(ret,"%sAF_TRANSPORT_TRUCK",ret?"|":"");
@@ -354,7 +355,7 @@ flags_to_text(int flags)
 	return ret;
 }
 
-/** 
+/**
  * @brief Converts attribute data to human-readable text
  *
  * @param attr The attribute to be formatted
@@ -388,7 +389,8 @@ attr_to_text_ext(struct attr *attr, char *sep, enum attr_format fmt, enum attr_f
 			type.u.str="";
 		if (! item->map || !map_get_attr(item->map, attr_data, &data, NULL))
 			data.u.str="";
-		return g_strdup_printf("type=0x%x id=0x%x,0x%x map=%p (%s:%s)", item->type, item->id_hi, item->id_lo, item->map, type.u.str, data.u.str);
+		return g_strdup_printf("type=0x%x id=0x%x,0x%x map=%p (%s:%s)", item->type, item->id_hi, item->id_lo, item->map,
+		                       type.u.str, data.u.str);
 	}
 	if (type >= attr_type_string_begin && type <= attr_type_string_end) {
 		if (map) {
@@ -399,7 +401,7 @@ attr_to_text_ext(struct attr *attr, char *sep, enum attr_format fmt, enum attr_f
 				map_convert_free(mstr);
 			} else
 				ret=g_strdup("(null)");
-			
+
 		} else
 			ret=g_strdup(attr->u.str);
 		return ret;
@@ -411,7 +413,7 @@ attr_to_text_ext(struct attr *attr, char *sep, enum attr_format fmt, enum attr_f
 			double distance=attr->u.num;
 			if (distance > 10000)
 				return g_strdup_printf("%.0f%skm",distance/1000,sep);
-                	return g_strdup_printf("%.1f%skm",distance/1000,sep);
+			return g_strdup_printf("%.1f%skm",distance/1000,sep);
 		}
 	}
 	if (type == attr_destination_time) {
@@ -430,21 +432,22 @@ attr_to_text_ext(struct attr *attr, char *sep, enum attr_format fmt, enum attr_f
 			return g_strdup_printf("%02d:%02d",minutes,seconds);
 		}
 	}
-	if (type >= attr_type_int_begin && type <= attr_type_int_end) 
+	if (type >= attr_type_int_begin && type <= attr_type_int_end)
 		return g_strdup_printf("%ld", attr->u.num);
-	if (type >= attr_type_int64_begin && type <= attr_type_int64_end) 
+	if (type >= attr_type_int64_begin && type <= attr_type_int64_end)
 		return g_strdup_printf(LONGLONG_FMT, *attr->u.num64);
-	if (type >= attr_type_double_begin && type <= attr_type_double_end) 
+	if (type >= attr_type_double_begin && type <= attr_type_double_end)
 		return g_strdup_printf("%f", *attr->u.numd);
-	if (type >= attr_type_object_begin && type <= attr_type_object_end) 
+	if (type >= attr_type_object_begin && type <= attr_type_object_end)
 		return g_strdup_printf("(object[%s])", attr_to_name(type));
 	if (type >= attr_type_color_begin && type <= attr_type_color_end) {
-		if (attr->u.color->a != 65535) 
-			return g_strdup_printf("#%02x%02x%02x%02x", attr->u.color->r>>8,attr->u.color->g>>8,attr->u.color->b>>8, attr->u.color->a>>8);
+		if (attr->u.color->a != 65535)
+			return g_strdup_printf("#%02x%02x%02x%02x", attr->u.color->r>>8,attr->u.color->g>>8,attr->u.color->b>>8,
+			                       attr->u.color->a>>8);
 		else
 			return g_strdup_printf("#%02x%02x%02x", attr->u.color->r>>8,attr->u.color->g>>8,attr->u.color->b>>8);
 	}
-	if (type >= attr_type_coord_geo_begin && type <= attr_type_coord_geo_end) 
+	if (type >= attr_type_coord_geo_begin && type <= attr_type_coord_geo_end)
 		return g_strdup_printf("%f %f",attr->u.coord_geo->lng,attr->u.coord_geo->lat);
 	if (type == attr_zipfile_ref_block) {
 		int *data=attr->u.data;
@@ -482,7 +485,7 @@ attr_to_text_ext(struct attr *attr, char *sep, enum attr_format fmt, enum attr_f
 	if (type == attr_nav_status) {
 		return nav_status_to_text(attr->u.num);
 	}
-	return g_strdup_printf("(no text[%s])", attr_to_name(type));	
+	return g_strdup_printf("(no text[%s])", attr_to_name(type));
 }
 
 /**
@@ -500,7 +503,7 @@ attr_to_text(struct attr *attr, struct map *map, int pretty)
 	return attr_to_text_ext(attr, NULL, attr_format_default, attr_format_default, map);
 }
 
-/** 
+/**
  * @brief Searches for an attribute of a given type
  *
  * This function searches an array of pointers to attributes for a given
@@ -571,7 +574,8 @@ attr_match(enum attr_type search, enum attr_type found)
  * @return True if a matching attribute was found, false if not.
  */
 int
-attr_generic_get_attr(struct attr **attrs, struct attr **def_attrs, enum attr_type type, struct attr *attr, struct attr_iter *iter)
+attr_generic_get_attr(struct attr **attrs, struct attr **def_attrs, enum attr_type type, struct attr *attr,
+                      struct attr_iter *iter)
 {
 	while (attrs && *attrs) {
 		if (attr_match(type,(*attrs)->type)) {
@@ -730,8 +734,7 @@ attr_generic_remove_attr(struct attr **attrs, struct attr *attr)
 }
 
 enum attr_type
-attr_type_begin(enum attr_type type)
-{
+attr_type_begin(enum attr_type type) {
 	if (type < attr_type_item_begin)
 		return attr_none;
 	if (type < attr_type_int_begin)
@@ -766,23 +769,23 @@ attr_data_size(struct attr *attr)
 {
 	if (attr->type == attr_none)
 		return 0;
-	if (attr->type >= attr_type_string_begin && attr->type <= attr_type_string_end) 
+	if (attr->type >= attr_type_string_begin && attr->type <= attr_type_string_end)
 		return attr->u.str?strlen(attr->u.str)+1:0;
-	if (attr->type >= attr_type_int_begin && attr->type <= attr_type_int_end) 
+	if (attr->type >= attr_type_int_begin && attr->type <= attr_type_int_end)
 		return sizeof(attr->u.num);
-	if (attr->type >= attr_type_coord_geo_begin && attr->type <= attr_type_coord_geo_end) 
+	if (attr->type >= attr_type_coord_geo_begin && attr->type <= attr_type_coord_geo_end)
 		return sizeof(*attr->u.coord_geo);
-	if (attr->type >= attr_type_color_begin && attr->type <= attr_type_color_end) 
+	if (attr->type >= attr_type_color_begin && attr->type <= attr_type_color_end)
 		return sizeof(*attr->u.color);
-	if (attr->type >= attr_type_object_begin && attr->type <= attr_type_object_end) 
+	if (attr->type >= attr_type_object_begin && attr->type <= attr_type_object_end)
 		return sizeof(void *);
-	if (attr->type >= attr_type_item_begin && attr->type <= attr_type_item_end) 
+	if (attr->type >= attr_type_item_begin && attr->type <= attr_type_item_end)
 		return sizeof(struct item);
-	if (attr->type >= attr_type_int64_begin && attr->type <= attr_type_int64_end) 
+	if (attr->type >= attr_type_int64_begin && attr->type <= attr_type_int64_end)
 		return sizeof(*attr->u.num64);
 	if (attr->type == attr_order)
 		return sizeof(attr->u.range);
-	if (attr->type >= attr_type_double_begin && attr->type <= attr_type_double_end) 
+	if (attr->type >= attr_type_double_begin && attr->type <= attr_type_double_end)
 		return sizeof(*attr->u.numd);
 	if (attr->type == attr_item_types) {
 		int i=0;
@@ -803,8 +806,8 @@ attr_data_size(struct attr *attr)
 void *
 attr_data_get(struct attr *attr)
 {
-	if ((attr->type >= attr_type_int_begin && attr->type <= attr_type_int_end) || 
-	    (attr->type >= attr_type_item_type_begin && attr->type <= attr_type_item_type_end))
+	if ((attr->type >= attr_type_int_begin && attr->type <= attr_type_int_end) ||
+	                (attr->type >= attr_type_item_type_begin && attr->type <= attr_type_item_type_end))
 		return &attr->u.num;
 	if (attr->type == attr_order)
 		return &attr->u.range;
@@ -814,8 +817,8 @@ attr_data_get(struct attr *attr)
 void
 attr_data_set(struct attr *attr, void *data)
 {
-	if ((attr->type >= attr_type_int_begin && attr->type <= attr_type_int_end) || 
-	    (attr->type >= attr_type_item_type_begin && attr->type <= attr_type_item_type_end))
+	if ((attr->type >= attr_type_int_begin && attr->type <= attr_type_int_end) ||
+	                (attr->type >= attr_type_item_type_begin && attr->type <= attr_type_item_type_end))
 		attr->u.num=*((int *)data);
 	else
 		attr->u.data=data;
@@ -824,16 +827,15 @@ attr_data_set(struct attr *attr, void *data)
 void
 attr_data_set_le(struct attr * attr, void * data)
 {
-	if ((attr->type >= attr_type_int_begin && attr->type <= attr_type_int_end) || 
-	    (attr->type >= attr_type_item_type_begin && attr->type <= attr_type_item_type_end))
+	if ((attr->type >= attr_type_int_begin && attr->type <= attr_type_int_end) ||
+	                (attr->type >= attr_type_item_type_begin && attr->type <= attr_type_item_type_end))
 		attr->u.num=le32_to_cpu(*((int *)data));
 	else if (attr->type == attr_order) {
 		attr->u.num=le32_to_cpu(*((int *)data));
 		attr->u.range.min=le16_to_cpu(attr->u.range.min);
 		attr->u.range.max=le16_to_cpu(attr->u.range.max);
-	}
-	else
-/* Fixme: Handle long long */
+	} else
+		/* Fixme: Handle long long */
 		attr->u.data=data;
 
 }
@@ -848,9 +850,9 @@ attr_free_content_do(struct attr *attr)
 		if (obj && obj->func && obj->func->unref)
 			obj->func->unref(obj);
 	}
-	if (!(attr->type >= attr_type_int_begin && attr->type <= attr_type_int_end) && 
-	    !(attr->type >= attr_type_object_begin && attr->type <= attr_type_object_end) &&
-	    attr->type != attr_item_type)
+	if (!(attr->type >= attr_type_int_begin && attr->type <= attr_type_int_end) &&
+	                !(attr->type >= attr_type_object_begin && attr->type <= attr_type_object_end) &&
+	                attr->type != attr_item_type)
 		g_free(attr->u.data);
 }
 
@@ -873,7 +875,7 @@ attr_dup_content(struct attr *src, struct attr *dst)
 {
 	int size;
 	dst->type=src->type;
-	if (src->type >= attr_type_int_begin && src->type <= attr_type_int_end) 
+	if (src->type >= attr_type_int_begin && src->type <= attr_type_int_end)
 		dst->u.num=src->u.num;
 	else if (src->type == attr_item_type)
 		dst->u.item_type=src->u.item_type;
@@ -884,7 +886,7 @@ attr_dup_content(struct attr *src, struct attr *dst)
 				dst->u.data=obj->func->ref(obj);
 			} else
 				dst->u.data=obj;
-		} else 
+		} else
 			dst->u.data=src->u.data;
 	} else {
 		size=attr_data_size(src);
@@ -956,10 +958,10 @@ attr_from_line(char *line, char *name, int *pos, char *val_ret, char *name_ret)
 	int len=0,quoted;
 	char *p,*e,*n;
 
-	dbg(lvl_debug,"get_tag %s from %s", name, line); 
+	dbg(lvl_debug,"get_tag %s from %s", name, line);
 	if (name)
 		len=strlen(name);
-	if (pos) 
+	if (pos)
 		p=line+*pos;
 	else
 		p=line;
@@ -1000,7 +1002,7 @@ attr_from_line(char *line, char *name, int *pos, char *val_ret, char *name_ret)
 				*pos=p-line;
 			return 1;
 		}
-	}	
+	}
 	return 0;
 }
 
@@ -1041,7 +1043,7 @@ attr_types_contains_default(enum attr_type *types, enum attr_type type, int defl
 	if (!types) {
 		return deflt;
 	}
-	return attr_types_contains(types, type);	
+	return attr_types_contains(types, type);
 }
 
 /**
@@ -1055,10 +1057,10 @@ attr_types_contains_default(enum attr_type *types, enum attr_type type, int defl
  */
 int attr_rel2real(int attrval, int whole, int treat_neg_as_rel)
 {
-  if (attrval > ATTR_REL_MAXABS)
-	return whole * (attrval - ATTR_REL_RELSHIFT)/100;
-  if(treat_neg_as_rel && attrval<0 )
-  	return whole+attrval;
-  return attrval;
+	if (attrval > ATTR_REL_MAXABS)
+		return whole * (attrval - ATTR_REL_RELSHIFT)/100;
+	if(treat_neg_as_rel && attrval<0 )
+		return whole+attrval;
+	return attrval;
 }
 

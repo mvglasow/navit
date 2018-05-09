@@ -58,7 +58,7 @@ gui_internal_gesture_ring_add(struct gui_priv *this, struct point *p)
 	if(this->gesture_ring_last==this->gesture_ring_first) {
 		this->gesture_ring_first++;
 		this->gesture_ring_first%=GESTURE_RINGSIZE;
-   	}
+	}
 	this->gesture_ring[this->gesture_ring_last].p=*p;
 	this->gesture_ring[this->gesture_ring_last].msec=msec;
 	dbg(lvl_info,"msec="LONGLONG_FMT" x=%d y=%d",msec,p->x,p->y);
@@ -90,7 +90,7 @@ gui_internal_gesture_get_vector(struct gui_priv *this, long long msec, struct po
 	}
 	msec=g->msec;
 	dbg(lvl_info,LONGLONG_FMT" %d %d",g->msec, g->p.x, g->p.y);
-	for(i=1;(g=gui_internal_gesture_ring_get(this,i))!=NULL;i++) {
+	for(i=1; (g=gui_internal_gesture_ring_get(this,i))!=NULL; i++) {
 		if( msec-g->msec > 1000 )
 			break;
 		dt=msec-g->msec;
@@ -109,7 +109,7 @@ gui_internal_gesture_do(struct gui_priv *this)
 {
 	int dt;
 	int dx,dy;
-	
+
 	dt=gui_internal_gesture_get_vector(this, 1000, NULL, &dx, &dy);
 
 	if( abs(dx) > this->icon_s*3 && abs(dy) < this->icon_s ) {
@@ -120,7 +120,7 @@ gui_internal_gesture_do(struct gui_priv *this)
 		if(this->pressed==2)
 			return 0;
 
-		for(wt=this->highlighted;wt && wt->type!=widget_table;wt=wt->parent);
+		for(wt=this->highlighted; wt && wt->type!=widget_table; wt=wt->parent);
 		if(!wt || wt->type!=widget_table || !wt->data)
 			return 0;
 		if(this->highlighted) {
@@ -139,7 +139,7 @@ gui_internal_gesture_do(struct gui_priv *this)
 	} else {
 		dbg(lvl_debug,"none dx=%d dy=%d",dx,dy);
 	}
-	
+
 	return 0;
 
 };

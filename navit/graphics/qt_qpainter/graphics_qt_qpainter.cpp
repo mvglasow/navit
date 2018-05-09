@@ -21,7 +21,7 @@
 //#
 //# File: graphics_qt_qpainter.cpp
 //# Description: Graphics interface for internal GUI using Qt (Trolltech.com)
-//# Comment: 
+//# Comment:
 //# Authors: Martin Schaller (04/2008), Stefan Klumpp (04/2008)
 //#
 //##############################################################################################################
@@ -31,8 +31,8 @@
 #include "RenderArea.h"
 
 //##############################################################################################################
-//# Description: RenderArea (QWidget) class for the main window (map, menu, ...) 
-//# Comment: 
+//# Description: RenderArea (QWidget) class for the main window (map, menu, ...)
+//# Comment:
 //# Authors: Martin Schaller (04/2008), Stefan Klumpp (04/2008)
 //##############################################################################################################
 static void
@@ -98,7 +98,7 @@ qt_qpainter_draw(struct graphics_priv *gr, const QRect *r, int paintev)
 			QImage img=overlay->widget->pixmap->toImage().convertToFormat(QImage::Format_ARGB32_Premultiplied);
 			data=img.bits();
 			for (i = 0 ; i < size ; i++) {
-				if (data[0] == overlay->rgba[0] && data[1] == overlay->rgba[1] && data[2] == overlay->rgba[2]) 
+				if (data[0] == overlay->rgba[0] && data[1] == overlay->rgba[1] && data[2] == overlay->rgba[2])
 					data[3]=overlay->rgba[3];
 				data+=4;
 			}
@@ -120,8 +120,8 @@ qt_qpainter_draw(struct graphics_priv *gr, const QRect *r, int paintev)
 //##############################################################################################################
 
 //##############################################################################################################
-//# Description: 
-//# Comment: 
+//# Description:
+//# Comment:
 //# Authors: Martin Schaller (04/2008)
 //##############################################################################################################
 struct graphics_font_priv {
@@ -130,8 +130,8 @@ struct graphics_font_priv {
 
 
 //##############################################################################################################
-//# Description: 
-//# Comment: 
+//# Description:
+//# Comment:
 //# Authors: Martin Schaller (04/2008)
 //##############################################################################################################
 struct graphics_image_priv {
@@ -139,8 +139,8 @@ struct graphics_image_priv {
 };
 
 //##############################################################################################################
-//# Description: 
-//# Comment: 
+//# Description:
+//# Comment:
 //# Authors: Martin Schaller (04/2008)
 //##############################################################################################################
 static void graphics_destroy(struct graphics_priv *gr)
@@ -153,8 +153,8 @@ static void graphics_destroy(struct graphics_priv *gr)
 }
 
 //##############################################################################################################
-//# Description: 
-//# Comment: 
+//# Description:
+//# Comment:
 //# Authors: Martin Schaller (04/2008)
 //##############################################################################################################
 static void font_destroy(struct graphics_font_priv *font)
@@ -163,8 +163,8 @@ static void font_destroy(struct graphics_font_priv *font)
 }
 
 //##############################################################################################################
-//# Description: 
-//# Comment: 
+//# Description:
+//# Comment:
 //# Authors: Martin Schaller (04/2008)
 //##############################################################################################################
 static struct graphics_font_methods font_methods = {
@@ -172,11 +172,12 @@ static struct graphics_font_methods font_methods = {
 };
 
 //##############################################################################################################
-//# Description: 
-//# Comment: 
+//# Description:
+//# Comment:
 //# Authors: Martin Schaller (04/2008)
 //##############################################################################################################
-static struct graphics_font_priv *font_new(struct graphics_priv *gr, struct graphics_font_methods *meth, char *fontfamily, int size, int flags)
+static struct graphics_font_priv *font_new(struct graphics_priv *gr, struct graphics_font_methods *meth,
+                char *fontfamily, int size, int flags)
 {
 	struct graphics_font_priv *ret=g_new0(struct graphics_font_priv, 1);
 	ret->font=new QFont("Arial",size/20);
@@ -185,8 +186,8 @@ static struct graphics_font_priv *font_new(struct graphics_priv *gr, struct grap
 }
 
 //##############################################################################################################
-//# Description: 
-//# Comment: 
+//# Description:
+//# Comment:
 //# Authors: Martin Schaller (04/2008)
 //##############################################################################################################
 static void gc_destroy(struct graphics_gc_priv *gc)
@@ -197,8 +198,8 @@ static void gc_destroy(struct graphics_gc_priv *gc)
 }
 
 //##############################################################################################################
-//# Description: 
-//# Comment: 
+//# Description:
+//# Comment:
 //# Authors: Martin Schaller (04/2008)
 //##############################################################################################################
 static void gc_set_linewidth(struct graphics_gc_priv *gc, int w)
@@ -207,8 +208,8 @@ static void gc_set_linewidth(struct graphics_gc_priv *gc, int w)
 }
 
 //##############################################################################################################
-//# Description: 
-//# Comment: 
+//# Description:
+//# Comment:
 //# Authors: Martin Schaller (04/2008)
 //##############################################################################################################
 static void gc_set_dashes(struct graphics_gc_priv *gc, int w, int offset, unsigned char *dash_list, int n)
@@ -216,21 +217,21 @@ static void gc_set_dashes(struct graphics_gc_priv *gc, int w, int offset, unsign
 }
 
 //##############################################################################################################
-//# Description: 
-//# Comment: 
+//# Description:
+//# Comment:
 //# Authors: Martin Schaller (04/2008)
 //##############################################################################################################
 static void gc_set_foreground(struct graphics_gc_priv *gc, struct color *c)
 {
-	QColor col(c->r >> 8, c->g >> 8, c->b >> 8 /* , c->a >> 8 */); 
+	QColor col(c->r >> 8, c->g >> 8, c->b >> 8 /* , c->a >> 8 */);
 	gc->pen->setColor(col);
 	gc->brush->setColor(col);
 	gc->c=*c;
 }
 
 //##############################################################################################################
-//# Description: 
-//# Comment: 
+//# Description:
+//# Comment:
 //# Authors: Martin Schaller (04/2008)
 //##############################################################################################################
 static void gc_set_background(struct graphics_gc_priv *gc, struct color *c)
@@ -238,21 +239,21 @@ static void gc_set_background(struct graphics_gc_priv *gc, struct color *c)
 }
 
 //##############################################################################################################
-//# Description: 
-//# Comment: 
+//# Description:
+//# Comment:
 //# Authors: Martin Schaller (04/2008)
 //##############################################################################################################
 static struct graphics_gc_methods gc_methods = {
 	gc_destroy,
 	gc_set_linewidth,
-	gc_set_dashes,	
-	gc_set_foreground,	
-	gc_set_background	
+	gc_set_dashes,
+	gc_set_foreground,
+	gc_set_background
 };
 
 //##############################################################################################################
-//# Description: 
-//# Comment: 
+//# Description:
+//# Comment:
 //# Authors: Martin Schaller (04/2008)
 //##############################################################################################################
 static struct graphics_gc_priv *gc_new(struct graphics_priv *gr, struct graphics_gc_methods *meth)
@@ -265,11 +266,12 @@ static struct graphics_gc_priv *gc_new(struct graphics_priv *gr, struct graphics
 }
 
 //##############################################################################################################
-//# Description: 
-//# Comment: 
+//# Description:
+//# Comment:
 //# Authors: Martin Schaller (04/2008)
 //##############################################################################################################
-static struct graphics_image_priv * image_new(struct graphics_priv *gr, struct graphics_image_methods *meth, char *path, int *w, int *h, struct point *hot, int rotation)
+static struct graphics_image_priv * image_new(struct graphics_priv *gr, struct graphics_image_methods *meth, char *path,
+                int *w, int *h, struct point *hot, int rotation)
 {
 	struct graphics_image_priv *ret;
 	QPixmap *cachedPixmap;
@@ -280,30 +282,30 @@ static struct graphics_image_priv * image_new(struct graphics_priv *gr, struct g
 	cachedPixmap=QPixmapCache::find(key);
 	if (!cachedPixmap) {
 #ifdef HAVE_QT_SVG
-                if(key.endsWith(".svg", Qt::CaseInsensitive)) {
-                    QSvgRenderer renderer(key);
-                    if (!renderer.isValid()) {
-                       g_free(ret);
-                       return NULL;
-                    }
-                    ret->pixmap=new QPixmap(renderer.defaultSize());
-                    ret->pixmap->fill(Qt::transparent);
-                    QPainter painter(ret->pixmap); 
-                    renderer.render(&painter);
+		if(key.endsWith(".svg", Qt::CaseInsensitive)) {
+			QSvgRenderer renderer(key);
+			if (!renderer.isValid()) {
+				g_free(ret);
+				return NULL;
+			}
+			ret->pixmap=new QPixmap(renderer.defaultSize());
+			ret->pixmap->fill(Qt::transparent);
+			QPainter painter(ret->pixmap);
+			renderer.render(&painter);
 
-                } else {
+		} else {
 
-		    ret->pixmap=new QPixmap(path);
+			ret->pixmap=new QPixmap(path);
 
-                }
-#else 
+		}
+#else
 		ret->pixmap=new QPixmap(path);
 #endif /* QT__VERSION */
-                if (ret->pixmap->isNull()) {
-                        g_free(ret);
-                        return NULL;
-                }
-                   
+		if (ret->pixmap->isNull()) {
+			g_free(ret);
+			return NULL;
+		}
+
 		QPixmapCache::insert(key,QPixmap(*ret->pixmap));
 	} else {
 		ret->pixmap=new QPixmap(*cachedPixmap);
@@ -320,8 +322,8 @@ static struct graphics_image_priv * image_new(struct graphics_priv *gr, struct g
 }
 
 //##############################################################################################################
-//# Description: 
-//# Comment: 
+//# Description:
+//# Comment:
 //# Authors: Martin Schaller (04/2008)
 //##############################################################################################################
 static void draw_lines(struct graphics_priv *gr, struct graphics_gc_priv *gc, struct point *p, int count)
@@ -336,8 +338,8 @@ static void draw_lines(struct graphics_priv *gr, struct graphics_gc_priv *gc, st
 }
 
 //##############################################################################################################
-//# Description: 
-//# Comment: 
+//# Description:
+//# Comment:
 //# Authors: Martin Schaller (04/2008)
 //##############################################################################################################
 static void draw_polygon(struct graphics_priv *gr, struct graphics_gc_priv *gc, struct point *p, int count)
@@ -353,8 +355,8 @@ static void draw_polygon(struct graphics_priv *gr, struct graphics_gc_priv *gc, 
 }
 
 //##############################################################################################################
-//# Description: 
-//# Comment: 
+//# Description:
+//# Comment:
 //# Authors: Martin Schaller (04/2008)
 //##############################################################################################################
 static void draw_rectangle(struct graphics_priv *gr, struct graphics_gc_priv *gc, struct point *p, int w, int h)
@@ -364,23 +366,24 @@ static void draw_rectangle(struct graphics_priv *gr, struct graphics_gc_priv *gc
 }
 
 //##############################################################################################################
-//# Description: 
-//# Comment: 
+//# Description:
+//# Comment:
 //# Authors: Martin Schaller (04/2008)
 //##############################################################################################################
 static void draw_circle(struct graphics_priv *gr, struct graphics_gc_priv *gc, struct point *p, int r)
 {
 	gr->painter->setPen(*gc->pen);
 	gr->painter->drawArc(p->x-r/2, p->y-r/2, r, r, 0, 360*16);
-	
+
 }
 
 //##############################################################################################################
-//# Description: 
-//# Comment: 
+//# Description:
+//# Comment:
 //# Authors: Martin Schaller (04/2008)
 //##############################################################################################################
-static void draw_text(struct graphics_priv *gr, struct graphics_gc_priv *fg, struct graphics_gc_priv *bg, struct graphics_font_priv *font, char *text, struct point *p, int dx, int dy)
+static void draw_text(struct graphics_priv *gr, struct graphics_gc_priv *fg, struct graphics_gc_priv *bg,
+                      struct graphics_font_priv *font, char *text, struct point *p, int dx, int dy)
 {
 	QPainter *painter=gr->painter;
 #ifndef QT_QPAINTER_USE_FREETYPE
@@ -405,7 +408,7 @@ static void draw_text(struct graphics_priv *gr, struct graphics_gc_priv *fg, str
 	struct color *fgc=&fg->c, *bgc=&bg->c;
 
 	int i,x,y;
-	
+
 	if (! font)
 		return;
 	t=gr->freetype_methods.text_new(text, (struct font_freetype_font *)font, dx, dy);
@@ -442,19 +445,20 @@ static void draw_text(struct graphics_priv *gr, struct graphics_gc_priv *fg, str
 			gr->freetype_methods.get_glyph(g,(unsigned char *)data,img.bytesPerLine(),fgc,bgc,&transparent);
 			painter->drawImage((x+g->x)>>6, (y+g->y)>>6, img);
 		}
-                x+=g->dx;
-                y+=g->dy;
+		x+=g->dx;
+		y+=g->dy;
 	}
 	gr->freetype_methods.text_destroy(t);
 #endif
 }
 
 //##############################################################################################################
-//# Description: 
-//# Comment: 
+//# Description:
+//# Comment:
 //# Authors: Martin Schaller (04/2008)
 //##############################################################################################################
-static void draw_image(struct graphics_priv *gr, struct graphics_gc_priv *fg, struct point *p, struct graphics_image_priv *img)
+static void draw_image(struct graphics_priv *gr, struct graphics_gc_priv *fg, struct point *p,
+                       struct graphics_image_priv *img)
 {
 	gr->painter->drawPixmap(p->x, p->y, *img->pixmap);
 }
@@ -475,8 +479,8 @@ draw_drag(struct graphics_priv *gr, struct point *p)
 }
 
 //##############################################################################################################
-//# Description: 
-//# Comment: 
+//# Description:
+//# Comment:
 //# Authors: Martin Schaller (04/2008)
 //##############################################################################################################
 static void background_gc(struct graphics_priv *gr, struct graphics_gc_priv *gc)
@@ -490,8 +494,8 @@ static void background_gc(struct graphics_priv *gr, struct graphics_gc_priv *gc)
 
 
 //##############################################################################################################
-//# Description: 
-//# Comment: 
+//# Description:
+//# Comment:
 //# Authors: Martin Schaller (04/2008)
 //##############################################################################################################
 static void draw_mode(struct graphics_priv *gr, enum draw_mode_num mode)
@@ -505,34 +509,36 @@ static void draw_mode(struct graphics_priv *gr, enum draw_mode_num mode)
 		gr->painter->begin(gr->widget->pixmap);
 	}
 	if (mode == draw_mode_end) {
-			gr->painter->end();
-			if (gr->parent) {
-				if (gr->cleanup) {
-					overlay_rect(gr->parent, gr, 1, &r);
-					qt_qpainter_draw(gr->parent, &r, 0);
-					gr->cleanup=0;
-				}
-				overlay_rect(gr->parent, gr, 0, &r);	
+		gr->painter->end();
+		if (gr->parent) {
+			if (gr->cleanup) {
+				overlay_rect(gr->parent, gr, 1, &r);
 				qt_qpainter_draw(gr->parent, &r, 0);
-			} else {
-				r.setRect(0, 0, gr->widget->pixmap->width(), gr->widget->pixmap->height());
-				qt_qpainter_draw(gr, &r, 0);
+				gr->cleanup=0;
 			}
+			overlay_rect(gr->parent, gr, 0, &r);
+			qt_qpainter_draw(gr->parent, &r, 0);
+		} else {
+			r.setRect(0, 0, gr->widget->pixmap->width(), gr->widget->pixmap->height());
+			qt_qpainter_draw(gr, &r, 0);
+		}
 		if (!gr->parent)
-			QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents|QEventLoop::ExcludeSocketNotifiers|QEventLoop::DeferredDeletion|QEventLoop::X11ExcludeTimers);
+			QCoreApplication::processEvents(
+			        QEventLoop::ExcludeUserInputEvents|QEventLoop::ExcludeSocketNotifiers|QEventLoop::DeferredDeletion|QEventLoop::X11ExcludeTimers);
 	}
 	gr->mode=mode;
 }
 
 //##############################################################################################################
-//# Description: 
-//# Comment: 
+//# Description:
+//# Comment:
 //# Authors: Martin Schaller (04/2008)
 //##############################################################################################################
-static struct graphics_priv * overlay_new(struct graphics_priv *gr, struct graphics_methods *meth, struct point *p, int w, int h,int wraparound);
+static struct graphics_priv *
+overlay_new(struct graphics_priv *gr, struct graphics_methods *meth, struct point *p, int w, int h,int wraparound);
 
 static int argc=1;
-static char *argv[]={NULL,NULL,NULL};
+static char *argv[]= {NULL,NULL,NULL};
 
 static int
 fullscreen(struct window *win, int on)
@@ -563,8 +569,8 @@ disable_suspend(struct window *win)
 }
 
 //##############################################################################################################
-//# Description: 
-//# Comment: 
+//# Description:
+//# Comment:
 //# Authors: Martin Schaller (04/2008)
 //##############################################################################################################
 static void * get_data(struct graphics_priv *this_, const char *type)
@@ -578,10 +584,10 @@ static void * get_data(struct graphics_priv *this_, const char *type)
 		QSize size(this_->w,this_->h);
 		this_->widget->do_resize(size);
 	}
-	if (!strcmp(type, "qt_widget")) 
-	    return this_->widget;
-	if (!strcmp(type, "qt_pixmap")) 
-	    return this_->widget->pixmap;
+	if (!strcmp(type, "qt_widget"))
+		return this_->widget;
+	if (!strcmp(type, "qt_pixmap"))
+		return this_->widget->pixmap;
 	if (!strcmp(type, "window")) {
 		win=g_new(struct window, 1);
 #ifndef QT_QPAINTER_NO_WIDGET
@@ -614,7 +620,8 @@ image_free(struct graphics_priv *gr, struct graphics_image_priv *priv)
 }
 
 static void
-get_text_bbox(struct graphics_priv *gr, struct graphics_font_priv *font, char *text, int dx, int dy, struct point *ret, int estimate)
+get_text_bbox(struct graphics_priv *gr, struct graphics_font_priv *font, char *text, int dx, int dy, struct point *ret,
+              int estimate)
 {
 	QPainter *painter=gr->painter;
 	QString tmp=QString::fromUtf8(text);
@@ -632,8 +639,8 @@ get_text_bbox(struct graphics_priv *gr, struct graphics_font_priv *font, char *t
 
 
 //##############################################################################################################
-//# Description: 
-//# Comment: 
+//# Description:
+//# Comment:
 //# Authors: Martin Schaller (04/2008)
 //##############################################################################################################
 static void overlay_disable(struct graphics_priv *gr, int disable)
@@ -642,8 +649,8 @@ static void overlay_disable(struct graphics_priv *gr, int disable)
 }
 
 //##############################################################################################################
-//# Description: 
-//# Comment: 
+//# Description:
+//# Comment:
 //# Authors: Martin Schaller (04/2008)
 //##############################################################################################################
 static int set_attr(struct graphics_priv *gr, struct attr *attr)
@@ -670,8 +677,8 @@ static int set_attr(struct graphics_priv *gr, struct attr *attr)
 }
 
 //##############################################################################################################
-//# Description: 
-//# Comment: 
+//# Description:
+//# Comment:
 //# Authors: Martin Schaller (04/2008)
 //##############################################################################################################
 static struct graphics_methods graphics_methods = {
@@ -692,8 +699,8 @@ static struct graphics_methods graphics_methods = {
 	image_new,
 	get_data,
 	image_free,
-        get_text_bbox,
-        overlay_disable,
+	get_text_bbox,
+	overlay_disable,
 	NULL,
 	set_attr,
 	NULL, /* show_native_keyboard */
@@ -701,20 +708,23 @@ static struct graphics_methods graphics_methods = {
 };
 
 //##############################################################################################################
-//# Description: 
-//# Comment: 
+//# Description:
+//# Comment:
 //# Authors: Martin Schaller (04/2008)
 //##############################################################################################################
-static struct graphics_priv * overlay_new(struct graphics_priv *gr, struct graphics_methods *meth, struct point *p, int w, int h,int wraparound)
+static struct graphics_priv * overlay_new(struct graphics_priv *gr, struct graphics_methods *meth, struct point *p,
+                int w, int h,int wraparound)
 {
 	*meth=graphics_methods;
 	struct graphics_priv *ret=g_new0(struct graphics_priv, 1);
 #ifdef QT_QPAINTER_USE_FREETYPE
 	if (gr->font_freetype_new) {
 		ret->font_freetype_new=gr->font_freetype_new;
-        	gr->font_freetype_new(&ret->freetype_methods);
-		meth->font_new=(struct graphics_font_priv *(*)(struct graphics_priv *, struct graphics_font_methods *, char *,  int, int))ret->freetype_methods.font_new;
-		meth->get_text_bbox=(void (*)(struct graphics_priv*, struct graphics_font_priv*, char*, int, int, struct point*, int))ret->freetype_methods.get_text_bbox;
+		gr->font_freetype_new(&ret->freetype_methods);
+		meth->font_new=(struct graphics_font_priv *(*)(struct graphics_priv *, struct graphics_font_methods *, char *,  int,
+		                int))ret->freetype_methods.font_new;
+		meth->get_text_bbox=(void (*)(struct graphics_priv*, struct graphics_font_priv*, char*, int, int, struct point*,
+		                              int))ret->freetype_methods.get_text_bbox;
 	}
 #endif
 	ret->widget= new RenderArea(ret,gr->widget,w,h,1);
@@ -832,11 +842,12 @@ event_qt_new(struct event_methods *meth)
 #endif
 
 //##############################################################################################################
-//# Description: 
-//# Comment: 
+//# Description:
+//# Comment:
 //# Authors: Martin Schaller (04/2008)
 //##############################################################################################################
-static struct graphics_priv * graphics_qt_qpainter_new(struct navit *nav, struct graphics_methods *meth, struct attr **attrs, struct callback_list *cbl)
+static struct graphics_priv * graphics_qt_qpainter_new(struct navit *nav, struct graphics_methods *meth,
+                struct attr **attrs, struct callback_list *cbl)
 {
 	struct graphics_priv *ret;
 	struct font_priv * (*font_freetype_new)(void *meth);
@@ -866,8 +877,10 @@ static struct graphics_priv * graphics_qt_qpainter_new(struct navit *nav, struct
 #ifdef QT_QPAINTER_USE_FREETYPE
 	ret->font_freetype_new=font_freetype_new;
 	font_freetype_new(&ret->freetype_methods);
-	meth->font_new=(struct graphics_font_priv *(*)(struct graphics_priv *, struct graphics_font_methods *, char *,  int, int))ret->freetype_methods.font_new;
-	meth->get_text_bbox=(void (*)(struct graphics_priv*, struct graphics_font_priv*, char*, int, int, struct point*, int))ret->freetype_methods.get_text_bbox;
+	meth->font_new=(struct graphics_font_priv *(*)(struct graphics_priv *, struct graphics_font_methods *, char *,  int,
+	                int))ret->freetype_methods.font_new;
+	meth->get_text_bbox=(void (*)(struct graphics_priv*, struct graphics_font_priv*, char*, int, int, struct point*,
+	                              int))ret->freetype_methods.get_text_bbox;
 #endif
 
 #if defined QT_QPAINTER_USE_EMBEDDING && QT_VERSION >= 0x040500
@@ -915,19 +928,19 @@ static struct graphics_priv * graphics_qt_qpainter_new(struct navit *nav, struct
 
 
 //##############################################################################################################
-//# Description: 
-//# Comment: 
+//# Description:
+//# Comment:
 //# Authors: Martin Schaller (04/2008)
 //##############################################################################################################
 void plugin_init(void)
 {
-        plugin_register_category_graphics("qt_qpainter", graphics_qt_qpainter_new);
+	plugin_register_category_graphics("qt_qpainter", graphics_qt_qpainter_new);
 #ifdef QT_QPAINTER_USE_EVENT_QT
-        plugin_register_category_event("qt", event_qt_new);
+	plugin_register_category_event("qt", event_qt_new);
 #endif
 }
 
 
 
 
-// *** EOF *** 
+// *** EOF ***

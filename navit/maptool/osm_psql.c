@@ -33,7 +33,7 @@ map_collect_data_osm_db(char *dbstr, struct maptool_osm *osm)
 	PGconn *conn;
 	PGresult *res;
 	char query[256];
-	
+
 	sig_alrm(0);
 	conn=PQconnectdb(dbstr);
 	if (! conn) {
@@ -71,7 +71,7 @@ map_collect_data_osm_db(char *dbstr, struct maptool_osm *osm)
 		PQclear(res);
 		exit(1);
 	}
-	
+
 	for (;;) {
 		int j=0, count=0;
 		long min, max, id, tag_id;
@@ -115,7 +115,7 @@ map_collect_data_osm_db(char *dbstr, struct maptool_osm *osm)
 		PQclear(tag);
 		PQclear(node);
 	}
-	
+
 	for (;;) {
 		int j=0, k=0, count=0, tagged=0;
 		long min, max, id, tag_id, node_id;
@@ -133,7 +133,8 @@ map_collect_data_osm_db(char *dbstr, struct maptool_osm *osm)
 		min=atol(PQgetvalue(way, 0, 0));
 		max=atol(PQgetvalue(way, count-1, 0));
 		fprintf(stderr, "continue with %i ways\n", count);
-		sprintf(query,"select way_id,node_id from way_nodes where way_id >= %ld and way_id <= %ld order by way_id,sequence_id", min, max);
+		sprintf(query,"select way_id,node_id from way_nodes where way_id >= %ld and way_id <= %ld order by way_id,sequence_id",
+		        min, max);
 		node=PQexec(conn, query);
 		if (! node) {
 			fprintf(stderr, "Cannot query way_node: %s\n", PQerrorMessage(conn));
@@ -181,7 +182,7 @@ map_collect_data_osm_db(char *dbstr, struct maptool_osm *osm)
 		PQclear(node);
 		PQclear(way);
 	}
-	
+
 	for (;;) {
 		int j=0, k=0, count=0, tagged=0;
 		long min, max, id;
@@ -198,13 +199,17 @@ map_collect_data_osm_db(char *dbstr, struct maptool_osm *osm)
 			break;
 		min=atol(PQgetvalue(relation, 0, 0));
 		max=atol(PQgetvalue(relation, count-1, 0));
-		sprintf(query,"select relation_id,k,v from relation_tags where relation_id >= %ld and relation_id <= %ld order by relation_id", min, max);
+		sprintf(query,
+		        "select relation_id,k,v from relation_tags where relation_id >= %ld and relation_id <= %ld order by relation_id", min,
+		        max);
 		tag=PQexec(conn, query);
 		if (! tag) {
 			fprintf(stderr, "Cannot query relation_tag: %s\n", PQerrorMessage(conn));
 			exit(1);
 		}
-		sprintf(query,"select relation_id, member_id, member_type, member_role from relation_members where relation_id >= %ld and relation_id <= %ld order by relation_id, sequence_id", min, max);
+		sprintf(query,
+		        "select relation_id, member_id, member_type, member_role from relation_members where relation_id >= %ld and relation_id <= %ld order by relation_id, sequence_id",
+		        min, max);
 		member=PQexec(conn, query);
 		if (! member) {
 			fprintf(stderr, "Cannot query relation_members: %s\n", PQerrorMessage(conn));
@@ -230,17 +235,17 @@ map_collect_data_osm_db(char *dbstr, struct maptool_osm *osm)
 				long member_relation_id=atol(PQgetvalue(member, k, 0));
 				if (member_relation_id == id) {
 					int relmember_type=0; //type unknown
-					if (!strcmp(PQgetvalue(member,k, 2),"W")){
+					if (!strcmp(PQgetvalue(member,k, 2),"W")) {
 						relmember_type=2;
-						}else{
-								if (!strcmp(PQgetvalue(member,k, 2),"N")){
-								relmember_type=1;
-								}else{
-									if (!strcmp(PQgetvalue(member,k, 2),"R")){
-										relmember_type=3;
-										}
-									}
+					} else {
+						if (!strcmp(PQgetvalue(member,k, 2),"N")) {
+							relmember_type=1;
+						} else {
+							if (!strcmp(PQgetvalue(member,k, 2),"R")) {
+								relmember_type=3;
 							}
+						}
+					}
 					osm_add_member(relmember_type,atoll(PQgetvalue(member,k, 1)),PQgetvalue(member,k, 3));
 					k++;
 				}

@@ -75,19 +75,20 @@ static struct vehicle_priv {
 #define DEFAULT_RETRY_INTERVAL 10 // seconds
 #define MIN_RETRY_INTERVAL 1 // seconds
 
-static void vehicle_gpsd_io(struct vehicle_priv *priv);
+static void
+vehicle_gpsd_io(struct vehicle_priv *priv);
 
 static void
 #ifdef HAVE_LIBGPS19
 vehicle_gpsd_callback(struct gps_data_t *data, const char *buf, size_t len)
 #else
 vehicle_gpsd_callback(struct gps_data_t *data, const char *buf, size_t len,
-		      int level)
+                      int level)
 #endif
 {
 	char *pos,*nmea_data_buf;
-        int i=0,sats_signal=0;
-       
+	int i=0,sats_signal=0;
+
 	struct vehicle_priv *priv = vehicle_last;
 	if( len > 0 && buf[0] == '$' ) {
 		char buffer[len+2];
@@ -108,7 +109,7 @@ vehicle_gpsd_callback(struct gps_data_t *data, const char *buf, size_t len,
 				dbg(lvl_error, "nmea buffer overflow, discarding '%s'", buffer);
 			}
 		}
-	}	
+	}
 
 	dbg(lvl_debug,"data->set="LONGLONG_HEX_FMT"", (unsigned long long)data->set);
 	if (data->set & SPEED_SET) {
@@ -130,26 +131,27 @@ vehicle_gpsd_callback(struct gps_data_t *data, const char *buf, size_t len,
 // We cannot rely on GPSD_API_MAJOR_VERSION here because it was not
 // incremented for this change :-(.
 #ifdef HAVE_LIBGPS19
-                if(data->satellites_visible > 0) {
+		if(data->satellites_visible > 0) {
 #else
-                if(data->satellites > 0) {
+		if(data->satellites > 0) {
 #endif
-                        sats_signal=0;
+			sats_signal=0;
 #ifdef HAVE_LIBGPS19
-                        for( i=0;i<data->satellites_visible;i++) {
+			for( i=0; i<data->satellites_visible; i++) {
 #else
-                        for( i=0;i<data->satellites;i++) {
+			for( i=0; i<data->satellites; i++) {
 #endif
 #if GPSD_API_MAJOR_VERSION >= 6
-                               if (data->skyview[i].ss > 0)
+				if (data->skyview[i].ss > 0)
 #else
-                               if (data->ss[i] > 0)
+				if (data->ss[i] > 0)
 #endif
-                                        sats_signal++;
-                        }
-                }
+					sats_signal++;
+			}
+		}
 #ifdef HAVE_LIBGPS19
-		if (priv->sats_used != data->satellites_used || priv->sats != data->satellites_visible || priv->sats_signal != sats_signal ) {
+		if (priv->sats_used != data->satellites_used || priv->sats != data->satellites_visible
+		                || priv->sats_signal != sats_signal ) {
 #else
 		if (priv->sats_used != data->satellites_used || priv->sats != data->satellites || priv->sats_signal != sats_signal ) {
 #endif
@@ -159,7 +161,7 @@ vehicle_gpsd_callback(struct gps_data_t *data, const char *buf, size_t len,
 #else
 			priv->sats = data->satellites;
 #endif
-                        priv->sats_signal = sats_signal;
+			priv->sats_signal = sats_signal;
 			callback_list_call_attr_0(priv->cbl, attr_position_sats);
 		}
 		data->set &= ~SATELLITE_SET;
@@ -222,14 +224,15 @@ vehicle_gpsd_try_open(struct vehicle_priv *priv)
 	dbg(lvl_debug,"Trying to connect to %s:%s",source+7,port?port:"default");
 
 #if GPSD_API_MAJOR_VERSION >= 5
-        /* gps_open returns 0 on success */
+	/* gps_open returns 0 on success */
 	if (gps_open(source + 7, port, priv->gps)) {
 #else
 	priv->gps = gps_open(source + 7, port);
 	if(!priv->gps) {
 #endif
-		dbg(lvl_error,"gps_open failed for '%s'. Retrying in %d seconds. Have you started gpsd?", priv->source, priv->retry_interval);
-                g_free(source);
+		dbg(lvl_error,"gps_open failed for '%s'. Retrying in %d seconds. Have you started gpsd?", priv->source,
+		    priv->retry_interval);
+		g_free(source);
 		return TRUE;
 	}
 	g_free(source);
@@ -270,15 +273,15 @@ vehicle_gpsd_open(struct vehicle_priv *priv)
 	errno = 0;
 	memset(&priv->context, 0, sizeof(gpsbt_t));
 	if(gpsbt_start(NULL, 0, 0, 0, errstr, sizeof(errstr),
-		0, &priv->context) < 0) {
-	       dbg(lvl_error,"Error connecting to GPS with gpsbt: (%d) %s (%s)",
-		  errno, strerror(errno), errstr);
+	                0, &priv->context) < 0) {
+		dbg(lvl_error,"Error connecting to GPS with gpsbt: (%d) %s (%s)",
+		    errno, strerror(errno), errstr);
 	}
 	sleep(1);       /* give gpsd time to start */
 	dbg(lvl_debug,"gpsbt_start: completed");
 #endif
 	priv->retry_timer2=NULL;
-	if (vehicle_gpsd_try_open(priv)) 
+	if (vehicle_gpsd_try_open(priv))
 		priv->retry_timer2=event_add_timeout(priv->retry_interval*1000, 1, priv->cbt);
 }
 
@@ -308,7 +311,7 @@ vehicle_gpsd_close(struct vehicle_priv *priv)
 	if (priv->gps) {
 		gps_close(priv->gps);
 #if GPSD_API_MAJOR_VERSION >= 5
-                g_free(priv->gps);
+		g_free(priv->gps);
 #endif
 		priv->gps = NULL;
 	}
@@ -326,28 +329,27 @@ vehicle_gpsd_io(struct vehicle_priv *priv)
 {
 	dbg(lvl_debug, "enter");
 	if (priv->gps) {
-	 	vehicle_last = priv;
+		vehicle_last = priv;
 #if GPSD_API_MAJOR_VERSION >= 5
 		int read_result;
 		/* Read until EOF, in case we are lagging behind.
 		 * No point in processing old GPS reports. */
 		while((read_result=gps_read(priv->gps))>0);
 		if(read_result==-1) {
-                  dbg(lvl_error,"gps_poll failed");
-                  vehicle_gpsd_close(priv);
-                  vehicle_gpsd_open(priv);
-                }
-                else {
-                  const char *buf;
-                  buf = gps_data(priv->gps);
-  	          vehicle_gpsd_callback(priv->gps,buf,strlen(buf));
-                }
-#else
-                if (gps_poll(priv->gps)) {
 			dbg(lvl_error,"gps_poll failed");
 			vehicle_gpsd_close(priv);
 			vehicle_gpsd_open(priv);
-                }
+		} else {
+			const char *buf;
+			buf = gps_data(priv->gps);
+			vehicle_gpsd_callback(priv->gps,buf,strlen(buf));
+		}
+#else
+		if (gps_poll(priv->gps)) {
+			dbg(lvl_error,"gps_poll failed");
+			vehicle_gpsd_close(priv);
+			vehicle_gpsd_open(priv);
+		}
 #endif
 	}
 }
@@ -361,14 +363,14 @@ vehicle_gpsd_destroy(struct vehicle_priv *priv)
 	if (priv->gpsd_query)
 		g_free(priv->gpsd_query);
 #if GPSD_API_MAJOR_VERSION >= 5
-        g_free(priv->gps);
+	g_free(priv->gps);
 #endif
 	g_free(priv);
 }
 
 static int
 vehicle_gpsd_position_attr_get(struct vehicle_priv *priv,
-			       enum attr_type type, struct attr *attr)
+                               enum attr_type type, struct attr *attr)
 {
 	struct attr * active=NULL;
 	switch (type) {
@@ -404,27 +406,26 @@ vehicle_gpsd_position_attr_get(struct vehicle_priv *priv,
 		if (! attr->u.str)
 			return 0;
 		break;
-	case attr_position_time_iso8601:
-		{
+	case attr_position_time_iso8601: {
 		struct tm tm;
 		if (!priv->fix_time)
 			return 0;
 		if (gmtime_r(&priv->fix_time, &tm)) {
 			strftime(priv->fixiso8601, sizeof(priv->fixiso8601),
-				"%Y-%m-%dT%TZ", &tm);
+			         "%Y-%m-%dT%TZ", &tm);
 			attr->u.str=priv->fixiso8601;
 		} else
 			return 0;
-		}
-		break;
+	}
+	break;
 	case attr_active:
-	  active = attr_search(priv->attrs,NULL,attr_active);
-	  if(active != NULL) {
-		attr->u.num=active->u.num;
-	    return 1;
-	  } else
-	    return 0;
-	       break;
+		active = attr_search(priv->attrs,NULL,attr_active);
+		if(active != NULL) {
+			attr->u.num=active->u.num;
+			return 1;
+		} else
+			return 0;
+		break;
 	default:
 		return 0;
 	}
@@ -439,8 +440,8 @@ static struct vehicle_methods vehicle_gpsd_methods = {
 
 static struct vehicle_priv *
 vehicle_gpsd_new_gpsd(struct vehicle_methods
-		      *meth, struct callback_list
-		      *cbl, struct attr **attrs)
+                      *meth, struct callback_list
+                      *cbl, struct attr **attrs)
 {
 	struct vehicle_priv *ret;
 	struct attr *source, *query, *retry_int;

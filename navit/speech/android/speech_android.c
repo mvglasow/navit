@@ -33,24 +33,25 @@ struct speech_priv {
 	int flags;
 };
 
-static int 
+static int
 speech_android_say(struct speech_priv *this, const char *text)
 {
 	char *str=g_strdup(text);
 	jstring string;
 	int i;
-	
+
 	string = (*jnienv)->NewStringUTF(jnienv, str);
 	dbg(lvl_debug,"enter %s",str);
-        (*jnienv)->CallVoidMethod(jnienv, this->NavitSpeech, this->NavitSpeech_say, string);
-        (*jnienv)->DeleteLocalRef(jnienv, string);
+	(*jnienv)->CallVoidMethod(jnienv, this->NavitSpeech, this->NavitSpeech_say, string);
+	(*jnienv)->DeleteLocalRef(jnienv, string);
 	g_free(str);
 
 	return 1;
 }
 
-static void 
-speech_android_destroy(struct speech_priv *this) {
+static void
+speech_android_destroy(struct speech_priv *this)
+{
 	g_free(this);
 }
 
@@ -88,7 +89,8 @@ speech_android_init(struct speech_priv *ret)
 }
 
 static struct speech_priv *
-speech_android_new(struct speech_methods *meth, struct attr **attrs, struct attr *parent) {
+speech_android_new(struct speech_methods *meth, struct attr **attrs, struct attr *parent)
+{
 	struct speech_priv *this;
 	struct attr *flags;
 	*meth=speech_android_meth;
@@ -102,7 +104,7 @@ speech_android_new(struct speech_methods *meth, struct attr **attrs, struct attr
 	}
 	if ((flags = attr_search(attrs, NULL, attr_flags)))
 		this->flags=flags->u.num;
-	
+
 	return this;
 }
 

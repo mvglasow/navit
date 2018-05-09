@@ -131,7 +131,7 @@ navit_py(PyObject *self, PyObject *args)
 {
 	navitObject *ret;
 
-	dbg(lvl_debug,"enter");	
+	dbg(lvl_debug,"enter");
 	ret=PyObject_NEW(navitObject, &navit_Type);
 	return (PyObject *)ret;
 }

@@ -133,7 +133,7 @@ coord_slice_free(void *data)
 static GHashTable *
 coord_hash_new(void)
 {
-        return g_hash_table_new_full(coord_hash, coord_equal, coord_slice_free, NULL);
+	return g_hash_table_new_full(coord_hash, coord_equal, coord_slice_free, NULL);
 }
 
 static void
@@ -164,15 +164,15 @@ edge_hash_slice_free(void *data)
 static guint
 edge_hash_hash(gconstpointer key)
 {
-        const struct edge_hash_item *itm=key;
-        return itm->first*2654435761UL+itm->last;
+	const struct edge_hash_item *itm=key;
+	return itm->first*2654435761UL+itm->last;
 }
 
 static gboolean
 edge_hash_equal(gconstpointer a, gconstpointer b)
 {
-        const struct edge_hash_item *itm_a=a;
-        const struct edge_hash_item *itm_b=b;
+	const struct edge_hash_item *itm_a=a;
+	const struct edge_hash_item *itm_b=b;
 	return (itm_a->first == itm_b->first && itm_a->last == itm_b->last);
 }
 
@@ -187,7 +187,7 @@ ch_generate_ddsg(FILE *in, FILE *ref, FILE *idx, FILE *ddsg)
 
 	while ((ib=read_item(in))) {
 		int ccount=ib->clen/2;
-                struct coord *c=(struct coord *)(ib+1);
+		struct coord *c=(struct coord *)(ib+1);
 		if (road_speed(ib->type)) {
 			add_node_to_hash(idx, hash, &c[0], &nodes);
 			add_node_to_hash(idx, hash, &c[ccount-1], &nodes);
@@ -200,12 +200,12 @@ ch_generate_ddsg(FILE *in, FILE *ref, FILE *idx, FILE *ddsg)
 	fprintf(ddsg,"%d %d\n", nodes, edges);
 	while ((ib=read_item(in))) {
 		int i,ccount=ib->clen/2;
-                struct coord *c=(struct coord *)(ib+1);
+		struct coord *c=(struct coord *)(ib+1);
 		int n1,n2,speed=road_speed(ib->type);
 		struct item_id road_id;
 		double l;
-		
-		if (fread(&road_id, sizeof(road_id), 1, ref) == 0){
+
+		if (fread(&road_id, sizeof(road_id), 1, ref) == 0) {
 			dbg(lvl_warning, "fread failed");
 			continue;
 		}
@@ -234,16 +234,20 @@ ch_generate_sgr(char *suffix)
 #ifndef HAVE_API_WIN32_CE
 	char command[1024];
 	int system_result;
-	sprintf(command,"./contraction-hierarchies-20080621/main -s -p -f ddsg_%s.tmp -o hcn_%s.tmp -l hcn_log_%s.tmp -x 190 -y 1 -e 600 -p 1000 -k 1,3.3,2,10,3,10,5",suffix,suffix,suffix);
+	sprintf(command,
+	        "./contraction-hierarchies-20080621/main -s -p -f ddsg_%s.tmp -o hcn_%s.tmp -l hcn_log_%s.tmp -x 190 -y 1 -e 600 -p 1000 -k 1,3.3,2,10,3,10,5",
+	        suffix,suffix,suffix);
 	printf("%s\n",command);
 	system_result = system(command);
-	if (system_result == -1){
+	if (system_result == -1) {
 		dbg(lvl_warning, "Running main failed");
 	}
-	sprintf(command,"./contraction-hierarchies-20080621/main -c -f ddsg_%s.tmp -h hcn_%s.tmp -k 1,3.3,2,10,3,10,5 -C ch_%s.tmp -O 1 -z sgr_%s.tmp",suffix,suffix,suffix,suffix);
+	sprintf(command,
+	        "./contraction-hierarchies-20080621/main -c -f ddsg_%s.tmp -h hcn_%s.tmp -k 1,3.3,2,10,3,10,5 -C ch_%s.tmp -O 1 -z sgr_%s.tmp",
+	        suffix,suffix,suffix,suffix);
 	printf("%s\n",command);
 	system_result = system(command);
-	if (system_result == -1){
+	if (system_result == -1) {
 		dbg(lvl_warning, "Running main failed");
 	}
 #endif
@@ -310,7 +314,7 @@ ch_process_nodes(FILE *out, int pos, int count, int resolve)
 {
 	int i;
 	printf("count %d sum=%d newnode_count=%d\n",count,pos,newnode_count);
-	for (i = 0 ; i < count ; i++) 
+	for (i = 0 ; i < count ; i++)
 		ch_process_node(out, pos+i, resolve);
 }
 
@@ -374,7 +378,7 @@ ch_setup(char *suffix)
 
 		for (i = 0 ; i < newnode_count ; i++) {
 			g_hash_table_insert(newnode_hash, GINT_TO_POINTER(newnodes[i].newnode), GINT_TO_POINTER(i));
-        	}
+		}
 	}
 	if (!ddsg_node_index) {
 		char *filename=tempfile_name(suffix,"ddsg_coords");
@@ -388,7 +392,7 @@ ch_setup(char *suffix)
 
 static void
 ch_create_tempfiles(char *suffix, FILE **files, int count, int mode)
-{	
+{
 	char name[256];
 	int i;
 
@@ -446,11 +450,11 @@ ch_generate_tiles(char *map_suffix, char *suffix, FILE *tilesdir_out, struct zip
 	struct tile_info info;
 	FILE *in,*ref,*ddsg_coords,*ddsg;
 	FILE **graphfiles;
-        info.write=0;
-        info.maxlen=0;
-        info.suffix=suffix;
-        info.tiles_list=NULL;
-        info.tilesdir_out=tilesdir_out;
+	info.write=0;
+	info.maxlen=0;
+	info.suffix=suffix;
+	info.tiles_list=NULL;
+	info.tilesdir_out=tilesdir_out;
 	graphfiles=g_alloca(sizeof(FILE*)*(ch_levels+1));
 
 	ch_create_tempfiles(suffix, graphfiles, ch_levels, 1);
@@ -485,21 +489,21 @@ ch_assemble_map(char *map_suffix, char *suffix, struct zip_info *zip_info)
 	struct item_id id;
 	int nodeid=0;
 
-        info.write=1;
-        info.maxlen=zip_get_maxnamelen(zip_info);
-        info.suffix=suffix;
-        info.tiles_list=NULL;
-        info.tilesdir_out=NULL;
+	info.write=1;
+	info.maxlen=zip_get_maxnamelen(zip_info);
+	info.suffix=suffix;
+	info.tiles_list=NULL;
+	info.tilesdir_out=NULL;
 	ref=tempfile(suffix,"sgr_ref",1);
 
 	create_tile_hash();
 
 	th=tile_head_root;
-        while (th) {
+	while (th) {
 		th->zip_data=NULL;
 		th->process=1;
-                th=th->next;
-        }
+		th=th->next;
+	}
 
 	ch_setup(suffix);
 	ch_copy_to_tiles(suffix, ch_levels, &info, ref);
@@ -513,11 +517,11 @@ ch_assemble_map(char *map_suffix, char *suffix, struct zip_info *zip_info)
 		nodeid++;
 	}
 	th=tile_head_root;
-        while (th) {
+	while (th) {
 		th->zip_data=g_malloc(th->total_size);
 		th->total_size_used=0;
-                th=th->next;
-        }
+		th=th->next;
+	}
 	ch_create_tempfiles(suffix, graphfiles, ch_levels, 1);
 	ch_process(graphfiles, ch_levels, 1);
 	ch_close_tempfiles(graphfiles, ch_levels);
@@ -530,7 +534,7 @@ ch_assemble_map(char *map_suffix, char *suffix, struct zip_info *zip_info)
 	write_tilesdir(&info, zip_info, NULL);
 
 	th=tile_head_root;
-        while (th) {
+	while (th) {
 		if (th->name[0]) {
 			if (th->total_size != th->total_size_used) {
 				fprintf(stderr,"Size error '%s': %d vs %d\n", th->name, th->total_size, th->total_size_used);
@@ -541,6 +545,6 @@ ch_assemble_map(char *map_suffix, char *suffix, struct zip_info *zip_info)
 			fwrite(th->zip_data, th->total_size, 1, zip_get_index(zip_info));
 		}
 		g_free(th->zip_data);
-                th=th->next;
-        }
+		th=th->next;
+	}
 }

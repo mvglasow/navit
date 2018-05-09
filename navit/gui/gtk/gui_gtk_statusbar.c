@@ -53,16 +53,18 @@ statusbar_destroy(struct statusbar_priv *this)
 }
 
 static void
-statusbar_gps_update(struct statusbar_priv *this, int sats, int qual, double lng, double lat, double height, double direction, double speed)
+statusbar_gps_update(struct statusbar_priv *this, int sats, int qual, double lng, double lat, double height,
+                     double direction, double speed)
 {
-	char *dirs[]={_("N"),_("NE"),_("E"),_("SE"),_("S"),_("SW"),_("W"),_("NW"),_("N")};
+	char *dirs[]= {_("N"),_("NE"),_("E"),_("SE"),_("S"),_("SW"),_("W"),_("NW"),_("N")};
 	char *dir;
 	int dir_idx;
 	char pos_text[36];
 
 	coord_format(lat,lng,DEGREES_MINUTES_SECONDS,pos_text,sizeof(pos_text));
 	dir=dirs[dir_idx];
-	sprintf(this->gps_text, "GPS %02d/%02d %s %4.0fm %3.0f°%-2s %3.0fkm/h", sats, qual, pos_text, height, direction, dir, speed);
+	sprintf(this->gps_text, "GPS %02d/%02d %s %4.0fm %3.0f°%-2s %3.0fkm/h", sats, qual, pos_text, height, direction, dir,
+	        speed);
 	gtk_label_set_text(GTK_LABEL(this->gps), this->gps_text);
 
 }
@@ -71,11 +73,14 @@ statusbar_gps_update(struct statusbar_priv *this, int sats, int qual, double lng
 static const char *status_fix2str(int type)
 {
 	switch(type) {
-		case 0: return _("No");
-		case 1: return _("2D");
-		case 3: return _("3D");
-		default:
-			return _("OT");
+	case 0:
+		return _("No");
+	case 1:
+		return _("2D");
+	case 3:
+		return _("3D");
+	default:
+		return _("OT");
 	}
 }
 
@@ -94,14 +99,14 @@ statusbar_route_update(struct statusbar_priv *this, struct navit *navit, struct 
 	double lng, lat, direction=0, height=0, speed=0, hdop=0;
 	int sats=0, qual=0;
 	int status=0;
-	const char *dirs[]={_("N"),_("NE"),_("E"),_("SE"),_("S"),_("SW"),_("W"),_("NW"),_("N")};
+	const char *dirs[]= {_("N"),_("NE"),_("E"),_("SE"),_("S"),_("SW"),_("W"),_("NW"),_("N")};
 	const char *dir;
 	int dir_idx;
 
-        /* Respect the Imperial attribute as we enlighten the user. */
-        int imperial = FALSE;  /* default to using metric measures. */
-        if (navit_get_attr(navit, attr_imperial, &attr, NULL))
-            imperial=attr.u.num;
+	/* Respect the Imperial attribute as we enlighten the user. */
+	int imperial = FALSE;  /* default to using metric measures. */
+	if (navit_get_attr(navit, attr_imperial, &attr, NULL))
+		imperial=attr.u.num;
 
 	if (navit)
 		nav=navit_get_navigation(navit);
@@ -122,11 +127,11 @@ statusbar_route_update(struct statusbar_priv *this, struct navit *navit, struct 
 	if (mr)
 		map_rect_destroy(mr);
 
-        sprintf(buffer,_("Route %4.1f%s    %02d:%02d ETA" ),
-                imperial == TRUE ? route_len * (KILOMETERS_TO_MILES/1000.00) : route_len/1000,
-                imperial == TRUE ? "mi" : "km",
-                eta_tm ? eta_tm->tm_hour : 0 ,
-                eta_tm ? eta_tm->tm_min : 0);
+	sprintf(buffer,_("Route %4.1f%s    %02d:%02d ETA" ),
+	        imperial == TRUE ? route_len * (KILOMETERS_TO_MILES/1000.00) : route_len/1000,
+	        imperial == TRUE ? "mi" : "km",
+	        eta_tm ? eta_tm->tm_hour : 0,
+	        eta_tm ? eta_tm->tm_min : 0);
 
 	if (strcmp(buffer, this->route_text)) {
 		strcpy(this->route_text, buffer);
@@ -157,15 +162,15 @@ statusbar_route_update(struct statusbar_priv *this, struct navit *navit, struct 
 		qual=attr.u.num;
 	coord_format(lat,lng,DEGREES_MINUTES_SECONDS,buffer,sizeof(buffer));
 
-        sprintf(this->gps_text,"GPS:%s %02d/%02d HD:%02.2f %s %4.0f%s %3.0f°%-2s %3.1f%s", 
-                status_fix2str(status),
-                sats, qual, hdop, buffer,
-                imperial ? height * FEET_PER_METER : height,
-                imperial == TRUE ? "\'" : "m",
-                direction, dir,
-                imperial == TRUE ? speed * KILOMETERS_TO_MILES : speed,
-                imperial == TRUE ? " mph" : "km/h"
-            );
+	sprintf(this->gps_text,"GPS:%s %02d/%02d HD:%02.2f %s %4.0f%s %3.0f°%-2s %3.1f%s",
+	        status_fix2str(status),
+	        sats, qual, hdop, buffer,
+	        imperial ? height * FEET_PER_METER : height,
+	        imperial == TRUE ? "\'" : "m",
+	        direction, dir,
+	        imperial == TRUE ? speed * KILOMETERS_TO_MILES : speed,
+	        imperial == TRUE ? " mph" : "km/h"
+	       );
 
 	gtk_label_set_text(GTK_LABEL(this->gps), this->gps_text);
 }

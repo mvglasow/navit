@@ -23,9 +23,9 @@
 
 /** Information about all members of a relation type and how to process them. */
 struct relations {
-        /** Hashes for nodes, ways and relations which are members. */
+	/** Hashes for nodes, ways and relations which are members. */
 	GHashTable *member_hash[3];
-        /** Default entries for processing items which are not a member of any relation. */
+	/** Default entries for processing items which are not a member of any relation. */
 	GList *default_members;
 };
 
@@ -67,7 +67,8 @@ relations_new(void)
 }
 
 struct relations_func *
-relations_func_new(void (*func)(void *func_priv, void *relation_priv, struct item_bin *member, void *member_priv), void *func_priv)
+relations_func_new(void (*func)(void *func_priv, void *relation_priv, struct item_bin *member, void *member_priv),
+                   void *func_priv)
 {
 	struct relations_func *relations_func=g_new(struct relations_func, 1);
 	relations_func->func=func;
@@ -98,11 +99,11 @@ relations_member_new(struct relations_func *func, void *relation_priv, void *mem
  */
 void
 relations_add_relation_member_entry(struct relations *rel, struct relations_func *func, void
-    *relation_priv, void *member_priv, enum relation_member_type type, osmid id)
+                                    *relation_priv, void *member_priv, enum relation_member_type type, osmid id)
 {
 	struct relations_member *memb=relations_member_new(func, relation_priv, member_priv, id);
 	GHashTable *member_hash=rel->member_hash[type-1];
-        // The real key is the OSM ID, but we recycle "memb" as key to avoid a second allocating for the key.
+	// The real key is the OSM ID, but we recycle "memb" as key to avoid a second allocating for the key.
 	g_hash_table_insert(member_hash, memb, g_list_append(g_hash_table_lookup(member_hash, memb), memb));
 }
 
@@ -136,7 +137,7 @@ relations_process(struct relations *rel, FILE *nodes, FILE *ways)
 	char buffer[128];
 	struct item_bin *ib=(struct item_bin *)buffer;
 	osmid *id;
-	struct coord *c=(struct coord *)(ib+1),cn={0,0};
+	struct coord *c=(struct coord *)(ib+1),cn= {0,0};
 	struct node_item *ni;
 	GList *l;
 

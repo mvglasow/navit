@@ -28,7 +28,8 @@ import android.util.Log;
 
 
 @SuppressWarnings("unused")
-public class NavitSpeech2 implements TextToSpeech.OnInitListener, NavitActivityResult {
+public class NavitSpeech2 implements TextToSpeech.OnInitListener, NavitActivityResult
+{
 	private TextToSpeech mTts;
 	private final Navit navit;
 	private final int MY_DATA_CHECK_CODE=1;
@@ -49,7 +50,7 @@ public class NavitSpeech2 implements TextToSpeech.OnInitListener, NavitActivityR
 			} else {
 				// missing data, ask to install it
 				AlertDialog.Builder builder = new AlertDialog.Builder(navit);
-			    	builder
+				builder
 				.setTitle(R.string.TTS_title_data_missing)
 				.setMessage(R.string.TTS_qery_install_data)
 				.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
@@ -57,10 +58,10 @@ public class NavitSpeech2 implements TextToSpeech.OnInitListener, NavitActivityR
 						Intent installIntent = new Intent();
 						installIntent.setAction(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA);
 						navit.startActivity(installIntent);
-	    				}
+					}
 				})
-			    	.setNegativeButton(R.string.no, null)
-			    	.show();
+				.setNegativeButton(R.string.no, null)
+				.show();
 			}
 		}
 	}

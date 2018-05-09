@@ -3,11 +3,11 @@
 
 int main(int argc, char *argv[])
 {
-    QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-    QGuiApplication app(argc, argv);
+	QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+	QGuiApplication app(argc, argv);
 
-    QQmlApplicationEngine engine;
-    engine.load(QUrl(QLatin1String("qrc:/gui_qt5_qml.qml")));
+	QQmlApplicationEngine engine;
+	engine.load(QUrl(QLatin1String("qrc:/gui_qt5_qml.qml")));
 
-    return app.exec();
+	return app.exec();
 }

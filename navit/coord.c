@@ -88,7 +88,7 @@ coord_rect_new(struct coord *lu, struct coord *rl)
 	r->rl=*rl;
 
 	return r;
-	
+
 }
 
 void
@@ -97,14 +97,15 @@ coord_rect_destroy(struct coord_rect *r)
 	g_free(r);
 }
 
-int 
+int
 coord_rect_overlap(struct coord_rect *r1, struct coord_rect *r2)
 {
 	dbg_assert(r1->lu.x <= r1->rl.x);
 	dbg_assert(r1->lu.y >= r1->rl.y);
 	dbg_assert(r2->lu.x <= r2->rl.x);
 	dbg_assert(r2->lu.y >= r2->rl.y);
-	dbg(lvl_debug,"0x%x,0x%x - 0x%x,0x%x vs 0x%x,0x%x - 0x%x,0x%x", r1->lu.x, r1->lu.y, r1->rl.x, r1->rl.y, r2->lu.x, r2->lu.y, r2->rl.x, r2->rl.y);
+	dbg(lvl_debug,"0x%x,0x%x - 0x%x,0x%x vs 0x%x,0x%x - 0x%x,0x%x", r1->lu.x, r1->lu.y, r1->rl.x, r1->rl.y, r2->lu.x,
+	    r2->lu.y, r2->rl.x, r2->rl.y);
 	if (r1->lu.x > r2->rl.x)
 		return 0;
 	if (r1->rl.x < r2->lu.x)
@@ -205,7 +206,7 @@ coord_parse(const char *coord_input, enum projection output_projection, struct c
 		dbg(lvl_debug,"str='%s' x=0x%x y=0x%x c=%d", str, c.x, c.y, ret);
 		dbg(lvl_debug,"rest='%s'", str+ret);
 
-		if (str_pro == projection_none) 
+		if (str_pro == projection_none)
 			str_pro=projection_mg;
 		if (str_pro != output_projection) {
 			transform_to_geo(str_pro, &c, &g);
@@ -277,22 +278,23 @@ out:
 int
 pcoord_parse(const char *c_str, enum projection pro, struct pcoord *pc_ret)
 {
-    struct coord c;
-    int ret;
-    ret = coord_parse(c_str, pro, &c);
-    pc_ret->x = c.x;
-    pc_ret->y = c.y;
-    pc_ret->pro = pro;
-    return ret;
+	struct coord c;
+	int ret;
+	ret = coord_parse(c_str, pro, &c);
+	pc_ret->x = c.x;
+	pc_ret->y = c.y;
+	pc_ret->pro = pro;
+	return ret;
 }
 
 void
-coord_print(enum projection pro, struct coord *c, FILE *out) {
+coord_print(enum projection pro, struct coord *c, FILE *out)
+{
 	unsigned int x;
 	unsigned int y;
 	char *sign_x = "";
 	char *sign_y = "";
-	
+
 	if ( c->x < 0 ) {
 		x = -c->x;
 		sign_x = "-";
@@ -306,9 +308,9 @@ coord_print(enum projection pro, struct coord *c, FILE *out) {
 		y = c->y;
 	}
 	fprintf( out, "%s: %s0x%x %s0x%x\n",
-		 projection_to_name( pro ),
-		 sign_x, x,
-		 sign_y, y );
+	         projection_to_name( pro ),
+	         sign_x, x,
+	         sign_y, y );
 	return;
 }
 
@@ -316,12 +318,12 @@ coord_print(enum projection pro, struct coord *c, FILE *out) {
  * @brief Converts a lat/lon into a text formatted text string.
  * @param lat The latitude (if lat is 360 or greater, the latitude will be omitted)
  * @param lng The longitude (if lng is 360 or greater, the longitude will be omitted)
- * @param fmt The format to use. 
+ * @param fmt The format to use.
  *    @li DEGREES_DECIMAL=>Degrees with decimal places, i.e. 20.5000°N 110.5000°E
  *    @li DEGREES_MINUTES=>Degrees and minutes, i.e. 20°30.00'N 110°30.00'E
  *    @li DEGREES_MINUTES_SECONDS=>Degrees, minutes and seconds, i.e. 20°30'30.00"N 110°30'30"E
- *           
- * 
+ *
+ *
  * @param buffer  A buffer large enough to hold the output + a terminating NULL (up to 31 bytes)
  * @param size The size of the buffer
  *
@@ -330,7 +332,7 @@ void coord_format(float lat,float lng, enum coord_format fmt, char * buffer, int
 {
 
 	char lat_c='N';
-  	char lng_c='E';
+	char lng_c='E';
 	float lat_deg,lat_min,lat_sec;
 	float lng_deg,lng_min,lng_sec;
 	int size_used=0;
@@ -349,53 +351,54 @@ void coord_format(float lat,float lng, enum coord_format fmt, char * buffer, int
 	lng_deg=lng;
 	lng_min=(lng-floor(lng_deg))*60;
 	lng_sec=fmod(lng*3600,60);
-	switch(fmt)
-	{
+	switch(fmt) {
 
 	case DEGREES_DECIMAL:
-	  if (lat<360)
-	    size_used+=g_snprintf(buffer+size_used,size-size_used,"%02.6f°%c",lat,lat_c);
-	  if ((lat<360)&&(lng<360))
-	    size_used+=g_snprintf(buffer+size_used,size-size_used," ");
-	  if (lng<360)
-	    size_used+=g_snprintf(buffer+size_used,size-size_used,"%03.7f°%c",lng,lng_c);
-	  break;
+		if (lat<360)
+			size_used+=g_snprintf(buffer+size_used,size-size_used,"%02.6f°%c",lat,lat_c);
+		if ((lat<360)&&(lng<360))
+			size_used+=g_snprintf(buffer+size_used,size-size_used," ");
+		if (lng<360)
+			size_used+=g_snprintf(buffer+size_used,size-size_used,"%03.7f°%c",lng,lng_c);
+		break;
 	case DEGREES_MINUTES:
-	  if (lat<360)
-	    size_used+=g_snprintf(buffer+size_used,size-size_used,"%02.0f°%07.4f' %c",floor(lat_deg),lat_min,lat_c);
-	  if ((lat<360)&&(lng<360))
-	    size_used+=g_snprintf(buffer+size_used,size-size_used," ");
-	  if (lng<360)
-	    size_used+=g_snprintf(buffer+size_used,size-size_used,"%03.0f°%07.4f' %c",floor(lng_deg),lng_min,lng_c);
-	  break;
+		if (lat<360)
+			size_used+=g_snprintf(buffer+size_used,size-size_used,"%02.0f°%07.4f' %c",floor(lat_deg),lat_min,lat_c);
+		if ((lat<360)&&(lng<360))
+			size_used+=g_snprintf(buffer+size_used,size-size_used," ");
+		if (lng<360)
+			size_used+=g_snprintf(buffer+size_used,size-size_used,"%03.0f°%07.4f' %c",floor(lng_deg),lng_min,lng_c);
+		break;
 	case DEGREES_MINUTES_SECONDS:
-	  if (lat<360)
-	    size_used+=g_snprintf(buffer+size_used,size-size_used,"%02.0f°%02.0f'%05.2f\" %c",floor(lat_deg),floor(lat_min),lat_sec,lat_c);
-	  if ((lat<360)&&(lng<360))
-	    size_used+=g_snprintf(buffer+size_used,size-size_used," ");
-	  if (lng<360)
-	    size_used+=g_snprintf(buffer+size_used,size-size_used,"%03.0f°%02.0f'%05.2f\" %c",floor(lng_deg),floor(lng_min),lng_sec,lng_c);
-	  break;
-	  
-	
+		if (lat<360)
+			size_used+=g_snprintf(buffer+size_used,size-size_used,"%02.0f°%02.0f'%05.2f\" %c",floor(lat_deg),floor(lat_min),
+			                      lat_sec,lat_c);
+		if ((lat<360)&&(lng<360))
+			size_used+=g_snprintf(buffer+size_used,size-size_used," ");
+		if (lng<360)
+			size_used+=g_snprintf(buffer+size_used,size-size_used,"%03.0f°%02.0f'%05.2f\" %c",floor(lng_deg),floor(lng_min),
+			                      lng_sec,lng_c);
+		break;
+
+
 	}
-	
+
 }
 
-unsigned int 
+unsigned int
 coord_hash(const void *key)
 {
-        const struct coord *c=key;
+	const struct coord *c=key;
 	return c->x^c->y;
 }
 
 int
 coord_equal(const void *a, const void *b)
 {
-        const struct coord *c_a=a;
-        const struct coord *c_b=b;
+	const struct coord *c_a=a;
+	const struct coord *c_b=b;
 	if (c_a->x == c_b->x && c_a->y == c_b->y)
-                return TRUE;
-        return FALSE;
+		return TRUE;
+	return FALSE;
 }
 /** @} */

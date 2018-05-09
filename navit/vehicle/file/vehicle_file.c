@@ -28,7 +28,7 @@
 #include <glib.h>
 #include <sys/stat.h>
 #ifdef _WIN32
-    #include <serial_io.h>
+#include <serial_io.h>
 #else
 #include <termios.h>
 #endif
@@ -49,7 +49,8 @@
 #endif
 #ifdef HAVE_WINSOCK
 #include <winsock2.h>
-int inet_aton(const char *cp, struct in_addr *inp);
+int
+inet_aton(const char *cp, struct in_addr *inp);
 
 int inet_aton(const char *cp, struct in_addr *inp)
 {
@@ -67,11 +68,16 @@ int inet_aton(const char *cp, struct in_addr *inp)
  * @{
  */
 
-static void vehicle_file_disable_watch(struct vehicle_priv *priv);
-static void vehicle_file_enable_watch(struct vehicle_priv *priv);
-static int vehicle_file_parse(struct vehicle_priv *priv, char *buffer);
-static int vehicle_file_open(struct vehicle_priv *priv);
-static void vehicle_file_close(struct vehicle_priv *priv);
+static void
+vehicle_file_disable_watch(struct vehicle_priv *priv);
+static void
+vehicle_file_enable_watch(struct vehicle_priv *priv);
+static int
+vehicle_file_parse(struct vehicle_priv *priv, char *buffer);
+static int
+vehicle_file_open(struct vehicle_priv *priv);
+static void
+vehicle_file_close(struct vehicle_priv *priv);
 
 
 enum file_type {
@@ -148,68 +154,62 @@ struct vehicle_priv {
 #ifdef _WIN32
 static int vehicle_win32_serial_track(struct vehicle_priv *priv)
 {
-    static char buffer[2048] = {0,};
-    static int current_index = 0;
-    const int chunk_size = 1024;
-    int rc = 0;
-    int dwBytes;
+	static char buffer[2048] = {0,};
+	static int current_index = 0;
+	const int chunk_size = 1024;
+	int rc = 0;
+	int dwBytes;
 
-    dbg(lvl_debug, "enter, *priv='%x', priv->source='%s'", priv, priv->source);
+	dbg(lvl_debug, "enter, *priv='%x', priv->source='%s'", priv, priv->source);
 
-    if ( priv->no_data_count > 5 )
-    {
-        vehicle_file_close( priv );
-        priv->no_data_count = 0;
-        vehicle_file_open( priv );
-        vehicle_file_enable_watch(priv);
-    }
+	if ( priv->no_data_count > 5 ) {
+		vehicle_file_close( priv );
+		priv->no_data_count = 0;
+		vehicle_file_open( priv );
+		vehicle_file_enable_watch(priv);
+	}
 
-    //if ( priv->fd <= 0 )
-    //{
-    //    vehicle_file_open( priv );
-    //}
+	//if ( priv->fd <= 0 )
+	//{
+	//    vehicle_file_open( priv );
+	//}
 
-    if ( current_index >= ( sizeof( buffer ) - chunk_size ) )
-    {
-        // discard
-        current_index = 0;
-        memset( buffer, 0 , sizeof( buffer ) );
-    }
+	if ( current_index >= ( sizeof( buffer ) - chunk_size ) ) {
+		// discard
+		current_index = 0;
+		memset( buffer, 0, sizeof( buffer ) );
+	}
 
-    dwBytes = serial_io_read( priv->fd, &buffer[ current_index ], chunk_size );
-    if ( dwBytes > 0 )
-    {
-        char* return_pos = NULL;
-        current_index += dwBytes;
+	dwBytes = serial_io_read( priv->fd, &buffer[ current_index ], chunk_size );
+	if ( dwBytes > 0 ) {
+		char* return_pos = NULL;
+		current_index += dwBytes;
 
-        while ( ( return_pos = strchr( buffer, '\n' ) ) != NULL )
-        {
-            char return_buffer[1024];
-            int bytes_to_copy = return_pos - buffer + 1;
-            memcpy( return_buffer, buffer, bytes_to_copy );
-            return_buffer[ bytes_to_copy + 1 ] = '\0';
-            return_buffer[ bytes_to_copy ] = '\0';
+		while ( ( return_pos = strchr( buffer, '\n' ) ) != NULL ) {
+			char return_buffer[1024];
+			int bytes_to_copy = return_pos - buffer + 1;
+			memcpy( return_buffer, buffer, bytes_to_copy );
+			return_buffer[ bytes_to_copy + 1 ] = '\0';
+			return_buffer[ bytes_to_copy ] = '\0';
 
-            // printf( "received %d : '%s' bytes to copy\n", bytes_to_copy, return_buffer );
-            rc += vehicle_file_parse( priv, return_buffer );
+			// printf( "received %d : '%s' bytes to copy\n", bytes_to_copy, return_buffer );
+			rc += vehicle_file_parse( priv, return_buffer );
 
-            current_index -= bytes_to_copy;
-            memmove( buffer, &buffer[ bytes_to_copy ] , sizeof( buffer ) - bytes_to_copy );
-        }
-        if (rc) {
-            priv->no_data_count = 0;
-            callback_list_call_attr_0(priv->cbl, attr_position_coord_geo);
-            if (rc > 1)
-                dbg(lvl_error, "Can not keep with gps data delay is %d seconds", rc - 1);
+			current_index -= bytes_to_copy;
+			memmove( buffer, &buffer[ bytes_to_copy ], sizeof( buffer ) - bytes_to_copy );
+		}
+		if (rc) {
+			priv->no_data_count = 0;
+			callback_list_call_attr_0(priv->cbl, attr_position_coord_geo);
+			if (rc > 1)
+				dbg(lvl_error, "Can not keep with gps data delay is %d seconds", rc - 1);
 
-        }
-    }
-    else
-    {
-        priv->no_data_count++;
-    }
-    dbg(lvl_info, "leave, return '1', priv->no_data_count='%d'", priv->no_data_count);
-    return 1;
+		}
+	} else {
+		priv->no_data_count++;
+	}
+	dbg(lvl_info, "leave, return '1', priv->no_data_count='%d'", priv->no_data_count);
+	return 1;
 }
 #endif
 
@@ -227,7 +227,7 @@ vehicle_file_open(struct vehicle_priv *priv)
 #ifndef _WIN32
 	struct termios tio;
 #else
-	#define O_NDELAY 0
+#define O_NDELAY 0
 #endif
 
 	name = priv->source + 5;
@@ -256,12 +256,12 @@ vehicle_file_open(struct vehicle_priv *priv)
 		priv->fd = fileno(priv->file);
 		priv->file_type = file_type_pipe;
 #endif //!_WIN32
-#if defined(HAVE_SOCKET) || defined(HAVE_WINSOCK) 
+#if defined(HAVE_SOCKET) || defined(HAVE_WINSOCK)
 	} else if (!strncmp(priv->source,"socket:", 7)) {
-		#ifdef _WIN32
+#ifdef _WIN32
 		WSADATA wsi;
 		WSAStartup(0x00020002,&wsi);
-		#endif
+#endif
 		char *p,*s=g_strdup(priv->source+7);
 		struct sockaddr_in sin;
 		p=strchr(s,':');
@@ -291,7 +291,7 @@ vehicle_file_open(struct vehicle_priv *priv)
 			p++;
 			int write_result;
 			write_result = write(priv->fd, p, strlen(p));
-			if (write_result == -1){
+			if (write_result == -1) {
 				dbg(lvl_warning, "write failed.");
 			}
 		}
@@ -304,24 +304,23 @@ vehicle_file_open(struct vehicle_priv *priv)
 		char* strport = strchr(raw_setting_str, ':' );
 		char* strsettings = strchr(raw_setting_str, ' ' );
 
-		if ( strport && strsettings )
-		{
-		    strport++;
-		    *strsettings = '\0';
-		    strsettings++;
+		if ( strport && strsettings ) {
+			strport++;
+			*strsettings = '\0';
+			strsettings++;
 
-		    priv->fd=serial_io_init( strport, strsettings );
+			priv->fd=serial_io_init( strport, strsettings );
 		}
 		g_free( raw_setting_str );
 		priv->file_type = file_type_serial;
 		// Add the callback
 		dbg(lvl_info, "Add the callback ...", priv->source);
-			priv->timeout_callback=callback_new_1(callback_cast(vehicle_win32_serial_track), priv);
+		priv->timeout_callback=callback_new_1(callback_cast(vehicle_win32_serial_track), priv);
 #else
 		//TODO - add linux serial
 #endif //!_WIN32
-    }
-    return(priv->fd != -1);
+	}
+	return(priv->fd != -1);
 }
 
 /**
@@ -332,31 +331,28 @@ vehicle_file_open(struct vehicle_priv *priv)
 static void
 vehicle_file_close(struct vehicle_priv *priv)
 {
-    dbg(lvl_debug, "enter, priv->fd='%d'", priv->fd);
+	dbg(lvl_debug, "enter, priv->fd='%d'", priv->fd);
 	vehicle_file_disable_watch(priv);
 #ifdef _WIN32
-    if(priv->file_type == file_type_serial)
-    {
-        if (priv->timeout_callback) {
-   		callback_destroy(priv->timeout_callback);
-		priv->timeout_callback=NULL;	// dangling pointer! prevent double freeing.
-        }
-	serial_io_shutdown( priv->fd );
-    }
-    else
+	if(priv->file_type == file_type_serial) {
+		if (priv->timeout_callback) {
+			callback_destroy(priv->timeout_callback);
+			priv->timeout_callback=NULL;	// dangling pointer! prevent double freeing.
+		}
+		serial_io_shutdown( priv->fd );
+	} else
 #endif
-    {
-	if (priv->file) {
+	{
+		if (priv->file) {
 #ifndef _MSC_VER
-		pclose(priv->file);
+			pclose(priv->file);
 #endif /* _MSC_VER */
-    }
-	else if (priv->fd >= 0) {
-		close(priv->fd);
-    }
-	priv->file = NULL;
-	priv->fd = -1;
-    }
+		} else if (priv->fd >= 0) {
+			close(priv->fd);
+		}
+		priv->file = NULL;
+		priv->fd = -1;
+	}
 }
 
 /**
@@ -433,9 +429,9 @@ vehicle_file_parse(struct vehicle_priv *priv, char *buffer)
 		}
 		if (buffer[len - 1] == '\r' || buffer[len - 1] == '\n') {
 			buffer[--len] = '\0';
-            if (buffer[len - 1] == '\r')
-                buffer[--len] = '\0';
-        } else
+			if (buffer[len - 1] == '\r')
+				buffer[--len] = '\0';
+		} else
 			break;
 	}
 	if (buffer[0] != '$') {
@@ -463,7 +459,8 @@ vehicle_file_parse(struct vehicle_priv *priv, char *buffer)
 		g_free(priv->nmea_data_buf);
 		priv->nmea_data_buf=nmea_data_buf;
 	} else {
-		dbg(lvl_error, "nmea buffer overflow (len %zu), discarding '%s'", priv->nmea_data_buf?strlen(priv->nmea_data_buf):-1,buffer);
+		dbg(lvl_error, "nmea buffer overflow (len %zu), discarding '%s'", priv->nmea_data_buf?strlen(priv->nmea_data_buf):-1,
+		    buffer);
 	}
 	i = 0;
 	p = buffer;
@@ -569,9 +566,9 @@ vehicle_file_parse(struct vehicle_priv *priv, char *buffer)
 			priv->speed = g_ascii_strtod( item[7], NULL );
 			priv->speed *= 1.852;
 			sscanf(item[9], "%02d%02d%02d",
-				&priv->fixday,
-				&priv->fixmonth,
-				&priv->fixyear);
+			       &priv->fixday,
+			       &priv->fixmonth,
+			       &priv->fixyear);
 			priv->fixyear += 2000;
 
 			lat = g_ascii_strtod(item[3], NULL);
@@ -609,19 +606,19 @@ vehicle_file_parse(struct vehicle_priv *priv, char *buffer)
 		}
 	}
 	if (!strncmp(buffer, "$GPGSV", 6) && i >= 4) {
-	/*
-		0 GSV	   Satellites in view
-		1 2 	   Number of sentences for full data
-		2 1 	   sentence 1 of 2
-		3 08	   Number of satellites in view
+		/*
+			0 GSV	   Satellites in view
+			1 2 	   Number of sentences for full data
+			2 1 	   sentence 1 of 2
+			3 08	   Number of satellites in view
 
-		4 01	   Satellite PRN number
-		5 40	   Elevation, degrees
-		6 083	   Azimuth, degrees
-		7 46	   SNR - higher is better
-			   for up to 4 satellites per sentence
-		*75	   the checksum data, always begins with *
-	*/
+			4 01	   Satellite PRN number
+			5 40	   Elevation, degrees
+			6 083	   Azimuth, degrees
+			7 46	   SNR - higher is better
+				   for up to 4 satellites per sentence
+			*75	   the checksum data, always begins with *
+		*/
 		if (item[3]) {
 			sscanf(item[3], "%d", &priv->sats_visible);
 		}
@@ -646,14 +643,14 @@ vehicle_file_parse(struct vehicle_priv *priv, char *buffer)
 		}
 	}
 	if (!strncmp(&buffer[3], "ZDA", 3)) {
-	/*
-		0        1        2  3  4    5  6
-		$GPZDA,hhmmss.ss,dd,mm,yyyy,xx,yy*CC
-			hhmmss    HrMinSec(UTC)
-			dd,mm,yyy Day,Month,Year
-			xx        local zone hours -13..13
-			yy        local zone minutes 0..59
-	*/
+		/*
+			0        1        2  3  4    5  6
+			$GPZDA,hhmmss.ss,dd,mm,yyyy,xx,yy*CC
+				hhmmss    HrMinSec(UTC)
+				dd,mm,yyy Day,Month,Year
+				xx        local zone hours -13..13
+				yy        local zone minutes 0..59
+		*/
 		if (item[1] && item[2] && item[3] && item[4]) {
 			strncpy(priv->fixtime, item[1], strlen(priv->fixtime));
 			priv->fixday = atoi(item[2]);
@@ -662,14 +659,14 @@ vehicle_file_parse(struct vehicle_priv *priv, char *buffer)
 		}
 	}
 	if (!strncmp(buffer, "$IISMD", 6)) {
-	/*
-		0      1   2     3      4
-		$IISMD,dir,press,height,temp*CC"
-			dir 	  Direction (0-359)
-			press	  Pressure (hpa, i.e. 1032)
-			height    Barometric height above ground (meter)
-			temp      Temperature (Degree Celsius)
-	*/
+		/*
+			0      1   2     3      4
+			$IISMD,dir,press,height,temp*CC"
+				dir 	  Direction (0-359)
+				press	  Pressure (hpa, i.e. 1032)
+				height    Barometric height above ground (meter)
+				temp      Temperature (Degree Celsius)
+		*/
 		if (item[1]) {
 			priv->magnetic_direction = g_ascii_strtod( item[1], NULL );
 			dbg(lvl_debug,"magnetic %d", priv->magnetic_direction);
@@ -688,7 +685,7 @@ vehicle_file_io(struct vehicle_priv *priv)
 {
 	int size, rc = 0;
 	char *str, *tok;
-    dbg(lvl_debug, "vehicle_file_io : enter");
+	dbg(lvl_debug, "vehicle_file_io : enter");
 
 	if (priv->process_statefile) {
 		unsigned char *data;
@@ -759,18 +756,17 @@ vehicle_file_enable_watch(struct vehicle_priv *priv)
 	dbg(lvl_debug, "enter");
 #ifdef _WIN32
 	// add an event : don't use glib timers and g_timeout_add
-    if (priv->file_type == file_type_serial)
-    {
-	if (priv->timeout_callback != NULL)
-            priv->timeout = event_add_timeout(500, 1, priv->timeout_callback);
-        else
-            dbg(lvl_warning, "error : watch not enabled : priv->timeout_callback is null"); }
-    else
+	if (priv->file_type == file_type_serial) {
+		if (priv->timeout_callback != NULL)
+			priv->timeout = event_add_timeout(500, 1, priv->timeout_callback);
+		else
+			dbg(lvl_warning, "error : watch not enabled : priv->timeout_callback is null");
+	} else
 #endif
-    {
-	if (! priv->watch)
-		priv->watch = event_add_watch(priv->fd, event_watch_cond_read, priv->cb);
-    }
+	{
+		if (! priv->watch)
+			priv->watch = event_add_watch(priv->fd, event_watch_cond_read, priv->cb);
+	}
 }
 
 /**
@@ -783,20 +779,18 @@ vehicle_file_disable_watch(struct vehicle_priv *priv)
 {
 	dbg(lvl_debug, "vehicle_file_disable_watch : enter");
 #ifdef _WIN32
-    if(priv->file_type == file_type_serial)
-    {
-    if (priv->timeout) {
-		event_remove_timeout(priv->timeout);
-		priv->timeout=NULL;		// dangling pointer! prevent double freeing.
-        }
-    }
-    else
+	if(priv->file_type == file_type_serial) {
+		if (priv->timeout) {
+			event_remove_timeout(priv->timeout);
+			priv->timeout=NULL;		// dangling pointer! prevent double freeing.
+		}
+	} else
 #endif //!_WIN32
-    {
-	if (priv->watch)
-		event_remove_watch(priv->watch);
-	priv->watch = NULL;
-    }
+	{
+		if (priv->watch)
+			event_remove_watch(priv->watch);
+		priv->watch = NULL;
+	}
 }
 
 /**
@@ -810,9 +804,9 @@ static void
 vehicle_file_destroy(struct vehicle_priv *priv)
 {
 	if (priv->statefile && priv->nmea_data) {
-		struct attr readwrite={attr_readwrite};
-		struct attr create={attr_create};
-		struct attr *attrs[]={&readwrite,&create,NULL};
+		struct attr readwrite= {attr_readwrite};
+		struct attr create= {attr_create};
+		struct attr *attrs[]= {&readwrite,&create,NULL};
 		struct file *f;
 		readwrite.u.num=1;
 		create.u.num=1;
@@ -821,7 +815,7 @@ vehicle_file_destroy(struct vehicle_priv *priv)
 			file_data_write(f, 0, strlen(priv->nmea_data), priv->nmea_data);
 			file_fsync(f);
 			file_destroy(f);
-		}	
+		}
 	}
 	vehicle_file_close(priv);
 	callback_destroy(priv->cb);
@@ -846,7 +840,7 @@ vehicle_file_destroy(struct vehicle_priv *priv)
 */
 static int
 vehicle_file_position_attr_get(struct vehicle_priv *priv,
-			       enum attr_type type, struct attr *attr)
+                               enum attr_type type, struct attr *attr)
 {
 	switch (type) {
 	case attr_position_fix_type:
@@ -888,8 +882,8 @@ vehicle_file_position_attr_get(struct vehicle_priv *priv,
 		if (!priv->fixyear || !priv->fixtime[0])
 			return 0;
 		sprintf(priv->fixiso8601, "%04d-%02d-%02dT%.2s:%.2s:%sZ",
-			priv->fixyear, priv->fixmonth, priv->fixday,
-						priv->fixtime, (priv->fixtime+2), (priv->fixtime+4));
+		        priv->fixyear, priv->fixmonth, priv->fixday,
+		        priv->fixtime, (priv->fixtime+2), (priv->fixtime+4));
 		attr->u.str=priv->fixiso8601;
 		break;
 	case attr_position_sat_item:
@@ -925,7 +919,7 @@ vehicle_file_position_attr_get(struct vehicle_priv *priv,
 static int
 vehicle_file_sat_attr_get(void *priv_data, enum attr_type type, struct attr *attr)
 {
-    struct gps_sat *sat;
+	struct gps_sat *sat;
 	struct vehicle_priv *priv=priv_data;
 	if (priv->sat_item.id_lo < 1)
 		return 0;
@@ -977,8 +971,8 @@ static struct vehicle_methods vehicle_file_methods = {
 */
 static struct vehicle_priv *
 vehicle_file_new_file(struct vehicle_methods
-		      *meth, struct callback_list
-		      *cbl, struct attr **attrs)
+                      *meth, struct callback_list
+                      *cbl, struct attr **attrs)
 {
 	struct vehicle_priv *ret;
 	struct attr *source;
@@ -991,9 +985,9 @@ vehicle_file_new_file(struct vehicle_methods
 	dbg(lvl_debug, "enter");
 
 	source = attr_search(attrs, NULL, attr_source);
-	if(source == NULL){
-		 dbg(lvl_error,"Missing source attribute");
-		 return NULL;
+	if(source == NULL) {
+		dbg(lvl_error,"Missing source attribute");
+		return NULL;
 	}
 	ret = g_new0(struct vehicle_priv, 1);   // allocate and initialize to 0
 	ret->fd = -1;
@@ -1005,7 +999,7 @@ vehicle_file_new_file(struct vehicle_methods
 	ret->fixtime[0] = '\0';
 	ret->ev_fix_timeout = NULL;
 	state_file=attr_search(attrs, NULL, attr_state_file);
-	if (state_file) 
+	if (state_file)
 		ret->statefile=g_strdup(state_file->u.str);
 	time = attr_search(attrs, NULL, attr_time);
 	if (time)
@@ -1067,7 +1061,7 @@ vehicle_file_new_file(struct vehicle_methods
 
 	dbg(lvl_debug, "vehicle_file_new_file:open");
 	if (!vehicle_file_open(ret)) {
-        dbg(lvl_error, "Failed to open '%s'", ret->source);
+		dbg(lvl_error, "Failed to open '%s'", ret->source);
 	}
 
 	vehicle_file_enable_watch(ret);

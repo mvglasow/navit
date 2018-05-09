@@ -155,14 +155,14 @@ struct div_flags_map {
 };
 
 static enum flags
-div_flag(const char **names, const char **values, char *name)
-{
+div_flag(const char **names, const char **values, char *name) {
 	int i;
 	enum flags ret=0;
 	const char *value=find_attr(names, values, name);
 	if (!value)
 		return ret;
-	for (i = 0 ; i < sizeof(div_flags_map)/sizeof(struct div_flags_map); i++) {
+	for (i = 0 ; i < sizeof(div_flags_map)/sizeof(struct div_flags_map); i++)
+	{
 		if (!strcmp(div_flags_map[i].attr,name) && !strcmp(div_flags_map[i].val,value))
 			ret|=div_flags_map[i].flags;
 	}
@@ -170,8 +170,7 @@ div_flag(const char **names, const char **values, char *name)
 }
 
 static enum flags
-div_flags(const char **names, const char **values)
-{
+div_flags(const char **names, const char **values) {
 	enum flags flags;
 	flags = div_flag(names, values, "gravity");
 	flags |= div_flag(names, values, "orientation");
@@ -209,7 +208,8 @@ html_image(struct gui_priv *this, const char **names, const char **values)
 }
 
 static void
-gui_internal_html_start(xml_context *dummy, const char *tag_name, const char **names, const char **values, void *data, GError **error)
+gui_internal_html_start(xml_context *dummy, const char *tag_name, const char **names, const char **values, void *data,
+                        GError **error)
 {
 	struct gui_priv *this=data;
 	int i;
@@ -278,7 +278,7 @@ gui_internal_html_start(xml_context *dummy, const char *tag_name, const char **n
 				const char *value=find_attr(names, values, "value");
 				html->w=gui_internal_label_new(this, value);
 				html->w->background=this->background;
-			        html->w->flags |= div_flags(names, values);
+				html->w->flags |= div_flags(names, values);
 				html->w->state|=STATE_EDITABLE;
 				if (!this->editable) {
 					this->editable=html->w;
@@ -386,7 +386,7 @@ gui_internal_set_refresh_callback(struct gui_priv *this, char *cond)
 		if (type == attr_none) {
 			dbg(lvl_error,"can't get type of '%s'",cond);
 			return;
-		}	
+		}
 		func=object_func_lookup(menu_data->refresh_callback_obj.type);
 		if (!func)
 			dbg(lvl_error,"'%s' has no functions",cond);
@@ -395,7 +395,8 @@ gui_internal_set_refresh_callback(struct gui_priv *this, char *cond)
 		if (!func || !func->add_attr)
 			return;
 		menu_data->refresh_callback.type=attr_callback;
-		menu_data->refresh_callback.u.callback=callback_new_attr_2(callback_cast(gui_internal_refresh_callback_called),type,this,menu_data);
+		menu_data->refresh_callback.u.callback=callback_new_attr_2(callback_cast(gui_internal_refresh_callback_called),type,
+		                                       this,menu_data);
 		func->add_attr(menu_data->refresh_callback_obj.u.data, &menu_data->refresh_callback);
 	}
 }
@@ -428,7 +429,8 @@ gui_internal_html_text(xml_context *dummy, const char *text, gsize len, void *da
 	case html_tag_a:
 		if (html->name && len) {
 			if (html->class && !strcasecmp(html->class,"clist"))
-				this->html_container=gui_internal_box_new(this, gravity_left_top|orientation_vertical|flags_expand|flags_fill /* |flags_scrolly */);
+				this->html_container=gui_internal_box_new(this,
+				                     gravity_left_top|orientation_vertical|flags_expand|flags_fill /* |flags_scrolly */);
 			else
 				this->html_container=gui_internal_box_new(this, gravity_center|orientation_horizontal_vertical|flags_expand|flags_fill);
 			gui_internal_widget_append(gui_internal_menu(this, _(text_stripped)), this->html_container);
@@ -451,13 +453,15 @@ gui_internal_html_text(xml_context *dummy, const char *text, gsize len, void *da
 			else
 				w=gui_internal_box_new(this, gravity_center|orientation_vertical);
 			gui_internal_widget_append(w, html->w);
-			gui_internal_widget_append(w, gui_internal_text_new(this, _(text_stripped), gravity_left_top|orientation_vertical|flags_fill));
+			gui_internal_widget_append(w, gui_internal_text_new(this, _(text_stripped),
+			                           gravity_left_top|orientation_vertical|flags_fill));
 			html->w=w;
 		}
 		break;
 	case html_tag_div:
 		if (len) {
-			gui_internal_widget_append(html->w, gui_internal_text_font_new(this, _(text_stripped), html->font_size, gravity_center|orientation_vertical));
+			gui_internal_widget_append(html->w, gui_internal_text_font_new(this, _(text_stripped), html->font_size,
+			                           gravity_center|orientation_vertical));
 		}
 		break;
 	case html_tag_script:
@@ -494,9 +498,11 @@ gui_internal_html_menu(struct gui_priv *this, const char *document, char *anchor
 	if (this->keyboard_required) {
 		this->html_container->flags=gravity_center|orientation_vertical|flags_expand|flags_fill;
 		if (this->keyboard)
-			gui_internal_widget_append(this->html_container, gui_internal_keyboard(this, VKBD_FLAG_2 | gui_internal_keyboard_init_mode(getenv("LANG"))));
+			gui_internal_widget_append(this->html_container, gui_internal_keyboard(this,
+			                           VKBD_FLAG_2 | gui_internal_keyboard_init_mode(getenv("LANG"))));
 		else
-			gui_internal_keyboard_show_native(this, this->html_container, VKBD_FLAG_2 | gui_internal_keyboard_init_mode(getenv("LANG")), getenv("LANG"));
+			gui_internal_keyboard_show_native(this, this->html_container,
+			                                  VKBD_FLAG_2 | gui_internal_keyboard_init_mode(getenv("LANG")), getenv("LANG"));
 	}
 	gui_internal_menu_render(this);
 	graphics_draw_mode(this->gra, draw_mode_end);

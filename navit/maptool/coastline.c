@@ -19,8 +19,7 @@
 #include "maptool.h"
 #include "debug.h"
 
-struct coastline_tile
-{
+struct coastline_tile {
 	osmid wayid;
 	int edges;
 };
@@ -28,7 +27,7 @@ struct coastline_tile
 static int distance_from_ll(struct coord *c, struct rect *bbox)
 {
 	int dist=0;
-	if (c->x == bbox->l.x) 
+	if (c->x == bbox->l.x)
 		return dist+c->y-bbox->l.y;
 	dist+=bbox->h.y-bbox->l.y;
 	if (c->y == bbox->h.y)
@@ -171,7 +170,7 @@ tile_collector_process_tile(char *tile, int *tile_data, struct coastline_tile_da
 	sorted_segments=geom_poly_segments_sort(curr, geom_poly_segment_type_way_right_side);
 	g_list_foreach(curr,(GFunc)geom_poly_segment_destroy,NULL);
 	g_list_free(curr);
-	
+
 	flags=0;
 	curr=sorted_segments;
 	while (curr) {
@@ -306,21 +305,21 @@ tile_collector_add_siblings(char *tile, struct coastline_tile *ct, struct coastl
 	int debug=0;
 	if (debug)
 		fprintf(stderr,"%s (%c) has %d edges active\n",tile,t,edges);
-	if (t == 'a' && (edges & 1)) 
+	if (t == 'a' && (edges & 1))
 		ocean_tile(data->tile_edges, tile, 'b', ct->wayid, out);
-	if (t == 'a' && (edges & 8)) 
+	if (t == 'a' && (edges & 8))
 		ocean_tile(data->tile_edges, tile, 'c', ct->wayid, out);
-	if (t == 'b' && (edges & 4)) 
+	if (t == 'b' && (edges & 4))
 		ocean_tile(data->tile_edges, tile, 'a', ct->wayid, out);
-	if (t == 'b' && (edges & 8)) 
+	if (t == 'b' && (edges & 8))
 		ocean_tile(data->tile_edges, tile, 'd', ct->wayid, out);
-	if (t == 'c' && (edges & 1)) 
+	if (t == 'c' && (edges & 1))
 		ocean_tile(data->tile_edges, tile, 'd', ct->wayid, out);
-	if (t == 'c' && (edges & 2)) 
+	if (t == 'c' && (edges & 2))
 		ocean_tile(data->tile_edges, tile, 'a', ct->wayid, out);
-	if (t == 'd' && (edges & 4)) 
+	if (t == 'd' && (edges & 4))
 		ocean_tile(data->tile_edges, tile, 'c', ct->wayid, out);
-	if (t == 'd' && (edges & 2)) 
+	if (t == 'd' && (edges & 2))
 		ocean_tile(data->tile_edges, tile, 'b', ct->wayid, out);
 }
 
@@ -385,7 +384,7 @@ tile_collector_add_siblings2(char *tile, struct coastline_tile *ct, struct coast
 	char t=tile[len-1];
 	strcpy(tile2, tile);
 	tile2[len-1]='\0';
-	if (debug) 
+	if (debug)
 		fprintf(stderr,"len of %s %d vs %d\n",tile,len,data->level);
 
 
@@ -431,12 +430,13 @@ foreach_tile_func(gpointer key, gpointer value, gpointer user_data)
 }
 
 static void
-foreach_tile(struct coastline_tile_data *data, void(*func)(char *, struct coastline_tile *, struct coastline_tile_data *))
+foreach_tile(struct coastline_tile_data *data, void(*func)(char *, struct coastline_tile *,
+                struct coastline_tile_data *))
 {
 	GList *k,*v;
 	data->k=NULL;
 	data->v=NULL;
-	
+
 	g_hash_table_foreach(data->tile_edges, foreach_tile_func, data);
 	k=data->k;
 	v=data->v;

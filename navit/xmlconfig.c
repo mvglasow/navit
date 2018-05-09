@@ -149,7 +149,8 @@ static const char * find_attribute(struct xmlstate *state, const char *attribute
 		attribute_value++;
 	}
 	if (required)
-		g_set_error(state->error,G_MARKUP_ERROR,G_MARKUP_ERROR_INVALID_CONTENT, "element '%s' is missing attribute '%s'", state->element, attribute);
+		g_set_error(state->error,G_MARKUP_ERROR,G_MARKUP_ERROR_INVALID_CONTENT, "element '%s' is missing attribute '%s'",
+		            state->element, attribute);
 	return NULL;
 }
 
@@ -308,22 +309,22 @@ struct element_func {
 };
 struct element_func *elements;
 
-static char *attr_fixme_itemgra[]={
+static char *attr_fixme_itemgra[]= {
 	"type","item_types",
 	NULL,NULL,
 };
 
-static char *attr_fixme_text[]={
+static char *attr_fixme_text[]= {
 	"label_size","text_size",
 	NULL,NULL,
 };
 
-static char *attr_fixme_circle[]={
+static char *attr_fixme_circle[]= {
 	"label_size","text_size",
 	NULL,NULL,
 };
 
-static struct attr_fixme attr_fixmes[]={
+static struct attr_fixme attr_fixmes[]= {
 	{"item",attr_fixme_itemgra},
 	{"itemgra",attr_fixme_itemgra},
 	{"text",attr_fixme_text},
@@ -333,13 +334,14 @@ static struct attr_fixme attr_fixmes[]={
 };
 
 
-static char *element_fixmes[]={
+static char *element_fixmes[]= {
 	"item","itemgra",
 	"label","text",
 	NULL,NULL,
 };
 
-static void initStatic(void) {
+static void initStatic(void)
+{
 	elements=g_new0(struct element_func,44); //43 is a number of elements + ending NULL element
 
 	elements[0].name="config";
@@ -571,11 +573,11 @@ static void initStatic(void) {
 
 static void
 start_element(xml_context *context,
-		const gchar         *element_name,
-		const gchar        **attribute_names,
-		const gchar        **attribute_values,
-		gpointer             user_data,
-		xmlerror             **error)
+              const gchar         *element_name,
+              const gchar        **attribute_names,
+              const gchar        **attribute_values,
+              gpointer             user_data,
+              xmlerror             **error)
 {
 	struct xmlstate *new=NULL, **parent = user_data;
 	struct element_func *e=elements,*func=NULL;
@@ -621,21 +623,22 @@ start_element(xml_context *context,
 			possible_parents=s;
 			sep=",";
 			if ((parent_name && e->parent && !g_ascii_strcasecmp(parent_name, e->parent)) ||
-			    (!parent_name && !e->parent))
+			                (!parent_name && !e->parent))
 				func=e;
 		}
 		e++;
 	}
 	if (! found) {
 		g_set_error(error,G_MARKUP_ERROR,G_MARKUP_ERROR_UNKNOWN_ELEMENT,
-				"Unknown element '%s'", element_name);
+		            "Unknown element '%s'", element_name);
 		g_free(possible_parents);
 		return;
 	}
 	if (! func) {
 		g_set_error(error,G_MARKUP_ERROR,G_MARKUP_ERROR_INVALID_CONTENT,
-				"Element '%s' within unexpected context '%s'. Expected '%s'%s",
-				element_name, parent_name, possible_parents, ! strcmp(possible_parents, "config") ? "\nPlease add <config> </config> tags at the beginning/end of your navit.xml": "");
+		            "Element '%s' within unexpected context '%s'. Expected '%s'%s",
+		            element_name, parent_name, possible_parents, ! strcmp(possible_parents,
+		                            "config") ? "\nPlease add <config> </config> tags at the beginning/end of your navit.xml": "");
 		g_free(possible_parents);
 		return;
 	}
@@ -689,9 +692,9 @@ start_element(xml_context *context,
 /* Called for close tags </foo> */
 static void
 end_element (xml_context *context,
-		const gchar         *element_name,
-		gpointer             user_data,
-		xmlerror             **error)
+             const gchar         *element_name,
+             gpointer             user_data,
+             xmlerror             **error)
 {
 	struct xmlstate *curr, **state = user_data;
 
@@ -701,16 +704,18 @@ end_element (xml_context *context,
 	curr=*state;
 	if (curr->object_func && curr->object_func->init)
 		curr->object_func->init(curr->element_attr.u.data);
-	if (curr->object_func && curr->object_func->unref) 
+	if (curr->object_func && curr->object_func->unref)
 		curr->object_func->unref(curr->element_attr.u.data);
 	*state=curr->parent;
 	g_free(curr);
 }
 
-static gboolean parse_file(struct xmldocument *document, xmlerror **error);
+static gboolean
+parse_file(struct xmldocument *document, xmlerror **error);
 
 static void
-xinclude(xml_context *context, const gchar **attribute_names, const gchar **attribute_values, struct xmldocument *doc_old, xmlerror **error)
+xinclude(xml_context *context, const gchar **attribute_names, const gchar **attribute_values,
+         struct xmldocument *doc_old, xmlerror **error)
 {
 	struct xmldocument doc_new;
 	struct file_wordexp *we;
@@ -755,9 +760,9 @@ xinclude(xml_context *context, const gchar **attribute_names, const gchar **attr
 		dbg(lvl_debug,"no href, using '%s'", doc_old->href);
 		doc_new.href=doc_old->href;
 		if (file_exists(doc_new.href)) {
-		    parse_file(&doc_new, error);
+			parse_file(&doc_new, error);
 		} else {
-		    dbg(lvl_error,"Unable to include %s",doc_new.href);
+			dbg(lvl_error,"Unable to include %s",doc_new.href);
 		}
 	} else {
 		dbg(lvl_debug,"expanding '%s'", href);
@@ -910,11 +915,11 @@ xpointer_match(const char *xpointer, struct xistate *first)
 
 static void
 xi_start_element(xml_context *context,
-		const gchar         *element_name,
-		const gchar        **attribute_names,
-		const gchar        **attribute_values,
-		gpointer             user_data,
-		xmlerror             **error)
+                 const gchar         *element_name,
+                 const gchar        **attribute_names,
+                 const gchar        **attribute_values,
+                 gpointer             user_data,
+                 xmlerror             **error)
 {
 	struct xmldocument *doc=user_data;
 	struct xistate *xistate;
@@ -959,9 +964,9 @@ xi_start_element(xml_context *context,
 
 static void
 xi_end_element (xml_context *context,
-		const gchar         *element_name,
-		gpointer             user_data,
-		xmlerror             **error)
+                const gchar         *element_name,
+                gpointer             user_data,
+                xmlerror             **error)
 {
 	struct xmldocument *doc=user_data;
 	struct xistate *xistate=doc->last;
@@ -992,10 +997,10 @@ xi_end_element (xml_context *context,
 /* text is not nul-terminated */
 static void
 xi_text (xml_context *context,
-		const gchar            *text,
-		gsize                   text_len,
-		gpointer                user_data,
-		xmlerror               **error)
+         const gchar            *text,
+         gsize                   text_len,
+         gpointer                user_data,
+         xmlerror               **error)
 {
 	struct xmldocument *doc=user_data;
 	int i;
@@ -1021,9 +1026,10 @@ xi_text (xml_context *context,
 
 #if USE_EZXML
 static void
-parse_node_text(ezxml_t node, void *data, void (*start)(void *, const char *, const char **, const char **, void *, void *),
-					  void (*end)(void *, const char *, void *, void *),
-					  void (*text)(void *, const char *, int, void *, void *))
+parse_node_text(ezxml_t node, void *data, void (*start)(void *, const char *, const char **, const char **, void *,
+                void *),
+                void (*end)(void *, const char *, void *, void *),
+                void (*text)(void *, const char *, int, void *, void *))
 {
 	while (node) {
 		if (start)
@@ -1041,21 +1047,22 @@ parse_node_text(ezxml_t node, void *data, void (*start)(void *, const char *, co
 
 void
 xml_parse_text(const char *document, void *data,
-	void (*start)(xml_context *, const char *, const char **, const char **, void *, GError **),
-	void (*end)(xml_context *, const char *, void *, GError **),
-	void (*text)(xml_context *, const char *, gsize, void *, GError **)) {
+               void (*start)(xml_context *, const char *, const char **, const char **, void *, GError **),
+               void (*end)(xml_context *, const char *, void *, GError **),
+               void (*text)(xml_context *, const char *, gsize, void *, GError **))
+{
 #if !USE_EZXML
 	GMarkupParser parser = { start, end, text, NULL, NULL};
 	xml_context *context;
 	gboolean result;
 
 	context = g_markup_parse_context_new (&parser, 0, data, NULL);
-	if (!document){
+	if (!document) {
 		dbg(lvl_error, "FATAL: No XML data supplied (looks like incorrect configuration for internal GUI).");
 		exit(1);
 	}
 	result = g_markup_parse_context_parse (context, document, strlen(document), NULL);
-	if (!result){
+	if (!result) {
 		dbg(lvl_error, "FATAL: Cannot parse data as XML: '%s'", document);
 		exit(1);
 	}
@@ -1113,7 +1120,7 @@ parse_file(struct xmldocument *document, xmlerror **error)
 	xmlfile=getenv("XMLFILE");
 	newxmlfile=g_strdup(document->href);
 	newxmldir=g_strdup(document->href);
-	if ((sep=strrchr(newxmldir,'/'))) 
+	if ((sep=strrchr(newxmldir,'/')))
 		*sep='\0';
 	else {
 		g_free(newxmldir);
@@ -1134,7 +1141,7 @@ parse_file(struct xmldocument *document, xmlerror **error)
 	g_markup_parse_context_free (context);
 	g_free (contents);
 	if (xmldir)
-		setenv("XMLDIR",xmldir,1);	
+		setenv("XMLDIR",xmldir,1);
 	else
 		unsetenv("XMLDIR");
 	if (xmlfile)
@@ -1249,7 +1256,7 @@ navit_object_ref(struct navit_object *obj)
 {
 	obj->refcount++;
 	dbg(lvl_debug,"refcount %s %p %d",attr_to_name(obj->func->type),obj,obj->refcount);
-        return obj;
+	return obj;
 }
 
 void
@@ -1332,7 +1339,7 @@ navit_object_add_attr(struct navit_object *obj, struct attr *attr)
 	dbg(lvl_debug, "enter, obj=%p, attr=%p (%s)", obj, attr, attr_to_name(attr->type));
 	if (attr->type == attr_callback) {
 		struct callback_list *cbl;
-		if (obj->attrs && obj->attrs[0] && obj->attrs[0]->type == attr_callback_list) 
+		if (obj->attrs && obj->attrs[0] && obj->attrs[0]->type == attr_callback_list)
 			cbl=obj->attrs[0]->u.callback_list;
 		else {
 			struct attr attr;

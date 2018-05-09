@@ -33,7 +33,7 @@ graphics_opengl_x11_destroy(struct graphics_opengl_window_system *x11)
 	if (x11->display) {
 		if (x11->window)
 			XDestroyWindow(x11->display, x11->window);
-		if (x11->colormap) 
+		if (x11->colormap)
 			XFreeColormap(x11->display, x11->colormap);
 		XCloseDisplay(x11->display);
 	}
@@ -53,7 +53,8 @@ graphics_opengl_get_window(struct graphics_opengl_window_system *x11)
 }
 
 static void
-graphics_opengl_set_callbacks(struct graphics_opengl_window_system *x11, void *data, void *resize, void *button, void *motion, void *keypress)
+graphics_opengl_set_callbacks(struct graphics_opengl_window_system *x11, void *data, void *resize, void *button,
+                              void *motion, void *keypress)
 {
 	x11->data=data;
 	x11->resize=resize;
@@ -112,9 +113,10 @@ graphics_opengl_x11_watch(struct graphics_opengl_window_system *x11)
 		}
 	}
 }
-	
+
 struct graphics_opengl_window_system *
-graphics_opengl_x11_new(void *displayname, int w, int h, int depth, struct graphics_opengl_window_system_methods **methods)
+graphics_opengl_x11_new(void *displayname, int w, int h, int depth,
+                        struct graphics_opengl_window_system_methods **methods)
 {
 	struct graphics_opengl_window_system *ret=g_new0(struct graphics_opengl_window_system, 1);
 	XSetWindowAttributes attributes;
@@ -140,14 +142,16 @@ graphics_opengl_x11_new(void *displayname, int w, int h, int depth, struct graph
 	valuemask = /* CWBackPixel | */ CWBorderPixel | CWEventMask | CWColormap ; // | CWBackingStore;
 	attributes.colormap = ret->colormap;
 	attributes.border_pixel = 0;
-	attributes.event_mask = StructureNotifyMask | ExposureMask | ButtonPressMask | ButtonMotionMask | ButtonReleaseMask | KeyPressMask | KeyReleaseMask;
+	attributes.event_mask = StructureNotifyMask | ExposureMask | ButtonPressMask | ButtonMotionMask | ButtonReleaseMask |
+	                        KeyPressMask | KeyReleaseMask;
 	attributes.backing_store = Always;
-	ret->window=XCreateWindow(ret->display, RootWindow(ret->display, ret->screen), 0, 0, w, h, 0, ret->visual.depth, InputOutput, ret->visual.visual, valuemask, &attributes);
+	ret->window=XCreateWindow(ret->display, RootWindow(ret->display, ret->screen), 0, 0, w, h, 0, ret->visual.depth,
+	                          InputOutput, ret->visual.visual, valuemask, &attributes);
 	XMapWindow(ret->display, ret->window);
 	XFlush(ret->display);
 	graphics_opengl_x11_watch(ret);
 	return ret;
 error:
 	graphics_opengl_x11_destroy(ret);
-	return NULL;	
+	return NULL;
 }

@@ -86,14 +86,12 @@ void Free(void *ptr)
 // --------------------------------------------------------------------
 
 
-enum speech_messages
-{
+enum speech_messages {
 	msg_say = WM_USER,
 	msg_exit
 };
 
-enum speech_state
-{
+enum speech_state {
 	state_available,
 	state_speaking_phase_1,
 	state_speaking_phase_2,
@@ -147,8 +145,7 @@ static int wave_out(struct speech_priv* sp_priv)
 
 	isDone = WavegenFill(0);
 
-	if ( out_ptr < out_end )
-	{
+	if ( out_ptr < out_end ) {
 		memset ( out_ptr, 0, out_end - out_ptr );
 	}
 	waveOutWrite(sp_priv->h_wave_out, WaveHeader, sizeof(WAVEHDR));
@@ -162,14 +159,11 @@ static BOOL initialise(void)
 	int result;
 
 	WavegenInit(22050,0);   // 22050
-	if((result = LoadPhData()) != 1)
-	{
-		if(result == -1)
-		{
+	if((result = LoadPhData()) != 1) {
+		if(result == -1) {
 			dbg(lvl_error, "Failed to load espeak-data");
 			return FALSE;
-		}
-		else
+		} else
 			dbg(lvl_error, "Wrong version of espeak-data 0x%x (expects 0x%x) at %s",result,version_phdata,path_home);
 	}
 	LoadConfig();
@@ -184,18 +178,14 @@ static BOOL initialise(void)
 
 static void fill_buffer(struct speech_priv *this)
 {
-	while ( this->free_buffers && this->state != state_speaking_phase_3 )
-	{
-		if(Generate(phoneme_list,&n_phoneme_list,1)==0)
-		{
-			if (!SpeakNextClause(NULL,NULL,1))
-			{
+	while ( this->free_buffers && this->state != state_speaking_phase_3 ) {
+		if(Generate(phoneme_list,&n_phoneme_list,1)==0) {
+			if (!SpeakNextClause(NULL,NULL,1)) {
 				this->state = state_speaking_phase_2;
 			}
 		}
 
-		if ( wave_out(this)!= 0 && this->state == state_speaking_phase_2)
-		{
+		if ( wave_out(this)!= 0 && this->state == state_speaking_phase_2) {
 			this->state = state_speaking_phase_3;
 		}
 	}
@@ -216,57 +206,47 @@ static LRESULT CALLBACK speech_message_handler( HWND hwnd, UINT uMsg, WPARAM wPa
 {
 	dbg(lvl_debug, "message_handler called");
 
-	switch (uMsg)
-	{
-		case msg_say:
-		{
-			struct speech_priv* sp_priv = (struct speech_priv*)wParam;
-			sp_priv->phrases = g_list_append(sp_priv->phrases, (char*)lParam);
+	switch (uMsg) {
+	case msg_say: {
+		struct speech_priv* sp_priv = (struct speech_priv*)wParam;
+		sp_priv->phrases = g_list_append(sp_priv->phrases, (char*)lParam);
 
-			if ( sp_priv->state == state_available )
-			{
+		if ( sp_priv->state == state_available ) {
+			start_speaking(sp_priv);
+		}
+
+	}
+	break;
+	case MM_WOM_DONE: {
+		WAVEHDR *WaveHeader = (WAVEHDR *)lParam;
+		struct speech_priv* sp_priv;
+		dbg(lvl_info, "Wave buffer done");
+
+		sp_priv = (struct speech_priv*)WaveHeader->dwUser;
+		sp_priv->free_buffers = g_list_append(sp_priv->free_buffers, WaveHeader);
+
+		if ( sp_priv->state != state_speaking_phase_3) {
+			fill_buffer(sp_priv);
+		} else if ( g_list_length(sp_priv->free_buffers) == BUFFERS && sp_priv->state == state_speaking_phase_3 ) {
+			// remove the spoken phrase from the list
+			char *phrase = g_list_first(sp_priv->phrases)->data;
+			g_free( phrase );
+			sp_priv->phrases = g_list_remove(sp_priv->phrases, phrase);
+
+			if ( sp_priv->phrases ) {
 				start_speaking(sp_priv);
-			}
-
-		}
-		break;
-		case MM_WOM_DONE:
-		{
-			WAVEHDR *WaveHeader = (WAVEHDR *)lParam;
-			struct speech_priv* sp_priv;
-			dbg(lvl_info, "Wave buffer done");
-
-			sp_priv = (struct speech_priv*)WaveHeader->dwUser;
-			sp_priv->free_buffers = g_list_append(sp_priv->free_buffers, WaveHeader);
-
-			if ( sp_priv->state != state_speaking_phase_3)
-			{
-				fill_buffer(sp_priv);
-			}
-			else if ( g_list_length(sp_priv->free_buffers) == BUFFERS && sp_priv->state == state_speaking_phase_3 )
-			{
-				// remove the spoken phrase from the list
-				char *phrase = g_list_first(sp_priv->phrases)->data;
-				g_free( phrase );
-				sp_priv->phrases = g_list_remove(sp_priv->phrases, phrase);
-
-				if ( sp_priv->phrases )
-				{
-					start_speaking(sp_priv);
-				}
-				else
-				{
-					sp_priv->state = state_available;
-				}
+			} else {
+				sp_priv->state = state_available;
 			}
 		}
+	}
+	break;
+	case msg_exit:
+		ExitThread(0);
 		break;
-		case msg_exit:
-			ExitThread(0);
-			break;
 
-		default:
-			break;
+	default:
+		break;
 
 	}
 
@@ -278,19 +258,15 @@ static void speech_message_dispatcher( struct speech_priv * sp_priv)
 	BOOL bRet;
 	MSG msg;
 
-    while( (bRet = GetMessage( &msg, NULL, 0, 0 )) != 0)
-    {
-        if (bRet == -1)
-        {
-            dbg(lvl_error, "Error getting message from queue");
-            break;
-        }
-        else
-        {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-    }
+	while( (bRet = GetMessage( &msg, NULL, 0, 0 )) != 0) {
+		if (bRet == -1) {
+			dbg(lvl_error, "Error getting message from queue");
+			break;
+		} else {
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
+	}
 }
 
 static void create_buffers(struct speech_priv *sp_priv)
@@ -299,13 +275,12 @@ static void create_buffers(struct speech_priv *sp_priv)
 	char *buffer_head;
 
 
-    SYSTEM_INFO system_info;
-    GetSystemInfo (&system_info);
+	SYSTEM_INFO system_info;
+	GetSystemInfo (&system_info);
 
 	buffer_head = VirtualAlloc(0, system_info.dwPageSize * BUFFERS, MEM_RESERVE, PAGE_NOACCESS);
 
-	for (buffer_counter = 0; buffer_counter < BUFFERS; buffer_counter++)
-	{
+	for (buffer_counter = 0; buffer_counter < BUFFERS; buffer_counter++) {
 		WAVEHDR *WaveHeader = g_new0(WAVEHDR, 1);
 
 		WaveHeader->dwBufferLength = system_info.dwPageSize;
@@ -324,53 +299,50 @@ static DWORD startThread( LPVOID sp_priv)
 	struct speech_priv *this = (struct speech_priv *) sp_priv;
 	// Create message queue
 	TCHAR *g_szClassName  = TEXT("SpeechQueue");
-    WNDCLASS wc;
-    HWND hwnd;
+	WNDCLASS wc;
+	HWND hwnd;
 	HWND hWndParent;
 
 
-	memset(&wc, 0 , sizeof(WNDCLASS));
-    wc.lpfnWndProc	= speech_message_handler;
-    wc.hInstance	= GetModuleHandle(NULL);
-    wc.lpszClassName = g_szClassName;
+	memset(&wc, 0, sizeof(WNDCLASS));
+	wc.lpfnWndProc	= speech_message_handler;
+	wc.hInstance	= GetModuleHandle(NULL);
+	wc.lpszClassName = g_szClassName;
 
-    if (!RegisterClass(&wc))
-    {
-        dbg(lvl_error, "Window registration for message queue failed");
-        return 1;
-    }
+	if (!RegisterClass(&wc)) {
+		dbg(lvl_error, "Window registration for message queue failed");
+		return 1;
+	}
 
-    hWndParent = NULL;
+	hWndParent = NULL;
 #ifndef HAVE_API_WIN32_CE
-    hWndParent = HWND_MESSAGE;
+	hWndParent = HWND_MESSAGE;
 #endif
 
-    // create a message only window
-    hwnd = CreateWindow(
-				g_szClassName,
-				TEXT("Navit"),
-				0,
-				0,
-				0,
-				0,
-				0,
-				hWndParent,
-				NULL,
-				GetModuleHandle(NULL),
-				NULL);
+	// create a message only window
+	hwnd = CreateWindow(
+	               g_szClassName,
+	               TEXT("Navit"),
+	               0,
+	               0,
+	               0,
+	               0,
+	               0,
+	               hWndParent,
+	               NULL,
+	               GetModuleHandle(NULL),
+	               NULL);
 
-    if (hwnd == NULL)
-    {
-        dbg(lvl_error, "Window creation failed: %d",  GetLastError());
-        return 1;
-    }
+	if (hwnd == NULL) {
+		dbg(lvl_error, "Window creation failed: %d",  GetLastError());
+		return 1;
+	}
 
-    this->h_queue = hwnd;
+	this->h_queue = hwnd;
 	this->phrases = NULL;
 	this->state = state_available;
 
-	if(!waveout_open(this))
-	{
+	if(!waveout_open(this)) {
 		dbg(lvl_error, "Can't open wave output");
 		return 1;
 	}
@@ -380,7 +352,7 @@ static DWORD startThread( LPVOID sp_priv)
 
 	speech_message_dispatcher(this);
 
-    return 0;
+	return 0;
 }
 
 static int
@@ -389,8 +361,7 @@ espeak_say(struct speech_priv *this, const char *text)
 	char *phrase = g_strdup(text);
 	dbg(lvl_debug, "Speak: '%s'", text);
 
-	if (!PostMessage(this->h_queue, msg_say, (WPARAM)this, (LPARAM)phrase))
-	{
+	if (!PostMessage(this->h_queue, msg_say, (WPARAM)this, (LPARAM)phrase)) {
 		dbg(lvl_error, "PostThreadMessage 'say' failed");
 	}
 
@@ -399,8 +370,7 @@ espeak_say(struct speech_priv *this, const char *text)
 
 static void free_list(gpointer pointer, gpointer this )
 {
-	if ( this )
-	{
+	if ( this ) {
 		struct speech_priv *sp_priv = (struct speech_priv *)this;
 		WAVEHDR *WaveHeader = (WAVEHDR *)pointer;
 
@@ -429,7 +399,8 @@ static struct speech_methods espeak_meth = {
 };
 
 static struct speech_priv *
-espeak_new(struct speech_methods *meth, struct attr **attrs, struct attr *parent) {
+espeak_new(struct speech_methods *meth, struct attr **attrs, struct attr *parent)
+{
 	struct speech_priv *this = NULL;
 	struct attr *path;
 	struct attr *language;
@@ -442,8 +413,7 @@ espeak_new(struct speech_methods *meth, struct attr **attrs, struct attr *parent
 		sprintf(path_home,"%s/espeak-data",getenv("NAVIT_SHAREDIR"));
 	dbg(lvl_debug,"path_home set to %s",path_home);
 
-	if ( !initialise() )
-	{
+	if ( !initialise() ) {
 		return NULL;
 	}
 
@@ -452,7 +422,7 @@ espeak_new(struct speech_methods *meth, struct attr **attrs, struct attr *parent
 		lang_str=g_strdup(language->u.str);
 	} else {
 		char *lang_env=getenv("LANG");
-		
+
 		if (lang_env) {
 			char *country,*lang,*lang_full;
 			char *file1;
@@ -468,7 +438,7 @@ espeak_new(struct speech_methods *meth, struct attr **attrs, struct attr *parent
 			file1=g_strdup_printf("%s/voices/%s",path_home,lang_full);
 			file2=g_strdup_printf("%s/voices/%s/%s",path_home,lang,lang_full);
 			dbg(lvl_debug,"Testing %s and %s",file1,file2);
-			if (file_exists(file1) || file_exists(file2)) 
+			if (file_exists(file1) || file_exists(file2))
 				lang_str=g_strdup(lang_full);
 			else
 				lang_str=g_strdup(lang);
@@ -479,8 +449,7 @@ espeak_new(struct speech_methods *meth, struct attr **attrs, struct attr *parent
 			g_free(file2);
 		}
 	}
-	if(lang_str && SetVoiceByName(lang_str) != EE_OK)
-	{
+	if(lang_str && SetVoiceByName(lang_str) != EE_OK) {
 		dbg(lvl_error, "Error setting language to: '%s',falling back to default", lang_str);
 		g_free(lang_str);
 		lang_str=NULL;

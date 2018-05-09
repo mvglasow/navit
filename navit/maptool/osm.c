@@ -78,7 +78,8 @@ struct attr_mapping {
 	int attr_present_idx[0];
 };
 
-static void nodes_ref_item_bin(struct item_bin *ib);
+static void
+nodes_ref_item_bin(struct item_bin *ib);
 
 
 static struct attr_mapping **attr_mapping_node;
@@ -90,8 +91,10 @@ static int attr_mapping_way2poi_count;
 static struct attr_mapping **attr_mapping_rel2poly_place;
 static int attr_mapping_rel2poly_place_count;
 
-static int attr_longest_match(struct attr_mapping **mapping, int mapping_count, enum item_type *types, int types_count);
-static void attr_longest_match_clear(void);
+static int
+attr_longest_match(struct attr_mapping **mapping, int mapping_count, enum item_type *types, int types_count);
+static void
+attr_longest_match_clear(void);
 
 
 enum attr_strings_type {
@@ -119,10 +122,10 @@ enum attr_strings_type {
 
 char *attr_strings[attr_string_last];
 
-char *osm_types[]={"unknown","node","way","relation"};
+char *osm_types[]= {"unknown","node","way","relation"};
 
 /*
- * These macros are designed to handle maptool internal node id reference representation. This representation does not leak 
+ * These macros are designed to handle maptool internal node id reference representation. This representation does not leak
  * to binfile, so it's safe to change it without breaking binfile binary compatibility.
  * Currently it keeps low 31 bits in y coordinate and up to 30 high order bits in x coordinate, allowing for 61 bit osm node id in total.
  */
@@ -132,8 +135,8 @@ char *osm_types[]={"unknown","node","way","relation"};
 #define GET_REF(c) ((((osmid)(c).x & ~REF_MARKER)<<31) + (c).y )
 #define SET_REF(c,ref) do { (c).x = REF_MARKER | ((osmid)(ref)>>31); (c).y = (osmid)(ref) & 0x7fffffffull; } while(0)
 
-/* Table of country codes with possible is_in spellings. 
- *  Note: If you update this list, check also country array in country.c 
+/* Table of country codes with possible is_in spellings.
+ *  Note: If you update this list, check also country array in country.c
  */
 struct country_table {
 	int countryid;
@@ -203,7 +206,7 @@ struct country_table {
 	{ 196,"Cyprus"},
 	{ 203,"Czech Republic,Česká republika,CZ"},
 	{ 204,"Benin"},
- 	{ 208,"Denmark,Danmark,DK"},
+	{ 208,"Denmark,Danmark,DK"},
 	{ 212,"Dominica"},
 	{ 214,"Dominican Republic"},
 	{ 218,"Ecuador"},
@@ -216,9 +219,9 @@ struct country_table {
 	{ 238,"Falkland Islands (Malvinas)"},
 	{ 239,"South Georgia and the South Sandwich Islands"},
 	{ 242,"Fiji"},
- 	{ 246,"Finland,Suomi"},
+	{ 246,"Finland,Suomi"},
 	{ 248,"Åland Islands"},
- 	{ 250,"France,République française,FR","3s5c7M"},
+	{ 250,"France,République française,FR","3s5c7M"},
 	{ 254,"French Guiana"},
 	{ 258,"French Polynesia"},
 	{ 260,"French Southern Territories"},
@@ -252,7 +255,7 @@ struct country_table {
 	{ 368,"Iraq"},
 	{ 372,"Ireland"},
 	{ 376,"Israel"},
- 	{ 380,"Italy,Italia"},
+	{ 380,"Italy,Italia"},
 	{ 384,"Côte d'Ivoire"},
 	{ 388,"Jamaica"},
 	{ 392,"Japan"},
@@ -270,7 +273,7 @@ struct country_table {
 	{ 430,"Liberia"},
 	{ 434,"Libyan Arab Jamahiriya"},
 	{ 438,"Liechtenstein"},
- 	{ 440,"Lithuania,Lietuva"},
+	{ 440,"Lithuania,Lietuva"},
 	{ 442,"Luxembourg"},
 	{ 446,"Macao"},
 	{ 450,"Madagascar"},
@@ -353,8 +356,8 @@ struct country_table {
 	{ 706,"Somalia"},
 	{ 710,"South Africa"},
 	{ 716,"Zimbabwe"},
- 	{ 724,"Spain,Espana,España,Reino de Espana,Reino de España","345scm"},
- 	{ 728,"South Sudan"},
+	{ 724,"Spain,Espana,España,Reino de Espana,Reino de España","345scm"},
+	{ 728,"South Sudan"},
 	{ 732,"Western Sahara"},
 	{ 736,"Sudan"},
 	{ 740,"Suriname"},
@@ -402,7 +405,7 @@ struct country_table {
 //   =? - used both for nodes and ways
 //   otherwise - nodes
 
-static char *attrmap={
+static char *attrmap= {
 	"n	*=*			point_unkn\n"
 	"?	addr:housenumber=*	house_number\n"
 	"?	aeroway=aerodrome	poi_airport\n"
@@ -527,7 +530,7 @@ static char *attrmap={
 	"?	shop=photo		poi_shop_photo\n"
 	"?	shop=shoes		poi_shop_shoes\n"
 	"?	shop=supermarket	poi_shopping\n"
-        "?      shop=mall               poi_mall\n" 
+	"?      shop=mall               poi_mall\n"
 	"?	sport=10pin		poi_bowling\n"
 	"?	sport=baseball		poi_baseball\n"
 	"?	sport=basketball	poi_basketball\n"
@@ -820,7 +823,8 @@ build_attrmap_line(char *line)
 		attr_mapping_way=g_realloc(attr_mapping_way, sizeof(*attr_mapping_way)*(attr_mapping_way_count+1));
 		attr_mapping_way[attr_mapping_way_count++]=attr_mapping;
 		if(item_is_poly_place(*attr_mapping)) {
-			attr_mapping_rel2poly_place=g_realloc(attr_mapping_rel2poly_place, sizeof(*attr_mapping_rel2poly_place)*(attr_mapping_rel2poly_place_count+1));
+			attr_mapping_rel2poly_place=g_realloc(attr_mapping_rel2poly_place,
+			                                      sizeof(*attr_mapping_rel2poly_place)*(attr_mapping_rel2poly_place_count+1));
 			attr_mapping_rel2poly_place[attr_mapping_rel2poly_place_count++]=attr_mapping;
 		}
 	}
@@ -841,31 +845,29 @@ build_attrmap(FILE* rule_file)
 	attr_hash=g_hash_table_new(g_str_hash, g_str_equal);
 	attr_present_count=1;
 
-    // build attribute map from rule file if given
-    if( rule_file )
-    {
-        char buffer[200], *p;
-        while (fgets( buffer, 200, rule_file )) {
-            p=strchr(buffer,'\n');
-            if(p)
-                *p = 0;
-            build_attrmap_line( g_strdup( buffer ) );
-        }
-        fclose( rule_file );
-    }
-    // use hardcoded default attributes
-    else
-    {
-        char *p,*map=g_strdup(attrmap);
-        while (map) {
-            p=strchr(map,'\n');
-            if (p)
-                *p++='\0';
-            if (strlen(map))
-                build_attrmap_line(map);
-            map=p;
-        }
-    }
+	// build attribute map from rule file if given
+	if( rule_file ) {
+		char buffer[200], *p;
+		while (fgets( buffer, 200, rule_file )) {
+			p=strchr(buffer,'\n');
+			if(p)
+				*p = 0;
+			build_attrmap_line( g_strdup( buffer ) );
+		}
+		fclose( rule_file );
+	}
+	// use hardcoded default attributes
+	else {
+		char *p,*map=g_strdup(attrmap);
+		while (map) {
+			p=strchr(map,'\n');
+			if (p)
+				*p++='\0';
+			if (strlen(map))
+				build_attrmap_line(map);
+			map=p;
+		}
+	}
 
 	attr_present=g_malloc0(sizeof(*attr_present)*attr_present_count);
 }
@@ -1005,7 +1007,8 @@ item_bin_get_id(struct item_bin *ib)
 }
 
 static int node_is_tagged;
-static void relation_add_tag(char *k, char *v);
+static void
+relation_add_tag(char *k, char *v);
 
 static int
 access_value(char *v)
@@ -1037,7 +1040,7 @@ access_value(char *v)
 	return 3;
 }
 
-static void 
+static void
 osm_update_attr_present(char *k, char *v);
 
 void
@@ -1048,7 +1051,7 @@ osm_add_tag(char *k, char *v)
 		relation_add_tag(k,v);
 		return;
 	}
-	if (! strcmp(k,"ele")){
+	if (! strcmp(k,"ele")) {
 		attr_strings_save(attr_string_label, v);
 		level=9;
 	}
@@ -1100,20 +1103,23 @@ osm_add_tag(char *k, char *v)
 		}
 	}
 	if (! strcmp(k,"access")) {
-		if (strcmp(v,"destination")) 
-			flagsa[access_value(v)] |= AF_DANGEROUS_GOODS|AF_EMERGENCY_VEHICLES|AF_TRANSPORT_TRUCK|AF_DELIVERY_TRUCK|AF_PUBLIC_BUS|AF_TAXI|AF_HIGH_OCCUPANCY_CAR|AF_CAR|AF_MOTORCYCLE|AF_MOPED|AF_HORSE|AF_BIKE|AF_PEDESTRIAN;
+		if (strcmp(v,"destination"))
+			flagsa[access_value(v)] |=
+			        AF_DANGEROUS_GOODS|AF_EMERGENCY_VEHICLES|AF_TRANSPORT_TRUCK|AF_DELIVERY_TRUCK|AF_PUBLIC_BUS|AF_TAXI|AF_HIGH_OCCUPANCY_CAR|AF_CAR|AF_MOTORCYCLE|AF_MOPED|AF_HORSE|AF_BIKE|AF_PEDESTRIAN;
 		else
 			flags[0] |= AF_THROUGH_TRAFFIC_LIMIT;
-		if (! strcmp(v,"hov")) 	
+		if (! strcmp(v,"hov"))
 			flags[0] |= AF_HIGH_OCCUPANCY_CAR_ONLY;
 		level=5;
 	}
 	if (! strcmp(k,"vehicle")) {
-		flags[access_value(v)] |= AF_DANGEROUS_GOODS|AF_EMERGENCY_VEHICLES|AF_TRANSPORT_TRUCK|AF_DELIVERY_TRUCK|AF_PUBLIC_BUS|AF_TAXI|AF_HIGH_OCCUPANCY_CAR|AF_CAR|AF_MOTORCYCLE|AF_MOPED|AF_BIKE;
+		flags[access_value(v)] |=
+		        AF_DANGEROUS_GOODS|AF_EMERGENCY_VEHICLES|AF_TRANSPORT_TRUCK|AF_DELIVERY_TRUCK|AF_PUBLIC_BUS|AF_TAXI|AF_HIGH_OCCUPANCY_CAR|AF_CAR|AF_MOTORCYCLE|AF_MOPED|AF_BIKE;
 		level=5;
 	}
 	if (! strcmp(k,"motor_vehicle")) {
-		flags[access_value(v)] |= AF_DANGEROUS_GOODS|AF_EMERGENCY_VEHICLES|AF_TRANSPORT_TRUCK|AF_DELIVERY_TRUCK|AF_PUBLIC_BUS|AF_TAXI|AF_HIGH_OCCUPANCY_CAR|AF_CAR|AF_MOTORCYCLE|AF_MOPED;
+		flags[access_value(v)] |=
+		        AF_DANGEROUS_GOODS|AF_EMERGENCY_VEHICLES|AF_TRANSPORT_TRUCK|AF_DELIVERY_TRUCK|AF_PUBLIC_BUS|AF_TAXI|AF_HIGH_OCCUPANCY_CAR|AF_CAR|AF_MOTORCYCLE|AF_MOPED;
 		level=5;
 	}
 	if (! strcmp(k,"bicycle")) {
@@ -1229,48 +1235,46 @@ osm_add_tag(char *k, char *v)
 		level=5;
 	}
 	if (! strcmp(k,"nat_ref")) {
-			if (in_way)
-				attr_strings_save(attr_string_street_name_systematic_nat, v);
-			level=5;
+		if (in_way)
+			attr_strings_save(attr_string_street_name_systematic_nat, v);
+		level=5;
 	}
 	if (! strcmp(k,"int_ref")) {
-			if (in_way)
-				attr_strings_save(attr_string_street_name_systematic_int, v);
-			level=5;
+		if (in_way)
+			attr_strings_save(attr_string_street_name_systematic_int, v);
+		level=5;
 	}
 	if (! strcmp(k,"destination")) {
-			if (in_way)
-				attr_strings_save(attr_string_street_destination, v);
-			level=5;
+		if (in_way)
+			attr_strings_save(attr_string_street_destination, v);
+		level=5;
 	}
-	if (! strcmp(k,"destination:forward")) 
-	{
+	if (! strcmp(k,"destination:forward")) {
 		if (in_way)
 			attr_strings_save(attr_string_street_destination_forward, v);
 		level=5;
 	}
-	if (! strcmp(k,"destination:backward")) 
-	{
+	if (! strcmp(k,"destination:backward")) {
 		if (in_way)
 			attr_strings_save(attr_string_street_destination_backward, v);
 		level=5;
 	}
 	if (! strcmp(k,"exit_to")) {
-			attr_strings_save(attr_string_exit_to, v);
-			level=5;
+		attr_strings_save(attr_string_exit_to, v);
+		level=5;
 	}
-	if (! strcmp(k,"openGeoDB:is_in")) { 
-		if (!is_in_buffer[0]) 
-			g_strlcpy(is_in_buffer, v, sizeof(is_in_buffer)); 
-		level=5; 
-	} 
+	if (! strcmp(k,"openGeoDB:is_in")) {
+		if (!is_in_buffer[0])
+			g_strlcpy(is_in_buffer, v, sizeof(is_in_buffer));
+		level=5;
+	}
 	if (! strcmp(k,"is_in")) {
 		if (!is_in_buffer[0])
 			g_strlcpy(is_in_buffer, v, sizeof(is_in_buffer));
 		level=5;
 	}
 	if (! strcmp(k,"is_in:country")) {
- 		/**
+		/**
 		* Sometimes there is no is_in tag, only is_in:country.
 		* I put this here so it can be overwritten by the previous if clause if there IS an is_in tag.
 		*/
@@ -1278,7 +1282,7 @@ osm_add_tag(char *k, char *v)
 		level=5;
 	}
 	if (! strcmp(k,"place_county")) {
-		/** 
+		/**
 		* Ireland uses the place_county OSM tag to describe what county a town is in.
 		* This would be equivalent to is_in: Town; Locality; Country
 		* A real world example would be Node: Moycullen (52234625)
@@ -1302,8 +1306,7 @@ osm_add_tag(char *k, char *v)
 	}
 	if (attr_debug_level >= level) {
 		int bytes_left = sizeof( debug_attr_buffer ) - strlen(debug_attr_buffer) - 1;
-		if ( bytes_left > 0 )
-		{
+		if ( bytes_left > 0 ) {
 			snprintf(debug_attr_buffer+strlen(debug_attr_buffer), bytes_left,  " %s=%s", k, v);
 			debug_attr_buffer[ sizeof( debug_attr_buffer ) -  1 ] = '\0';
 			node_is_tagged=1;
@@ -1315,7 +1318,7 @@ osm_add_tag(char *k, char *v)
 	osm_update_attr_present(k, v);
 }
 
-static void 
+static void
 osm_update_attr_present(char *k, char *v)
 {
 	const int bufsize=BUFFER_SIZE*2+2;
@@ -1329,7 +1332,7 @@ osm_update_attr_present(char *k, char *v)
 	}
 
 	snprintf(buffer,bufsize,"%s=*", k);
-	for(p=buffer;*p;p++)
+	for(p=buffer; *p; p++)
 		if(isspace(*p))	*p='_';
 	if ((idx=(int)(long)g_hash_table_lookup(attr_hash, buffer))) {
 		dbg_assert(idx<attr_present_count);
@@ -1337,7 +1340,7 @@ osm_update_attr_present(char *k, char *v)
 	}
 
 	snprintf(buffer,bufsize,"*=%s", v);
-	for(p=buffer;*p;p++)
+	for(p=buffer; *p; p++)
 		if(isspace(*p))	*p='_';
 	if ((idx=(int)(long)g_hash_table_lookup(attr_hash, buffer))) {
 		dbg_assert(idx<attr_present_count);
@@ -1345,7 +1348,7 @@ osm_update_attr_present(char *k, char *v)
 	}
 
 	snprintf(buffer,bufsize,"%s=%s", k, v);
-	for(p=buffer;*p;p++)
+	for(p=buffer; *p; p++)
 		if(isspace(*p))	*p='_';
 	if ((idx=(int)(long)g_hash_table_lookup(attr_hash, buffer))) {
 		dbg_assert(idx<attr_present_count);
@@ -1390,143 +1393,144 @@ flush_nodes(int final)
 }
 
 static struct node_item*
-allocate_node_item_in_buffer(void) {
-      struct node_item* new_node;
-      if (node_buffer.size + sizeof(struct node_item) > node_buffer.malloced)
-	      extend_buffer(&node_buffer);
-      if (node_buffer.size + sizeof(struct node_item) > slice_size) {
-	      flush_nodes(0);
-      }
-      new_node=(struct node_item *)(node_buffer.base+node_buffer.size);
-      node_buffer.size+=sizeof(struct node_item);
-      return new_node;
+allocate_node_item_in_buffer(void)
+{
+	struct node_item* new_node;
+	if (node_buffer.size + sizeof(struct node_item) > node_buffer.malloced)
+		extend_buffer(&node_buffer);
+	if (node_buffer.size + sizeof(struct node_item) > slice_size) {
+		flush_nodes(0);
+	}
+	new_node=(struct node_item *)(node_buffer.base+node_buffer.size);
+	node_buffer.size+=sizeof(struct node_item);
+	return new_node;
 }
 
 static void
-remove_last_node_item_from_buffer(void) {
-      node_buffer.size-=sizeof(struct node_item);
+remove_last_node_item_from_buffer(void)
+{
+	node_buffer.size-=sizeof(struct node_item);
 }
 
 void
 osm_add_node(osmid id, double lat, double lon)
 {
-      in_node=1;
-      attr_strings_clear();
-      node_is_tagged=0;
-      nodeid=id;
-      item.type=type_point_unkn;
-      debug_attr_buffer[0]='\0';
-      is_in_buffer[0]='\0';
-      debug_attr_buffer[0]='\0';
-      osmid_attr.type=attr_osm_nodeid;
-      osmid_attr.len=3;
-      osmid_attr_value=id;
+	in_node=1;
+	attr_strings_clear();
+	node_is_tagged=0;
+	nodeid=id;
+	item.type=type_point_unkn;
+	debug_attr_buffer[0]='\0';
+	is_in_buffer[0]='\0';
+	debug_attr_buffer[0]='\0';
+	osmid_attr.type=attr_osm_nodeid;
+	osmid_attr.len=3;
+	osmid_attr_value=id;
 
-      current_node=allocate_node_item_in_buffer();
-      dbg_assert(id < ((2ull<<NODE_ID_BITS)-1));
-      current_node->nd_id=id;
-      current_node->ref_way=0;
-      current_node->c.x=lon*6371000.0*M_PI/180;
-      current_node->c.y=log(tan(M_PI_4+lat*M_PI/360))*6371000.0;
-      if (! node_hash) {
-	      if (current_node->nd_id > id_last_node) {
-		      id_last_node=current_node->nd_id;
-	      } else {
-		      fprintf(stderr,"INFO: Nodes out of sequence (new " OSMID_FMT " vs old " OSMID_FMT "), adding hash\n",
-			(osmid)current_node->nd_id, id_last_node);
-		      node_hash=g_hash_table_new(NULL, NULL);
-		      node_buffer_to_hash();
-	      }
-      } else
-	      if (!g_hash_table_lookup(node_hash, (gpointer)(long long)(current_node->nd_id)))
-		      g_hash_table_insert(node_hash, (gpointer)(long long)(current_node->nd_id),
-			  (gpointer)(long long)(current_node-(struct node_item *)node_buffer.base));
-	      else {
-                      remove_last_node_item_from_buffer();
-		      nodeid=0;
-	      }
+	current_node=allocate_node_item_in_buffer();
+	dbg_assert(id < ((2ull<<NODE_ID_BITS)-1));
+	current_node->nd_id=id;
+	current_node->ref_way=0;
+	current_node->c.x=lon*6371000.0*M_PI/180;
+	current_node->c.y=log(tan(M_PI_4+lat*M_PI/360))*6371000.0;
+	if (! node_hash) {
+		if (current_node->nd_id > id_last_node) {
+			id_last_node=current_node->nd_id;
+		} else {
+			fprintf(stderr,"INFO: Nodes out of sequence (new " OSMID_FMT " vs old " OSMID_FMT "), adding hash\n",
+			        (osmid)current_node->nd_id, id_last_node);
+			node_hash=g_hash_table_new(NULL, NULL);
+			node_buffer_to_hash();
+		}
+	} else if (!g_hash_table_lookup(node_hash, (gpointer)(long long)(current_node->nd_id)))
+		g_hash_table_insert(node_hash, (gpointer)(long long)(current_node->nd_id),
+		                    (gpointer)(long long)(current_node-(struct node_item *)node_buffer.base));
+	else {
+		remove_last_node_item_from_buffer();
+		nodeid=0;
+	}
 
 }
 
 void
 clear_node_item_buffer(void)
 {
-      int j,count=node_buffer.size/sizeof(struct node_item);
-      struct node_item *ni=(struct node_item *)(node_buffer.base);
-      for (j = 0 ; j < count ; j++) {
-	      ni[j].ref_way=0;
-      }
+	int j,count=node_buffer.size/sizeof(struct node_item);
+	struct node_item *ni=(struct node_item *)(node_buffer.base);
+	for (j = 0 ; j < count ; j++) {
+		ni[j].ref_way=0;
+	}
 }
 
 static long long
 node_item_find_index_in_ordered_list(osmid id)
 {
-      struct node_item *node_buffer_base=(struct node_item *)(node_buffer.base);
-      long long node_count=node_buffer.size/sizeof(struct node_item);
-      long long search_step=node_count>4 ? node_count/4 : 1;
-      long long search_index=node_count/2;
-      if (node_buffer_base[0].nd_id > id)
-	      return -1;
-      if (node_buffer_base[node_count-1].nd_id < id)
-	      return -1;
-      while (node_buffer_base[search_index].nd_id != id) {
-	      if (node_buffer_base[search_index].nd_id < id) {
-		      search_index+=search_step;
-		      if (search_step == 1) {
-			      if (search_index >= node_count)
-				      return -1;
-			      if (node_buffer_base[search_index].nd_id > id)
-				      return -1;
-		      } else {
-			      if (search_index >= node_count)
-				      search_index=node_count-1;
-		      }
-	      } else {
-		      search_index-=search_step;
-		      if (search_step == 1) {
-			      if (search_index < 0)
-				      return -1;
-			      if (node_buffer_base[search_index].nd_id < id)
-				      return -1;
-		      } else {
-			      if (search_index < 0)
-				      search_index=0;
-		      }
-	      }
-	      if (search_step > 1)
-		      search_step/=2;
-      }
-      return search_index;
+	struct node_item *node_buffer_base=(struct node_item *)(node_buffer.base);
+	long long node_count=node_buffer.size/sizeof(struct node_item);
+	long long search_step=node_count>4 ? node_count/4 : 1;
+	long long search_index=node_count/2;
+	if (node_buffer_base[0].nd_id > id)
+		return -1;
+	if (node_buffer_base[node_count-1].nd_id < id)
+		return -1;
+	while (node_buffer_base[search_index].nd_id != id) {
+		if (node_buffer_base[search_index].nd_id < id) {
+			search_index+=search_step;
+			if (search_step == 1) {
+				if (search_index >= node_count)
+					return -1;
+				if (node_buffer_base[search_index].nd_id > id)
+					return -1;
+			} else {
+				if (search_index >= node_count)
+					search_index=node_count-1;
+			}
+		} else {
+			search_index-=search_step;
+			if (search_step == 1) {
+				if (search_index < 0)
+					return -1;
+				if (node_buffer_base[search_index].nd_id < id)
+					return -1;
+			} else {
+				if (search_index < 0)
+					search_index=0;
+			}
+		}
+		if (search_step > 1)
+			search_step/=2;
+	}
+	return search_index;
 }
 
 static struct node_item *
 node_item_get(osmid id)
 {
-      struct node_item *node_buffer_base=(struct node_item *)(node_buffer.base);
-      long long result_index;
-      if (node_hash) {
-            // Use g_hash_table_lookup_extended instead of g_hash_table_lookup
-            // to distinguish a key with a value 0 from a missing key.
-            if (!g_hash_table_lookup_extended (node_hash, (gpointer)(id), NULL,
-                                           (gpointer)&result_index)) {
-                  result_index=-1;
-            }
-      } else {
-	      result_index=node_item_find_index_in_ordered_list(id);
-      }
-      return result_index!=-1 ? node_buffer_base+result_index : NULL;
+	struct node_item *node_buffer_base=(struct node_item *)(node_buffer.base);
+	long long result_index;
+	if (node_hash) {
+		// Use g_hash_table_lookup_extended instead of g_hash_table_lookup
+		// to distinguish a key with a value 0 from a missing key.
+		if (!g_hash_table_lookup_extended (node_hash, (gpointer)(id), NULL,
+		                                   (gpointer)&result_index)) {
+			result_index=-1;
+		}
+	} else {
+		result_index=node_item_find_index_in_ordered_list(id);
+	}
+	return result_index!=-1 ? node_buffer_base+result_index : NULL;
 }
 
 #if 0
 static int
 load_node(FILE *coords, int p, struct node_item *ret)
 {
-      fseek(coords, p*sizeof(struct node_item), SEEK_SET);
-      if (fread(ret, sizeof(*ret), 1, coords) != 1) {
-	      fprintf(stderr,"read failed\n");
-	      return 0;
-      }
-      return 1;
+	fseek(coords, p*sizeof(struct node_item), SEEK_SET);
+	if (fread(ret, sizeof(*ret), 1, coords) != 1) {
+		fprintf(stderr,"read failed\n");
+		return 0;
+	}
+	return 1;
 }
 #endif
 
@@ -1534,69 +1538,69 @@ load_node(FILE *coords, int p, struct node_item *ret)
 static int
 node_item_get_from_file(FILE *coords, osmid id, struct node_item *ret)
 {
-      int count;
-      int interval;
-      int p;
-      if (node_hash) {
-	      int i;
-	      i=(int)(long)(g_hash_table_lookup(node_hash, (gpointer)(long)id));
-	      fseek(coords, i*sizeof(*ret), SEEK_SET);
-	      if (fread(ret, sizeof(*ret), 1, coords) == 1)
-		      return 1;
-	      else
-		      return 0;
-      }
+	int count;
+	int interval;
+	int p;
+	if (node_hash) {
+		int i;
+		i=(int)(long)(g_hash_table_lookup(node_hash, (gpointer)(long)id));
+		fseek(coords, i*sizeof(*ret), SEEK_SET);
+		if (fread(ret, sizeof(*ret), 1, coords) == 1)
+			return 1;
+		else
+			return 0;
+	}
 
-      fseek(coords, 0, SEEK_END);
-      count=ftello(coords)/sizeof(struct node_item);
-      interval=count/4;
-      p=count/2;
-      if(interval==0) {
-	      // If fewer than 4 nodes defined so far set interval to 1 to
-	      // avoid infinite loop
-	      interval = 1;
-      }
-      if (!load_node(coords, p, ret))
-	      return 0;
-      for (;;) {
-	      if (ret->id == id)
-		      return 1;
-	      if (ret->id < id) {
-		      p+=interval;
-		      if (interval == 1) {
-			      if (p >= count)
-				      return 0;
-			      if (!load_node(coords, p, ret))
-				      return 0;
-			      if (ret->id > id)
-				      return 0;
-		      } else {
-			      if (p >= count)
-				      p=count-1;
-			      if (!load_node(coords, p, ret))
-				      return 0;
-		      }
-	      } else {
-		      p-=interval;
-		      if (interval == 1) {
-			      if (p < 0)
-				      return 0;
-			      if (!load_node(coords, p, ret))
-				      return 0;
-			      if (ret->id < id)
-				      return 0;
-		      } else {
-			      if (p < 0)
-				      p=0;
-			      if (!load_node(coords, p, ret))
-				      return 0;
-		      }
-	      }
-	      if (interval > 1)
-		      interval/=2;
-      }
+	fseek(coords, 0, SEEK_END);
+	count=ftello(coords)/sizeof(struct node_item);
+	interval=count/4;
+	p=count/2;
+	if(interval==0) {
+		// If fewer than 4 nodes defined so far set interval to 1 to
+		// avoid infinite loop
+		interval = 1;
+	}
+	if (!load_node(coords, p, ret))
+		return 0;
+	for (;;) {
+		if (ret->id == id)
+			return 1;
+		if (ret->id < id) {
+			p+=interval;
+			if (interval == 1) {
+				if (p >= count)
+					return 0;
+				if (!load_node(coords, p, ret))
+					return 0;
+				if (ret->id > id)
+					return 0;
+			} else {
+				if (p >= count)
+					p=count-1;
+				if (!load_node(coords, p, ret))
+					return 0;
+			}
+		} else {
+			p-=interval;
+			if (interval == 1) {
+				if (p < 0)
+					return 0;
+				if (!load_node(coords, p, ret))
+					return 0;
+				if (ret->id < id)
+					return 0;
+			} else {
+				if (p < 0)
+					p=0;
+				if (!load_node(coords, p, ret))
+					return 0;
+			}
+		}
+		if (interval > 1)
+			interval/=2;
+	}
 }
-#endif 
+#endif
 void
 osm_add_way(osmid id)
 {
@@ -1651,7 +1655,7 @@ country_id_from_iso2(char *iso)
 		search=country_search_new(&country_iso2,0);
 		if ((item=country_search_get_item(search)) && item_attr_get(item, attr_country_id, &country_id))
 			ret=country_id.u.num;
-			
+
 		country_search_destroy(search);
 	}
 	return ret;
@@ -1684,20 +1688,20 @@ osm_end_relation(struct maptool_osm *osm)
 
 	if(attr_longest_match(attr_mapping_rel2poly_place, attr_mapping_rel2poly_place_count, &type, 1)) {
 		tmp_item_bin->type=type;
-	}
-	else 
+	} else
 		type=type_none;
 
 	if ((!strcmp(relation_type, "multipolygon") || !strcmp(relation_type, "boundary")) && (boundary || type!=type_none)) {
 		item_bin_write(tmp_item_bin, osm->boundaries);
 	}
 
-	if (!strcmp(relation_type, "restriction") && (tmp_item_bin->type == type_street_turn_restriction_no || tmp_item_bin->type == type_street_turn_restriction_only))
+	if (!strcmp(relation_type, "restriction") && (tmp_item_bin->type == type_street_turn_restriction_no
+	                || tmp_item_bin->type == type_street_turn_restriction_only))
 		item_bin_write(tmp_item_bin, osm->turn_restrictions);
 
 	if (!strcmp(relation_type, "associatedStreet") )
 		item_bin_write(tmp_item_bin, osm->associated_streets);
-		
+
 	attr_longest_match_clear();
 }
 
@@ -1720,8 +1724,7 @@ relation_add_tag(char *k, char *v)
 	if (!strcmp(k,"type")) {
 		g_strlcpy(relation_type, v, sizeof(relation_type));
 		add_tag=0;
-	}
-	else if (!strcmp(k,"restriction")) {
+	} else if (!strcmp(k,"restriction")) {
 		if (!strncmp(v,"no_",3)) {
 			tmp_item_bin->type=type_street_turn_restriction_no;
 			add_tag=0;
@@ -1819,9 +1822,9 @@ osm_end_way(struct maptool_osm *osm)
 		if (ignore_unknown && (types[i] == type_street_unkn || types[i] == type_point_unkn))
 			continue;
 		if (types[i] != type_street_unkn) {
-			if(types[i]<type_area) 	
-				count_lines++;	
-			else	
+			if(types[i]<type_area)
+				count_lines++;
+			else
 				count_areas++;
 		}
 		item_bin=init_item(types[i]);
@@ -1836,10 +1839,13 @@ osm_end_way(struct maptool_osm *osm)
 		item_bin_add_attr_string(item_bin, def_flags ? attr_street_name : attr_label, attr_strings[attr_string_label]);
 		item_bin_add_attr_string(item_bin, attr_district_name, attr_strings[attr_string_district_name]);
 		item_bin_add_attr_string(item_bin, attr_street_name_systematic, attr_strings[attr_string_street_name_systematic]);
-		item_bin_add_attr_string(item_bin, attr_street_name_systematic_nat, attr_strings[attr_string_street_name_systematic_nat]);
+		item_bin_add_attr_string(item_bin, attr_street_name_systematic_nat,
+		                         attr_strings[attr_string_street_name_systematic_nat]);
 		item_bin_add_attr_string(item_bin, attr_street_destination, attr_strings[attr_string_street_destination]);
-		item_bin_add_attr_string(item_bin, attr_street_destination_forward, attr_strings[attr_string_street_destination_forward]);
-		item_bin_add_attr_string(item_bin, attr_street_destination_backward, attr_strings[attr_string_street_destination_backward]);
+		item_bin_add_attr_string(item_bin, attr_street_destination_forward,
+		                         attr_strings[attr_string_street_destination_forward]);
+		item_bin_add_attr_string(item_bin, attr_street_destination_backward,
+		                         attr_strings[attr_string_street_destination_backward]);
 		item_bin_add_attr_longlong(item_bin, attr_osm_wayid, osmid_attr_value);
 		if (debug_attr_buffer[0])
 			item_bin_add_attr_string(item_bin, attr_debug, debug_attr_buffer);
@@ -1851,7 +1857,7 @@ osm_end_way(struct maptool_osm *osm)
 			item_bin_add_attr_int(item_bin, attr_duplicate, 1);
 		item_bin_write(item_bin,osm->ways);
 
-		if (types[i]>=type_house_number_interpolation_even && types[i]<=type_house_number_interpolation_alphabetic){
+		if (types[i]>=type_house_number_interpolation_even && types[i]<=type_house_number_interpolation_alphabetic) {
 			struct item_bin *item_bin_interpolation_way=init_item(types[i]);
 			item_bin_add_attr_longlong(item_bin, attr_osm_wayid, osmid_attr_value);
 			item_bin_add_attr_longlong(item_bin, attr_osm_nodeid_first_node, GET_REF(coord_buffer[0]));
@@ -1874,7 +1880,7 @@ osm_end_way(struct maptool_osm *osm)
 			item_bin_add_attr_string(item_bin, attr_phone, attr_strings[attr_string_phone]);
 			item_bin_add_attr_string(item_bin, attr_fax, attr_strings[attr_string_fax]);
 			item_bin_add_attr_string(item_bin, attr_email, attr_strings[attr_string_email]);
-			item_bin_add_attr_string(item_bin, attr_county_name, attr_strings[attr_string_county_name]); 
+			item_bin_add_attr_string(item_bin, attr_county_name, attr_strings[attr_string_county_name]);
 			item_bin_add_attr_string(item_bin, attr_url, attr_strings[attr_string_url]);
 			item_bin_add_attr_longlong(item_bin, attr_osm_wayid, osmid_attr_value);
 			item_bin_write(item_bin, count_areas<=count_lines ? osm->line2poi:osm->poly2poi);
@@ -1912,7 +1918,8 @@ osm_end_node(struct maptool_osm *osm)
 		if (item_is_town(*item_bin) && attr_strings[attr_string_population])
 			item_bin_set_type_by_population(item_bin, atoi(attr_strings[attr_string_population]));
 		item_bin_add_coord(item_bin, &current_node->c, 1);
-		item_bin_add_attr_string(item_bin, item_is_town(*item_bin) ? attr_town_name : attr_label, attr_strings[attr_string_label]);
+		item_bin_add_attr_string(item_bin, item_is_town(*item_bin) ? attr_town_name : attr_label,
+		                         attr_strings[attr_string_label]);
 		item_bin_add_attr_string(item_bin, attr_house_number, attr_strings[attr_string_house_number]);
 		item_bin_add_attr_string(item_bin, attr_street_name, attr_strings[attr_string_street_name]);
 		item_bin_add_attr_string(item_bin, attr_phone, attr_strings[attr_string_phone]);
@@ -1939,7 +1946,8 @@ osm_end_node(struct maptool_osm *osm)
 			item_bin_add_attr_longlong(item_bin, attr_osm_nodeid, osmid_attr_value);
 			item_bin_add_attr_string(item_bin, attr_town_postal, postal);
 			item_bin_add_attr_string(item_bin, attr_county_name, attr_strings[attr_string_county_name]);
-			item_bin_add_attr_string(item_bin, item_is_district(*item_bin)?attr_district_name:attr_town_name, attr_strings[attr_string_label]);
+			item_bin_add_attr_string(item_bin, item_is_district(*item_bin)?attr_district_name:attr_town_name,
+			                         attr_strings[attr_string_label]);
 			item_bin_write(item_bin, osm->towns);
 		}
 	}
@@ -2089,12 +2097,12 @@ osm_process_town_by_boundary_update_attrs(struct item_bin *town, struct town_cou
 
 	if(tc->country->admin_levels)
 		max_possible_adm_level=strlen(tc->country->admin_levels)+3;
-	
+
 	nodeid=item_bin_get_attr(town, attr_osm_nodeid, NULL);
 	if(nodeid)
 		node_id=*nodeid;
 
-	for(l=matches;l;l=g_list_next(l)) {
+	for(l=matches; l; l=g_list_next(l)) {
 		struct boundary *b=l->data;
 		char *boundary_admin_level_string;
 		char *name;
@@ -2149,7 +2157,7 @@ osm_process_town_by_boundary_update_attrs(struct item_bin *town, struct town_cou
 
 	/* Administrative centres are not to be contained in their own districts. */
 	if(max_adm_level>0)
-		for(a=max_possible_adm_level-1;a>max_adm_level && a>2;a--)
+		for(a=max_possible_adm_level-1; a>max_adm_level && a>2; a--)
 			tc->attrs[a-2].type=type_none;
 }
 
@@ -2168,7 +2176,7 @@ osm_process_town_by_boundary(GList *bl, struct item_bin *town, struct coord *c)
 	GList *town_country_list=NULL;
 	GList *l;
 
-	for (l=matches;l;l=g_list_next(l)) {
+	for (l=matches; l; l=g_list_next(l)) {
 		struct boundary *match=l->data;
 		if (match->country) {
 			struct town_country *tc=town_country_list_insert_if_new(&town_country_list, match->country);
@@ -2182,7 +2190,7 @@ osm_process_town_by_boundary(GList *bl, struct item_bin *town, struct coord *c)
 	return town_country_list;
 }
 
-static void 
+static void
 osm_town_relations_to_poly(GList *boundaries, FILE *towns_poly)
 {
 	while(boundaries) {
@@ -2191,7 +2199,8 @@ osm_town_relations_to_poly(GList *boundaries, FILE *towns_poly)
 			GList *s=b->sorted_segments;
 			while(s) {
 				struct geom_poly_segment *seg=s->data;
-				if((seg->type==geom_poly_segment_type_way_outer || seg->type==geom_poly_segment_type_way_unknown) && coord_is_equal(*seg->first,*seg->last)) {
+				if((seg->type==geom_poly_segment_type_way_outer || seg->type==geom_poly_segment_type_way_unknown)
+				                && coord_is_equal(*seg->first,*seg->last)) {
 					struct item_bin *ib=init_item(b->ib->type);
 					void *a;
 					item_bin_add_coord(ib, seg->first, seg->last-seg->first+1);
@@ -2230,8 +2239,7 @@ osm_process_towns(FILE *in, FILE *boundaries, FILE *ways, char *suffix)
 
 	town_hash=g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
 	while ((ib=read_item(in)))  {
-		if (!item_is_district(*ib))
-		{
+		if (!item_is_district(*ib)) {
 			char *townname=item_bin_get_attr(ib, attr_town_name, NULL);
 			char *dup=g_strdup(townname);
 			g_hash_table_replace(town_hash, dup, dup);
@@ -2256,7 +2264,8 @@ osm_process_towns(FILE *in, FILE *boundaries, FILE *ways, char *suffix)
 			tc_list=osm_process_town_unknown_country();
 
 		if (!tc_list) {
-			itembin_warning(ib, 0, "Lost town %s %s\n", item_bin_get_attr(ib, attr_town_name, NULL), item_bin_get_attr(ib, attr_district_name, NULL));
+			itembin_warning(ib, 0, "Lost town %s %s\n", item_bin_get_attr(ib, attr_town_name, NULL), item_bin_get_attr(ib,
+			                attr_district_name, NULL));
 		}
 
 		if(tc_list && g_list_next(tc_list))
@@ -2337,7 +2346,7 @@ osm_process_towns(FILE *in, FILE *boundaries, FILE *ways, char *suffix)
 	towns_poly=tempfile(suffix,"towns_poly",1);
 	osm_town_relations_to_poly(bl, towns_poly);
 	fclose(towns_poly);
-	
+
 	g_hash_table_destroy(town_hash);
 	free_boundaries(bl);
 
@@ -2394,7 +2403,7 @@ search_relation_member(struct item_bin *ib, char *role, struct relation_member *
 	while ((str=item_bin_get_attr(ib, attr_osm_member, str))) {
 		parse_relation_member_string(str, memb);
 		count++;
-	 	if (!strcmp(memb->role, role) && (!min_count || *min_count < count)) {
+		if (!strcmp(memb->role, role) && (!min_count || *min_count < count)) {
 			if (min_count)
 				*min_count=count;
 			return 1;
@@ -2527,7 +2536,8 @@ struct process_relation_member_func_priv {
 };
 
 static void
-process_associated_street_member(void *func_priv, void *relation_priv, struct item_bin *member, void *member_priv_unused)
+process_associated_street_member(void *func_priv, void *relation_priv, struct item_bin *member,
+                                 void *member_priv_unused)
 {
 	struct process_relation_member_func_priv *fp=func_priv;
 	struct associated_street *rel=relation_priv;
@@ -2539,14 +2549,15 @@ process_associated_street_member(void *func_priv, void *relation_priv, struct it
 			fp->allocations=g_list_prepend(fp->allocations, rel->name);
 		}
 	} else {
-		/* Pass 2, add associated street names to relation members which do not have street name attr defined but 
+		/* Pass 2, add associated street names to relation members which do not have street name attr defined but
 		   have house number defined or are streets */
 		int type_implies_streetname=item_is_street(*member) ||
-			member->type==type_house_number_interpolation_even ||
-			member->type==type_house_number_interpolation_odd || 
-			member->type==type_house_number_interpolation_all ||
-			member->type==type_house_number_interpolation_alphabetic;
-		if(rel->name && !item_bin_get_attr(member,attr_street_name,NULL) && (type_implies_streetname || item_bin_get_attr(member,attr_house_number,NULL)))
+		                            member->type==type_house_number_interpolation_even ||
+		                            member->type==type_house_number_interpolation_odd ||
+		                            member->type==type_house_number_interpolation_all ||
+		                            member->type==type_house_number_interpolation_alphabetic;
+		if(rel->name && !item_bin_get_attr(member,attr_street_name,NULL) && (type_implies_streetname
+		                || item_bin_get_attr(member,attr_house_number,NULL)))
 			item_bin_add_attr_string(member, attr_street_name, rel->name);
 		item_bin_write(member,fp->out);
 	}
@@ -2562,7 +2573,8 @@ struct house_number_interpolation {
 };
 
 static void
-process_house_number_interpolation_member(void *func_priv, void *relation_priv, struct item_bin *member, void *member_priv_unused)
+process_house_number_interpolation_member(void *func_priv, void *relation_priv, struct item_bin *member,
+                void *member_priv_unused)
 {
 	struct process_relation_member_func_priv *fp=func_priv;
 	struct house_number_interpolation *rel=relation_priv;
@@ -2580,9 +2592,9 @@ process_house_number_interpolation_member(void *func_priv, void *relation_priv, 
 			if((nodeid=item_bin_get_attr(member,attr_osm_nodeid,NULL))) {
 				house_number_dup=g_strdup(house_number);
 				fp->allocations=g_list_prepend(fp->allocations, house_number_dup);
-				if (*nodeid==rel->nodeid_first_node){
+				if (*nodeid==rel->nodeid_first_node) {
 					rel->house_number_first_node=house_number_dup;
-				}else{
+				} else {
 					rel->house_number_last_node=house_number_dup;
 				}
 			}
@@ -2590,19 +2602,19 @@ process_house_number_interpolation_member(void *func_priv, void *relation_priv, 
 	} else {
 		/* Pass 2, add interpolation information to interpolation ways. */
 		enum attr_type attr_for_interpolation = 0;
-		switch (member->type){
-			case type_house_number_interpolation_even:
-			case type_house_number_interpolation_odd:
-				attr_for_interpolation = attr_house_number_interpolation_no_ends_incrmt_2;
-				break;
-			case type_house_number_interpolation_all:
-				attr_for_interpolation = attr_house_number_interpolation_no_ends_incrmt_1;
-				break;
-			default:
-				// alphabetic interpolation not (yet) supported
-				break;
+		switch (member->type) {
+		case type_house_number_interpolation_even:
+		case type_house_number_interpolation_odd:
+			attr_for_interpolation = attr_house_number_interpolation_no_ends_incrmt_2;
+			break;
+		case type_house_number_interpolation_all:
+			attr_for_interpolation = attr_house_number_interpolation_no_ends_incrmt_1;
+			break;
+		default:
+			// alphabetic interpolation not (yet) supported
+			break;
 		}
-		if(attr_for_interpolation && rel->street_name){
+		if(attr_for_interpolation && rel->street_name) {
 			item_bin_add_attr_string(member, attr_street_name, rel->street_name);
 			char* house_number_from_to = g_strconcat(rel->house_number_first_node, "-", rel->house_number_last_node, NULL);
 			fp->allocations=g_list_prepend(fp->allocations, house_number_from_to);
@@ -2613,7 +2625,8 @@ process_house_number_interpolation_member(void *func_priv, void *relation_priv, 
 }
 
 static void
-relation_func_writethrough(void *func_priv, void *relation_priv_unused, struct item_bin *member, void *member_priv_unused)
+relation_func_writethrough(void *func_priv, void *relation_priv_unused, struct item_bin *member,
+                           void *member_priv_unused)
 {
 	FILE *out=*(FILE **)func_priv;
 	if(out)
@@ -2629,7 +2642,7 @@ process_associated_streets_setup(FILE *in, struct relations *relations, struct p
 	struct item_bin *ib;
 	struct relations_func *relations_func;
 	int min_count;
-	
+
 	fseek(in, 0, SEEK_SET);
 	relations_func=relations_func_new(process_associated_street_member, fp);
 	while ((ib=read_item(in))) {
@@ -2668,9 +2681,9 @@ void
 process_associated_streets(FILE *in, struct files_relation_processing *files_relproc)
 {
 	struct relations *relations=relations_new();
-	struct process_relation_member_func_priv fp={NULL,NULL};
+	struct process_relation_member_func_priv fp= {NULL,NULL};
 	fseek(in, 0, SEEK_SET);
- 	process_associated_streets_setup(in, relations, &fp);
+	process_associated_streets_setup(in, relations, &fp);
 
 	/* Set noname relations names from their street members */
 	fseek(files_relproc->ways_in, 0, SEEK_SET);
@@ -2697,7 +2710,8 @@ process_associated_streets(FILE *in, struct files_relation_processing *files_rel
 }
 
 static void
-process_house_number_interpolations_setup(FILE *in, struct relations *relations, struct process_relation_member_func_priv *fp)
+process_house_number_interpolations_setup(FILE *in, struct relations *relations,
+                struct process_relation_member_func_priv *fp)
 {
 	struct item_bin *ib;
 	struct relations_func *relations_func_process_hn_interpol;
@@ -2710,17 +2724,21 @@ process_house_number_interpolations_setup(FILE *in, struct relations *relations,
 		hn_interpol->nodeid_first_node=item_bin_get_nodeid_from_attr(ib, attr_osm_nodeid_first_node);
 		hn_interpol->nodeid_last_node=item_bin_get_nodeid_from_attr(ib, attr_osm_nodeid_last_node);
 		dbg_assert(hn_interpol->wayid && hn_interpol->nodeid_first_node && hn_interpol->nodeid_last_node);
-		relations_add_relation_member_entry(relations, relations_func_process_hn_interpol, hn_interpol, NULL, rel_member_node, hn_interpol->nodeid_first_node);
-		relations_add_relation_member_entry(relations, relations_func_process_hn_interpol, hn_interpol, NULL, rel_member_node, hn_interpol->nodeid_last_node);
-		relations_add_relation_member_entry(relations, relations_func_process_hn_interpol, hn_interpol, NULL, rel_member_way, hn_interpol->wayid);
+		relations_add_relation_member_entry(relations, relations_func_process_hn_interpol, hn_interpol, NULL, rel_member_node,
+		                                    hn_interpol->nodeid_first_node);
+		relations_add_relation_member_entry(relations, relations_func_process_hn_interpol, hn_interpol, NULL, rel_member_node,
+		                                    hn_interpol->nodeid_last_node);
+		relations_add_relation_member_entry(relations, relations_func_process_hn_interpol, hn_interpol, NULL, rel_member_way,
+		                                    hn_interpol->wayid);
 	}
 	relations_add_relation_default_entry(relations, relations_func_new(relation_func_writethrough, &fp->out));
 }
 
 void
-process_house_number_interpolations(FILE *in, struct files_relation_processing *files_relproc) {
+process_house_number_interpolations(FILE *in, struct files_relation_processing *files_relproc)
+{
 	struct relations *relations=relations_new();
-	struct process_relation_member_func_priv fp={NULL,NULL};
+	struct process_relation_member_func_priv fp= {NULL,NULL};
 	fseek(in, 0, SEEK_SET);
 	process_house_number_interpolations_setup(in, relations, &fp);
 
@@ -2768,13 +2786,13 @@ process_turn_restrictions_member(void *func_priv, void *relation_priv, struct it
 	struct coord *c=(struct coord *)(member+1);
 	int ccount=member->clen/2;
 
-	if (member->type < type_line) 
-		count=1;	
+	if (member->type < type_line)
+		count=1;
 	else
 		count=2;
 	turn_restriction->c[type]=g_renew(struct coord, turn_restriction->c[type], turn_restriction->c_count[type]+count);
 	turn_restriction->c[type][turn_restriction->c_count[type]++]=c[0];
-	if (count > 1) 
+	if (count > 1)
 		turn_restriction->c[type][turn_restriction->c_count[type]++]=c[ccount-1];
 	if(IS_REF(turn_restriction->r.l)) {
 		turn_restriction->r.l=c[0];
@@ -2782,7 +2800,7 @@ process_turn_restrictions_member(void *func_priv, void *relation_priv, struct it
 		i=1;
 	} else
 		i=0;
-	for(;i<ccount;i++)
+	for(; i<ccount; i++)
 		bbox_extend(&c[i], &turn_restriction->r);
 
 	i=item_order_by_type(member->type);
@@ -2826,7 +2844,7 @@ process_turn_restrictions_finish(GList *tr, FILE *out)
 	GList *l=tr;
 	while (l) {
 		struct turn_restriction *t=l->data;
-		struct coord *c[4]={NULL,NULL,NULL,NULL};
+		struct coord *c[4]= {NULL,NULL,NULL,NULL};
 		struct item_bin *ib=tmp_item_bin;
 
 		if (!t->c_count[0]) {
@@ -2860,7 +2878,7 @@ process_turn_restrictions_finish(GList *tr, FILE *out)
 					item_bin_init(ib,t->type);
 					item_bin_add_coord(ib, c[0], 1);
 					item_bin_add_coord(ib, c[1], 1);
-					if (t->c_count[1] > 1) 
+					if (t->c_count[1] > 1)
 						item_bin_add_coord(ib, c[3], 1);
 					item_bin_add_coord(ib, c[2], 1);
 
@@ -2868,10 +2886,10 @@ process_turn_restrictions_finish(GList *tr, FILE *out)
 					if(order > t->order)
 						order=t->order;
 					item_bin_add_attr_range(ib,attr_order,0,order);
-					
+
 					item_bin_write(ib, out);
 				}
-				
+
 			}
 		}
 		g_free(t->c[0]);
@@ -2892,7 +2910,7 @@ process_turn_restrictions_setup(FILE *in, struct relations *relations)
 	struct relations_func *relations_func;
 	int min_count;
 	GList *turn_restrictions=NULL;
-	
+
 	fseek(in, 0, SEEK_SET);
 	relations_func=relations_func_new(process_turn_restrictions_member, NULL);
 	while ((ib=read_item(in))) {
@@ -2972,7 +2990,8 @@ process_turn_restrictions_old(FILE *in, FILE *coords, FILE *ways, FILE *ways_ind
 	struct node_item ni;
 	long long relid;
 	char from_buffer[65536],to_buffer[65536],via_buffer[65536];
-	struct item_bin *ib,*from=(struct item_bin *)from_buffer,*to=(struct item_bin *)to_buffer,*via=(struct item_bin *)via_buffer;
+	struct item_bin *ib,*from=(struct item_bin *)from_buffer,*to=(struct item_bin *)to_buffer,
+	                     *via=(struct item_bin *)via_buffer;
 	struct coord *fromc,*toc,*viafrom,*viato,*tmp;
 	int min_count;
 	while ((ib=read_item(in))) {
@@ -3048,7 +3067,8 @@ process_turn_restrictions_old(FILE *in, FILE *coords, FILE *ways, FILE *ways_ind
 		if (!(fromc=get_way(ways, ways_index, viafrom, fromm.id, from, 0))) {
 			if (viam.type == 1 || !(fromc=get_way(ways, ways_index, viato, fromm.id, from, 0))) {
 				osm_warning("relation",relid,0,"turn restriction: failed to connect via ");
-				osm_warning(osm_types[viam.type],viam.id,1," 0x%x,0x%x-0x%x,0x%x to from member ",viafrom->x,viafrom->y,viato->x,viato->y);
+				osm_warning(osm_types[viam.type],viam.id,1," 0x%x,0x%x-0x%x,0x%x to from member ",viafrom->x,viafrom->y,viato->x,
+				            viato->y);
 				osm_warning(osm_types[fromm.type],fromm.id,1," (");
 				get_way(ways, ways_index, viafrom, fromm.id, from, 1);
 				fprintf(stderr,")\n");
@@ -3061,7 +3081,8 @@ process_turn_restrictions_old(FILE *in, FILE *coords, FILE *ways, FILE *ways_ind
 		}
 		if (!(toc=get_way(ways, ways_index, viato, tom.id, to, 0))) {
 			osm_warning("relation",relid,0,"turn restriction: failed to connect via ");
-			osm_warning(osm_types[viam.type],viam.id,1," 0x%x,0x%x-0x%x,0x%x to to member ",viafrom->x,viafrom->y,viato->x,viato->y);
+			osm_warning(osm_types[viam.type],viam.id,1," 0x%x,0x%x-0x%x,0x%x to to member ",viafrom->x,viafrom->y,viato->x,
+			            viato->y);
 			osm_warning(osm_types[tom.type],tom.id,1," (");
 			get_way(ways, ways_index, viato, tom.id, to, 1);
 			fprintf(stderr,")\n");
@@ -3118,7 +3139,8 @@ process_countries(FILE *way, FILE *ways_index)
 		if (!seg) {
 			fprintf(stderr,"is null\n");
 		} else {
-			fprintf(stderr,"segment %p %s area "LONGLONG_FMT"\n",sort_segments,coord_is_equal(*seg->first, *seg->last) ? "closed":"open",geom_poly_area(seg->first,seg->last-seg->first+1));
+			fprintf(stderr,"segment %p %s area "LONGLONG_FMT"\n",sort_segments,coord_is_equal(*seg->first,
+			                *seg->last) ? "closed":"open",geom_poly_area(seg->first,seg->last-seg->first+1));
 		}
 #if 0
 		int count=seg->last-seg->first+1;
@@ -3148,7 +3170,7 @@ nodes_ref_item_bin(struct item_bin *ib)
 {
 	int i;
 	struct coord *c=(struct coord *)(ib+1);
-	for (i = 0 ; i < ib->clen/2 ; i++) 
+	for (i = 0 ; i < ib->clen/2 ; i++)
 		node_ref_way(GET_REF(c[i]));
 }
 
@@ -3182,7 +3204,8 @@ write_item_way_subsection_index(FILE *out, FILE *out_index, FILE *out_graph, str
 }
 
 static void
-write_item_way_subsection(FILE *out, FILE *out_index, FILE *out_graph, struct item_bin *orig, int first, int last, long long *last_id)
+write_item_way_subsection(FILE *out, FILE *out_index, FILE *out_graph, struct item_bin *orig, int first, int last,
+                          long long *last_id)
 {
 	struct item_bin new;
 	struct coord *c=(struct coord *)(orig+1);
@@ -3205,7 +3228,7 @@ ref_ways(FILE *in)
 	struct item_bin *ib;
 
 	fseek(in, 0, SEEK_SET);
-	while ((ib=read_item(in))) 
+	while ((ib=read_item(in)))
 		nodes_ref_item_bin(ib);
 }
 
@@ -3276,7 +3299,8 @@ process_way2poi(FILE *in, FILE *out, int type)
 
 
 int
-map_resolve_coords_and_split_at_intersections(FILE *in, FILE *out, FILE *out_index, FILE *out_graph, FILE *out_coastline, int final)
+map_resolve_coords_and_split_at_intersections(FILE *in, FILE *out, FILE *out_index, FILE *out_graph,
+                FILE *out_coastline, int final)
 {
 	struct coord *c;
 	int i,ccount,last,remaining;
@@ -3327,7 +3351,8 @@ map_resolve_coords_and_split_at_intersections(FILE *in, FILE *out, FILE *out_ind
 }
 
 static void
-index_country_add(struct zip_info *info, int country_id, char*first_key, char *last_key, char *tile, char *filename, int size, FILE *out)
+index_country_add(struct zip_info *info, int country_id, char*first_key, char *last_key, char *tile, char *filename,
+                  int size, FILE *out)
 {
 	struct item_bin *item_bin=init_item(type_countryindex);
 	int num=0, zip_num;
@@ -3338,7 +3363,7 @@ index_country_add(struct zip_info *info, int country_id, char*first_key, char *l
 		num++;
 		zip_num=add_aux_tile(info, tilename, filename, size);
 	} while (zip_num == -1);
-	
+
 	item_bin_add_attr_int(item_bin, attr_country_id, country_id);
 
 	if(first_key)
@@ -3360,7 +3385,7 @@ write_countrydir(struct zip_info *zip_info, int max_index_size)
 	struct country_table *co;
 	for (i = 0 ; i < sizeof(country_table)/sizeof(struct country_table) ; i++) {
 		co=&country_table[i];
-		if(co->size) { 
+		if(co->size) {
 			FILE *in;
 			char countrypart[32];
 			char partsuffix[32];
@@ -3376,9 +3401,9 @@ write_countrydir(struct zip_info *zip_info, int max_index_size)
 			char *countryindexname;
 			FILE *countryindex;
 			char key[1024]="",first_key[1024]="",last_key[1024]="";
-			
+
 			tile(&co->r, "", tileco, max, overlap, NULL);
-			
+
 			snprintf(filename,sizeof(filename),"country_%d.tmp", co->countryid);
 			in=fopen(filename,"rb");
 
@@ -3386,7 +3411,7 @@ write_countrydir(struct zip_info *zip_info, int max_index_size)
 
 			countryindex=tempfile("0",countrypart,1);
 			countryindexname=tempfile_name("0",countrypart);
-			
+
 			partsize=0;
 
 			while(1) {
@@ -3399,8 +3424,7 @@ write_countrydir(struct zip_info *zip_info, int max_index_size)
 					if(a) {
 						g_strlcpy(tilecur,(char *)(a+1),sizeof(tilecur));
 						item_bin_remove_attr(ib,a+1);
-					}
-					else
+					} else
 						tilecur[0]=0;
 
 					a=item_bin_get_attr_bin_last(ib);
@@ -3409,7 +3433,7 @@ write_countrydir(struct zip_info *zip_info, int max_index_size)
 				}
 
 				/* If output file is already opened, and:
-				     - we have reached end of input file, or 
+				     - we have reached end of input file, or
 				     - adding new tile would make index part too big, or
 				     - item just read belongs to a different tile than the previous one,
 				    then close existing output file, put reference to the country index tile.*/
@@ -3417,7 +3441,8 @@ write_countrydir(struct zip_info *zip_info, int max_index_size)
 					partsize=ftello(out);
 					fclose(out);
 					out=NULL;
-					index_country_add(zip_info,co->countryid,first_key,last_key,strlen(tileco)>strlen(tileprev)?tileco:tileprev,outname,partsize,countryindex);
+					index_country_add(zip_info,co->countryid,first_key,last_key,strlen(tileco)>strlen(tileprev)?tileco:tileprev,outname,
+					                  partsize,countryindex);
 					g_free(outname);
 					outname=NULL;
 					g_strlcpy(first_key,key,sizeof(first_key));
@@ -3440,7 +3465,7 @@ write_countrydir(struct zip_info *zip_info, int max_index_size)
 				partsize+=ibsize;
 				g_strlcpy(last_key,key,sizeof(last_key));
 			}
-			
+
 			partsize=ftello(countryindex);
 			if(partsize)
 				index_country_add(zip_info,co->countryid,NULL,NULL,tileco,countryindexname, partsize, zip_get_index(zip_info));
@@ -3498,7 +3523,7 @@ remove_countryfiles(void)
 			sprintf(filename,"country_%d.tmp", co->countryid);
 			unlink(filename);
 		}
-		for(j=0; j<=co->nparts;j++) {
+		for(j=0; j<=co->nparts; j++) {
 			char partsuffix[32];
 			sprintf(filename,"country_%d_p", co->countryid);
 			sprintf(partsuffix,"%d",j);

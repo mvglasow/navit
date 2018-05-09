@@ -61,7 +61,7 @@ jobs:
           name: Process icons
           command: |
             cd navit/icons
-            make  
+            make
             sudo ls -la
             mkdir ../android/res/drawable-nodpi
             rename 'y/A-Z/a-z/' *
@@ -70,7 +70,7 @@ jobs:
       - run:
           name: Process translations
           command: |
-            cd po  
+            cd po
             make
             sudo ls -la
             mkdir ../navit/android/res/raw
@@ -113,7 +113,7 @@ jobs:
           path: navit/android/build/outputs/logs
           destination: logs
       - store_test_results:
-          path: navit/android/build/test-results  
+          path: navit/android/build/test-results
   build_win32:
     <<: *defaults
     steps:

@@ -58,7 +58,8 @@ int slices;
 int unknown_country;
 char ch_suffix[] ="r"; /* Used to make compiler happy due to Bug 35903 in gcc */
 /** Textual description of available experimental features, or NULL (=none available). */
-char* experimental_feature_description = "Move coastline data to order 6 tiles. Makes map look more smooth, but may affect drawing/searching performance."; /* add description here */
+char* experimental_feature_description =
+        "Move coastline data to order 6 tiles. Makes map look more smooth, but may affect drawing/searching performance."; /* add description here */
 /** Indicates if experimental features (if available) were enabled. */
 int experimental;
 
@@ -104,7 +105,7 @@ static int assafe_lltoa(long long n, int maxlen, char *buf)
 		n/=10;
 	}
 	out_length=i;
-	for(i=0;i<out_length/2;i++) {
+	for(i=0; i<out_length/2; i++) {
 		char c=buf[i];
 		buf[i]=buf[out_length-i-1];
 		buf[out_length-i-1]=c;
@@ -118,7 +119,7 @@ static int assafe_lltoa(long long n, int maxlen, char *buf)
 static int assafe_strcp2buf(char *str, int maxlen, char *buf)
 {
 	int i;
-	for(i=0;str[i] && i<maxlen;i++)
+	for(i=0; str[i] && i<maxlen; i++)
 		buf[i]=str[i];
 	return i;
 }
@@ -142,8 +143,8 @@ progress_time(void)
 	seconds%=60;
 	pos+=assafe_strcp2buf(seconds>9?":":":0", buflen-pos, buf+pos);
 	pos+=assafe_lltoa(seconds, buflen-pos, buf+pos);
-	if (write(2,buf,pos) == -1){
-		dbg(lvl_warning, "Writing progress time failed. Error-Code: %d" , errno);
+	if (write(2,buf,pos) == -1) {
+		dbg(lvl_warning, "Writing progress time failed. Error-Code: %d", errno);
 	}
 }
 
@@ -160,8 +161,8 @@ progress_memory(void)
 	pos+=assafe_lltoa(mem/1024/1024, buflen-pos, buf+pos);
 	pos+=assafe_strcp2buf(" MB", buflen-pos, buf+pos);
 	write_result = write(2,buf,pos);
-	if (write_result == -1){
-		dbg(lvl_warning, "Writing progress memory failed. Error-Code: %d" , errno);
+	if (write_result == -1) {
+		dbg(lvl_warning, "Writing progress memory failed. Error-Code: %d", errno);
 	}
 #endif
 }
@@ -191,20 +192,20 @@ sig_alrm_do(int sig)
 	pos+=assafe_lltoa(processed_tiles, buflen-pos, buf+pos);
 	pos+=assafe_strcp2buf(" tiles", buflen-pos, buf+pos);
 	write_result = write(2,buf,pos);
-	if (write_result == -1){
-		dbg(lvl_warning, "Writing sig alrm ailed. Error-Code: %d" , errno);
+	if (write_result == -1) {
+		dbg(lvl_warning, "Writing sig alrm ailed. Error-Code: %d", errno);
 	}
 	progress_time();
 	progress_memory();
 #ifndef _WIN32
 	write_result = write(2,"\r\n",2);
-	if (write_result == -1){
-		dbg(lvl_warning, "Writing new line in sig alrm ailed. Error-Code: %d" , errno);
+	if (write_result == -1) {
+		dbg(lvl_warning, "Writing new line in sig alrm ailed. Error-Code: %d", errno);
 	}
 #else
 	write_result = write(2,"\n",1);
-	if (write_result == -1){
-		dbg(lvl_warning, "Writing new line in sig alrm ailed. Error-Code: %d" , errno);
+	if (write_result == -1) {
+		dbg(lvl_warning, "Writing new line in sig alrm ailed. Error-Code: %d", errno);
 	}
 #endif
 }
@@ -227,7 +228,8 @@ sig_alrm_end(void)
 }
 
 static struct files_relation_processing *
-files_relation_processing_new(FILE *line2poi, char *suffix) {
+files_relation_processing_new(FILE *line2poi, char *suffix)
+{
 	struct files_relation_processing *result = g_new(struct files_relation_processing, 1);
 	result->ways_in=tempfile(suffix,"ways_split",0);
 	result->ways_out=tempfile(suffix,"ways_split_relproc_tmp",1);
@@ -243,7 +245,8 @@ files_relation_processing_new(FILE *line2poi, char *suffix) {
 }
 
 static void
-files_relation_processing_destroy(struct files_relation_processing *files_relproc, char *suffix) {
+files_relation_processing_destroy(struct files_relation_processing *files_relproc, char *suffix)
+{
 	fclose(files_relproc->ways_in);
 	fclose(files_relproc->nodes_in);
 	fclose(files_relproc->ways_out);
@@ -262,9 +265,9 @@ static struct plugins *plugins;
 
 static void add_plugin(char *path)
 {
-	struct attr pa_attr={attr_path};
-	struct attr pl_attr={attr_plugins};
-	struct attr *attrs[2]={&pa_attr,NULL};
+	struct attr pa_attr= {attr_path};
+	struct attr pl_attr= {attr_plugins};
+	struct attr *attrs[2]= {&pa_attr,NULL};
 
 	if (! plugins) {
 		file_init();
@@ -300,12 +303,13 @@ usage(void)
 	fprintf(f,"-a (--attr-debug-level)  <level>  : control which data is included in the debug attribute\n");
 	fprintf(f,"-c (--dump-coordinates)           : dump coordinates after phase 1\n");
 #ifdef HAVE_POSTGRESQL
-	fprintf(f,"-d (--db) <conn. string>          : get osm data out of a postgresql database with osm simple scheme and given connect string\n");
+	fprintf(f,
+	        "-d (--db) <conn. string>          : get osm data out of a postgresql database with osm simple scheme and given connect string\n");
 #endif
 	fprintf(f,"-D (--dump)                       : dump map data to standard output in Navit textfile format\n");
 	fprintf(f,"-e (--end) <phase>                : end at specified phase\n");
 	fprintf(f,"-E (--experimental)               : Enable experimental features (%s)\n",
-		experimental_feature_description ? experimental_feature_description : "-not available in this version-");
+	        experimental_feature_description ? experimental_feature_description : "-not available in this version-");
 	fprintf(f,"-i (--input-file) <file>          : specify the input file name (OSM), overrules default stdin\n");
 	fprintf(f,"-k (--keep-tmpfiles)              : do not delete tmp files after processing. useful to reuse them\n");
 	fprintf(f,"-M (--o5m)                        : input data is in o5m format\n");
@@ -314,21 +318,24 @@ usage(void)
 	fprintf(f,"-P (--protobuf)                   : input data is in pbf (Protocol Buffer) format\n");
 	fprintf(f,"-r (--rule-file) <file>           : read mapping rules from specified file\n");
 	fprintf(f,"-s (--start) <phase>              : start at specified phase\n");
-	fprintf(f,"-S (--slice-size) <size>          : limit memory to use for some large internal buffers, in bytes. Default is %dGB.\n", SLIZE_SIZE_DEFAULT_GB);
+	fprintf(f,
+	        "-S (--slice-size) <size>          : limit memory to use for some large internal buffers, in bytes. Default is %dGB.\n",
+	        SLIZE_SIZE_DEFAULT_GB);
 	fprintf(f,"-t (--timestamp) <y-m-dTh:m:s>    : Set zip timestamp\n");
-	fprintf(f,"-w (--dedupe-ways)                : ensure no duplicate ways or nodes. useful when using several input files\n");
+	fprintf(f,
+	        "-w (--dedupe-ways)                : ensure no duplicate ways or nodes. useful when using several input files\n");
 	fprintf(f,"-W (--ways-only)                  : process only ways\n");
 	fprintf(f,"-U (--unknown-country)            : add objects with unknown country to index\n");
 	fprintf(f,"-x (--index-size)                 : set maximum country index size in bytes\n");
 	fprintf(f,"-z (--compression-level) <level>  : set the compression level\n");
-	fprintf(f,"Internal options (undocumented):\n");                                                                      
-	fprintf(f,"-b (--binfile)\n");                                                                                        
-	fprintf(f,"-B \n");                                                                                                   
-	fprintf(f,"-m (--map) \n");                                                                                           
-	fprintf(f,"-O \n");                                                                                                   
-	fprintf(f,"-p (--plugin) \n");                                                                                        
+	fprintf(f,"Internal options (undocumented):\n");
+	fprintf(f,"-b (--binfile)\n");
+	fprintf(f,"-B \n");
+	fprintf(f,"-m (--map) \n");
+	fprintf(f,"-O \n");
+	fprintf(f,"-p (--plugin) \n");
 	fprintf(f,"-u (--url) \n");
-	
+
 	exit(0);
 }
 
@@ -405,9 +412,9 @@ parse_option(struct maptool_params *p, char **argv, int argc, int *option_index)
 	};
 	c = getopt_long (argc, argv, "6B:DEMNO:PS:Wa:bc"
 #ifdef HAVE_POSTGRESQL
-				      "d:"
+	                 "d:"
 #endif
-				      "e:hi:knm:p:r:s:t:wu:z:Ux:", long_options, option_index);
+	                 "e:hi:knm:p:r:s:t:wu:z:Ux:", long_options, option_index);
 	if (c == -1)
 		return 1;
 	switch (c) {
@@ -425,7 +432,7 @@ parse_option(struct maptool_params *p, char **argv, int argc, int *option_index)
 		break;
 	case 'M':
 		p->o5m=1;
-		break;	
+		break;
 	case 'N':
 		p->process_ways=0;
 		break;
@@ -514,18 +521,16 @@ parse_option(struct maptool_params *p, char **argv, int argc, int *option_index)
 		break;
 	case 'i':
 		p->input_file = fopen( optarg, "r" );
-		if (p->input_file ==  NULL )
-		{
-		    fprintf( stderr, "\nInput file (%s) not found\n", optarg );
-		    exit( 1 );
+		if (p->input_file ==  NULL ) {
+			fprintf( stderr, "\nInput file (%s) not found\n", optarg );
+			exit( 1 );
 		}
 		break;
 	case 'r':
 		p->rule_file = fopen( optarg, "r" );
-		if (p->rule_file ==  NULL )
-		{
-		    fprintf( stderr, "\nRule file (%s) not found\n", optarg );
-		    exit( 1 );
+		if (p->rule_file ==  NULL ) {
+			fprintf( stderr, "\nRule file (%s) not found\n", optarg );
+			exit( 1 );
 		}
 		break;
 	case 'u':
@@ -539,7 +544,7 @@ parse_option(struct maptool_params *p, char **argv, int argc, int *option_index)
 		p->compression_level=atoi(optarg);
 		break;
 #endif
-        case '?':
+	case '?':
 	default:
 		return 0;
 	}
@@ -562,7 +567,8 @@ start_phase(struct maptool_params *p, char *str)
 }
 
 static void
-exit_with_error(char* error_message) {
+exit_with_error(char* error_message)
+{
 	fprintf(stderr, "%s", error_message);
 	exit(1);
 }
@@ -592,28 +598,26 @@ osm_read_input_data(struct maptool_params *p, char *suffix)
 		map_collect_data_osm_db(p->dbstr,&p->osm);
 	else
 #endif
-	if (p->map_handles) {
-		GList *l;
-		phase1_map(p->map_handles,p->osm.ways,p->osm.nodes);
-		l=p->map_handles;
-		while (l) {
-			map_destroy(l->data);
-			l=g_list_next(l);
-		}
-	}
-	else if (p->protobuf) {
+		if (p->map_handles) {
+			GList *l;
+			phase1_map(p->map_handles,p->osm.ways,p->osm.nodes);
+			l=p->map_handles;
+			while (l) {
+				map_destroy(l->data);
+				l=g_list_next(l);
+			}
+		} else if (p->protobuf) {
 #ifdef _MSC_VER
-		exit_with_error("Option -P not yet supported on MSVC\n");
+			exit_with_error("Option -P not yet supported on MSVC\n");
 #else
-		map_collect_data_osm_protobuf(p->input_file,&p->osm);
+			map_collect_data_osm_protobuf(p->input_file,&p->osm);
 #endif
-	}
-	else if (p->o5m)
-		map_collect_data_osm_o5m(p->input_file,&p->osm);
-	else
-		map_collect_data_osm(p->input_file,&p->osm);
+		} else if (p->o5m)
+			map_collect_data_osm_o5m(p->input_file,&p->osm);
+		else
+			map_collect_data_osm(p->input_file,&p->osm);
 
-	if (node_buffer.size==0 && !p->map_handles){
+	if (node_buffer.size==0 && !p->map_handles) {
 		fprintf(stderr,"No nodes found - looks like an invalid input file.\n");
 		exit(1);
 	}
@@ -649,7 +653,7 @@ osm_count_references(struct maptool_params *p, char *suffix, int clear)
 		if (!first) {
 			FILE *ways=tempfile(suffix,"ways",0);
 			load_buffer("coords.tmp",&node_buffer, i*slice_size, slice_size);
-			if (clear) 
+			if (clear)
 				clear_node_item_buffer();
 			ref_ways(ways);
 			save_buffer("coords.tmp",&node_buffer, i*slice_size);
@@ -763,7 +767,7 @@ maptool_dump(struct maptool_params *p, char *suffix)
 {
 	char *files[10];
 	int i,files_count=0;
-	if (p->process_nodes) 
+	if (p->process_nodes)
 		files[files_count++]="nodes";
 	if (p->process_ways)
 		files[files_count++]="ways_split";
@@ -779,7 +783,8 @@ maptool_dump(struct maptool_params *p, char *suffix)
 }
 
 static void
-maptool_generate_tiles(struct maptool_params *p, char *suffix, char **filenames, int filename_count, int first, char *suffix0)
+maptool_generate_tiles(struct maptool_params *p, char *suffix, char **filenames, int filename_count, int first,
+                       char *suffix0)
 {
 	struct zip_info *zip_info;
 	FILE *tilesdir;
@@ -808,7 +813,8 @@ maptool_generate_tiles(struct maptool_params *p, char *suffix, char **filenames,
 }
 
 static void
-maptool_assemble_map(struct maptool_params *p, char *suffix, char **filenames, char **referencenames, int filename_count, int first, int last, char *suffix0)
+maptool_assemble_map(struct maptool_params *p, char *suffix, char **filenames, char **referencenames,
+                     int filename_count, int first, int last, char *suffix0)
 {
 	FILE *files[10];
 	FILE *references[10];
@@ -838,7 +844,7 @@ maptool_assemble_map(struct maptool_params *p, char *suffix, char **filenames, c
 	} else {
 		for (f = 0 ; f < filename_count ; f++) {
 			files[f]=tempfile(suffix, filenames[f], 0);
-			if (referencenames[f]) 
+			if (referencenames[f])
 				references[f]=tempfile(suffix,referencenames[f],1);
 			else
 				references[f]=NULL;
@@ -918,7 +924,7 @@ maptool_load_tilesdir(struct maptool_params *p, char *suffix)
 int main(int argc, char **argv)
 {
 	struct maptool_params p;
-	char *suffixes[]={""};
+	char *suffixes[]= {""};
 	char *suffix=suffixes[0];
 	char *filenames[20];
 	char *referencenames[20];
@@ -1053,11 +1059,12 @@ int main(int argc, char **argv)
 		if(!p.keep_tmpfiles)
 			tempfile_unlink(suffix,"ways_split_index");
 	}
-	if (p.process_relations && p.process_ways && p.process_nodes && start_phase(&p,"processing associated street relations")) {
-		struct files_relation_processing *files_relproc = files_relation_processing_new(p.osm.line2poi, suffix); 
+	if (p.process_relations && p.process_ways && p.process_nodes
+	                && start_phase(&p,"processing associated street relations")) {
+		struct files_relation_processing *files_relproc = files_relation_processing_new(p.osm.line2poi, suffix);
 		p.osm.associated_streets=tempfile(suffix,"associated_streets",0);
 		if (p.osm.associated_streets) {
-		
+
 			process_associated_streets(p.osm.associated_streets, files_relproc);
 
 			fclose(p.osm.associated_streets);
@@ -1067,9 +1074,10 @@ int main(int argc, char **argv)
 			}
 		}
 	}
-	if (p.process_relations && p.process_ways && p.process_nodes && start_phase(&p,"processing house number interpolations")) {
+	if (p.process_relations && p.process_ways && p.process_nodes
+	                && start_phase(&p,"processing house number interpolations")) {
 		// OSM house number interpolations are handled like a relation.
-		struct files_relation_processing *files_relproc = files_relation_processing_new(p.osm.line2poi, suffix); 
+		struct files_relation_processing *files_relproc = files_relation_processing_new(p.osm.line2poi, suffix);
 		p.osm.house_number_interpolations=tempfile(suffix,"house_number_interpolations",0);
 		if (p.osm.house_number_interpolations) {
 
@@ -1114,7 +1122,8 @@ int main(int argc, char **argv)
 		if (start_phase(&p,"assembling map")) {
 			maptool_load_countries(&p);
 			maptool_load_tilesdir(&p, suffix);
-			maptool_assemble_map(&p, suffix, filenames, referencenames, filename_count, i == suffix_start, i == suffix_count-1, suffixes[0]);
+			maptool_assemble_map(&p, suffix, filenames, referencenames, filename_count, i == suffix_start, i == suffix_count-1,
+			                     suffixes[0]);
 		}
 		phase-=2;
 	}

@@ -35,8 +35,9 @@ struct speech_priv {
 	SPDConnection *conn;
 };
 
-static int 
-speechd_say(struct speech_priv *this, const char *text) {
+static int
+speechd_say(struct speech_priv *this, const char *text)
+{
 	int err;
 
 	err = spd_sayf(this->conn, SPD_MESSAGE, text);
@@ -45,8 +46,9 @@ speechd_say(struct speech_priv *this, const char *text) {
 	return 0;
 }
 
-static void 
-speechd_destroy(struct speech_priv *this) {
+static void
+speechd_destroy(struct speech_priv *this)
+{
 	spd_close(this->conn);
 	g_free(this);
 }
@@ -57,12 +59,13 @@ static struct speech_methods speechd_meth = {
 };
 
 static struct speech_priv *
-speechd_new(struct speech_methods *meth, struct attr **attrs, struct attr *attr) {
+speechd_new(struct speech_methods *meth, struct attr **attrs, struct attr *attr)
+{
 	struct speech_priv *this;
 	SPDConnection *conn;
 
 	conn = spd_open("navit","main",NULL,SPD_MODE_SINGLE);
-	if (! conn) 
+	if (! conn)
 		return NULL;
 	this=g_new(struct speech_priv,1);
 	if (this) {

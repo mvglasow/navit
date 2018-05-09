@@ -53,7 +53,7 @@ select_row(GtkTreeView *tree, GtkTreePath *path, GtkTreeViewColumn *column, stru
 	model=gtk_tree_view_get_model(tree);
 	gtk_tree_model_get_iter(model, &iter, path);
 
-	for (i=0;i<gtk_tree_model_get_n_columns(model);i++) {
+	for (i=0; i<gtk_tree_model_get_n_columns(model); i++) {
 		gtk_tree_model_get_value(model, &iter, i, &value);
 		cols[i]=g_strdup_value_contents(&value)+1;
 		cols[i][strlen(cols[i])-1]='\0';
@@ -78,11 +78,11 @@ gui_gtk_datawindow_add(struct datawindow_priv *win, struct param_list *param, in
 		gtk_widget_grab_focus(GTK_WIDGET(win->treeview));
 
 		/* add column names to treeview */
-		for(i=0;i<count;i++) {
+		for(i=0; i<count; i++) {
 			if (param[i].name) {
 				cell=gtk_cell_renderer_text_new();
 				gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (win->treeview),-1,param[i].name,
-					cell,"text",i, NULL);
+				                cell,"text",i, NULL);
 			}
 		}
 #if 0
@@ -93,13 +93,13 @@ gui_gtk_datawindow_add(struct datawindow_priv *win, struct param_list *param, in
 
 	/* find data storage and create a new one if none is there */
 	if (gtk_tree_view_get_model(GTK_TREE_VIEW (win->treeview)) == NULL) {
-		for(i=0;i<count;i++) {
+		for(i=0; i<count; i++) {
 			if (param[i].name && !strcmp(param[i].name, "Distance"))
 				types[i]=G_TYPE_INT;
 			else
 				types[i]=G_TYPE_STRING;
 		}
-	    	win->liststore=gtk_list_store_newv(count,types);
+		win->liststore=gtk_list_store_newv(count,types);
 		if (! strcmp(param[0].name, "Distance")) {
 			win->sortmodel=gtk_tree_model_sort_new_with_model(GTK_TREE_MODEL(win->liststore));
 			gtk_tree_sortable_set_sort_column_id (GTK_TREE_SORTABLE (win->sortmodel), 0, GTK_SORT_ASCENDING);
@@ -111,7 +111,7 @@ gui_gtk_datawindow_add(struct datawindow_priv *win, struct param_list *param, in
 	gtk_list_store_append(win->liststore,&iter);
 
 	/* add data to data storage */
-	for(i=0;i<count;i++) {
+	for(i=0; i<count; i++) {
 		if (param[i].name && !strcmp(param[i].name, "Distance")) {
 			gtk_list_store_set(win->liststore,&iter,i,atoi(param[i].value),-1);
 		} else {
@@ -182,7 +182,8 @@ static struct datawindow_methods gui_gtk_datawindow_meth = {
 };
 
 struct datawindow_priv *
-gui_gtk_datawindow_new(struct gui_priv *gui, const char *name, struct callback *click, struct callback *close, struct datawindow_methods *meth)
+gui_gtk_datawindow_new(struct gui_priv *gui, const char *name, struct callback *click, struct callback *close,
+                       struct datawindow_methods *meth)
 {
 	struct datawindow_priv *win;
 
@@ -197,7 +198,7 @@ gui_gtk_datawindow_new(struct gui_priv *gui, const char *name, struct callback *
 
 	win->scrolled_window = gtk_scrolled_window_new (NULL, NULL);
 	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (win->scrolled_window),
-			GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+	                                GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
 	gtk_container_add(GTK_CONTAINER(win->window), win->scrolled_window);
 	g_signal_connect(G_OBJECT(win->window), "key-press-event", G_CALLBACK(keypress), win);
 	win->treeview=NULL;

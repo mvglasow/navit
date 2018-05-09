@@ -30,7 +30,7 @@ struct callback {
 	int pcount;
 	enum attr_type type;
 	void *p[0];
-	
+
 };
 
 struct callback_list {
@@ -41,7 +41,7 @@ struct callback_list *
 callback_list_new(void)
 {
 	struct callback_list *ret=g_new0(struct callback_list, 1);
-	
+
 	return ret;
 }
 
@@ -57,7 +57,7 @@ callback_new_attr(void (*func)(void), enum attr_type type, int pcount, void **p)
 	ret->type=type;
 	for (i = 0 ; i < pcount ; i++) {
 		ret->p[i]=p[i];
-	}	
+	}
 	return ret;
 }
 
@@ -118,8 +118,8 @@ struct callback *
 callback_list_add_new(struct callback_list *l, void (*func)(void), int pcount, void **p)
 {
 	struct callback *ret;
-	
-	ret=callback_new(func, pcount, p);	
+
+	ret=callback_new(func, pcount, p);
 	callback_list_add(l, ret);
 	return ret;
 }
@@ -146,49 +146,49 @@ callback_call(struct callback *cb, int pcount, void **p)
 		return;
 	if (cb->pcount + pcount <= 8) {
 		dbg(lvl_debug,"cb->pcount=%d", cb->pcount);
-		if (cb->pcount && cb->p) 
+		if (cb->pcount && cb->p)
 			dbg(lvl_debug,"cb->p[0]=%p", cb->p[0]);
 		dbg(lvl_debug,"pcount=%d", pcount);
 		if (pcount) {
-		       	dbg_assert(p!=NULL); 
+			dbg_assert(p!=NULL);
 			dbg(lvl_debug,"p[0]=%p", p[0]);
 		}
-		for (i = 0 ; i < cb->pcount ; i++) 
+		for (i = 0 ; i < cb->pcount ; i++)
 			pf[i]=cb->p[i];
 		for (i = 0 ; i < pcount ; i++)
 			pf[i+cb->pcount]=p[i];
 		switch (cb->pcount+pcount) {
 		case 8:
 			((int (*)(void*,void*,void*,void*,void*,void*,void*,void*))cb->func)(
-			  pf[0],pf[1],pf[2],pf[3],pf[4],pf[5],pf[6],pf[7]);
+			        pf[0],pf[1],pf[2],pf[3],pf[4],pf[5],pf[6],pf[7]);
 			break;
 		case 7:
 			((int (*)(void*,void*,void*,void*,void*,void*,void*))cb->func)(
-			  pf[0],pf[1],pf[2],pf[3],pf[4],pf[5],pf[6]);
+			        pf[0],pf[1],pf[2],pf[3],pf[4],pf[5],pf[6]);
 			break;
 		case 6:
 			((int (*)(void*,void*,void*,void*,void*,void*))cb->func)(
-			  pf[0],pf[1],pf[2],pf[3],pf[4],pf[5]);
+			        pf[0],pf[1],pf[2],pf[3],pf[4],pf[5]);
 			break;
 		case 5:
 			((int (*)(void*,void*,void*,void*,void*))cb->func)(
-			  pf[0],pf[1],pf[2],pf[3],pf[4]);
+			        pf[0],pf[1],pf[2],pf[3],pf[4]);
 			break;
 		case 4:
 			((int (*)(void*,void*,void*,void*))cb->func)(
-			  pf[0],pf[1],pf[2],pf[3]);
+			        pf[0],pf[1],pf[2],pf[3]);
 			break;
 		case 3:
 			((int (*)(void*,void*,void*))cb->func)(
-			  pf[0],pf[1],pf[2]);
+			        pf[0],pf[1],pf[2]);
 			break;
 		case 2:
 			((int (*)(void*,void*))cb->func)(
-			  pf[0],pf[1]);
+			        pf[0],pf[1]);
 			break;
 		case 1:
 			((int (*)(void*))cb->func)(
-			  pf[0]);
+			        pf[0]);
 			break;
 		case 0:
 			cb->func();
@@ -229,7 +229,7 @@ callback_list_call_attr(struct callback_list *l, enum attr_type type, int pcount
 			callback_call(cb, pcount, p);
 		cbi=g_list_next(cbi);
 	}
-	
+
 }
 
 void
@@ -264,7 +264,7 @@ callback_list_call_args(struct callback_list *cbl, int count, ...)
 	callback_list_call(cbl, count, p);
 }
 
-void 
+void
 callback_list_destroy(struct callback_list *l)
 {
 	GList *cbi;

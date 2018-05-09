@@ -39,8 +39,9 @@
 static int map_id;
 
 static void
-remove_comment_line(char* line){
-	if (line[0]==TEXTFILE_COMMENT_CHAR){
+remove_comment_line(char* line)
+{
+	if (line[0]==TEXTFILE_COMMENT_CHAR) {
 		line='\0';
 	}
 }
@@ -49,15 +50,15 @@ static void
 get_line(struct map_rect_priv *mr)
 {
 	if(mr->f) {
-		if (!mr->m->is_pipe) 
+		if (!mr->m->is_pipe)
 			mr->pos=ftell(mr->f);
 		else
 			mr->pos+=mr->lastlen;
 		fgets(mr->line, TEXTFILE_LINE_SIZE, mr->f);
-	        dbg(lvl_debug,"read textfile line: %s", mr->line);
+		dbg(lvl_debug,"read textfile line: %s", mr->line);
 		remove_comment_line(mr->line);
 		mr->lastlen=strlen(mr->line)+1;
-		if (strlen(mr->line) >= TEXTFILE_LINE_SIZE-1) 
+		if (strlen(mr->line) >= TEXTFILE_LINE_SIZE-1)
 			dbg(lvl_error, "line too long: %s", mr->line);
 	}
 }
@@ -97,12 +98,12 @@ textfile_coord_get(void *priv_data, struct coord *c, int count)
 	dbg(lvl_warning,"enter, count: %d",count);
 	while (count--) {
 		if (mr->f && !feof(mr->f) && (!mr->item.id_hi || !mr->eoc) && parse_line(mr, mr->item.id_hi)) {
-			if (c){
+			if (c) {
 				*c=mr->c;
 				dbg(lvl_debug,"c=0x%x,0x%x", c->x, c->y);
 				c++;
 			}
-			ret++;		
+			ret++;
 			get_line(mr);
 			if (mr->item.id_hi)
 				mr->eoc=1;
@@ -125,7 +126,7 @@ textfile_attr_rewind(void *priv_data)
 static void
 textfile_encode_attr(char *attr_val, enum attr_type attr_type, struct attr *attr)
 {
-	if (attr_type >= attr_type_int_begin && attr_type <= attr_type_int_end) 
+	if (attr_type >= attr_type_int_begin && attr_type <= attr_type_int_end)
 		attr->u.num=atoi(attr_val);
 	else
 		attr->u.str=attr_val;
@@ -133,7 +134,7 @@ textfile_encode_attr(char *attr_val, enum attr_type attr_type, struct attr *attr
 
 static int
 textfile_attr_get(void *priv_data, enum attr_type attr_type, struct attr *attr)
-{	
+{
 	struct map_rect_priv *mr=priv_data;
 	char *str=NULL;
 	dbg(lvl_debug,"mr=%p attrs='%s' ", mr, mr->attrs);
@@ -165,10 +166,10 @@ textfile_attr_get(void *priv_data, enum attr_type attr_type, struct attr *attr)
 }
 
 static struct item_methods methods_textfile = {
-        textfile_coord_rewind,
-        textfile_coord_get,
-        textfile_attr_rewind,
-        textfile_attr_get,
+	textfile_coord_rewind,
+	textfile_coord_get,
+	textfile_attr_rewind,
+	textfile_attr_get,
 };
 
 static struct map_rect_priv *
@@ -194,7 +195,8 @@ map_rect_new_textfile(struct map_priv *map, struct map_selection *sel)
 		g_free(mr->args);
 		while (sel) {
 			oargs=args;
-			args=g_strdup_printf("%s 0x%x 0x%x 0x%x 0x%x", oargs, sel->u.c_rect.lu.x, sel->u.c_rect.lu.y, sel->u.c_rect.rl.x, sel->u.c_rect.rl.y);
+			args=g_strdup_printf("%s 0x%x 0x%x 0x%x 0x%x", oargs, sel->u.c_rect.lu.x, sel->u.c_rect.lu.y, sel->u.c_rect.rl.x,
+			                     sel->u.c_rect.rl.y);
 			g_free(oargs);
 			for (lay=layer_town ; lay < layer_end ; lay++) {
 				oargs=args;
@@ -211,7 +213,7 @@ map_rect_new_textfile(struct map_priv *map, struct map_selection *sel)
 		mr->lastlen=0;
 #else
 		dbg(lvl_error,"unable to work with pipes %s",map->filename);
-#endif 
+#endif
 	} else {
 		mr->f=fopen(map->filename, "r");
 	}
@@ -233,12 +235,11 @@ map_rect_destroy_textfile(struct map_rect_priv *mr)
 #ifdef HAVE_POPEN
 			pclose(mr->f);
 #endif
-		}
-		else {
+		} else {
 			fclose(mr->f);
 		}
 	}
-        g_free(mr);
+	g_free(mr);
 }
 
 static struct item *
@@ -257,11 +258,11 @@ map_rect_get_item_textfile(struct map_rect_priv *mr)
 		if (feof(mr->f)) {
 			dbg(lvl_debug,"map_rect_get_item_textfile: eof %d",mr->item.id_hi);
 			if (mr->m->flags & 1) {
-				if (!mr->item.id_hi) 
+				if (!mr->item.id_hi)
 					return NULL;
 				mr->item.id_hi=0;
 			} else {
-				if (mr->item.id_hi) 
+				if (mr->item.id_hi)
 					return NULL;
 				mr->item.id_hi=1;
 			}
@@ -278,7 +279,7 @@ map_rect_get_item_textfile(struct map_rect_priv *mr)
 			}
 			get_line(mr);
 		}
-		if ((p=strchr(mr->line,'\n'))) 
+		if ((p=strchr(mr->line,'\n')))
 			*p='\0';
 		if (mr->item.id_hi) {
 			mr->attrs[0]='\0';
@@ -308,7 +309,7 @@ map_rect_get_item_textfile(struct map_rect_priv *mr)
 		if (attr_from_line(mr->attrs,"type",NULL,type,NULL)) {
 			dbg(lvl_debug,"type='%s'", type);
 			mr->item.type=item_from_name(type);
-			if (mr->item.type == type_none) 
+			if (mr->item.type == type_none)
 				dbg(lvl_error, "Warning: type '%s' unknown", type);
 		} else {
 			get_line(mr);
@@ -362,7 +363,7 @@ map_new_textfile(struct map_methods *meth, struct attr **attrs, struct callback_
 	char **wexp_data;
 	if (! data)
 		return NULL;
-	dbg(lvl_debug,"map_new_textfile %s", data->u.str);	
+	dbg(lvl_debug,"map_new_textfile %s", data->u.str);
 	wdata=g_strdup(data->u.str);
 	len=strlen(wdata);
 	if (len && wdata[len-1] == '|') {
@@ -378,7 +379,7 @@ map_new_textfile(struct map_methods *meth, struct attr **attrs, struct callback_
 	m->filename=g_strdup(wexp_data[0]);
 	m->is_pipe=is_pipe;
 	m->no_warning_if_map_file_missing=(no_warn!=NULL) && (no_warn->u.num);
-	if (flags) 
+	if (flags)
 		m->flags=flags->u.num;
 	dbg(lvl_debug,"map_new_textfile %s %s", m->filename, wdata);
 	if (charset) {

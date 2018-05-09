@@ -27,8 +27,8 @@
 #include "transform.h"
 
 struct item_name {
-        enum item_type item;
-        char *name;
+	enum item_type item;
+	char *name;
 };
 
 struct item_range item_range_all = { type_none, type_last };
@@ -40,14 +40,14 @@ struct default_flags {
 
 struct item busy_item;
 
-struct default_flags default_flags2[]={
+struct default_flags default_flags2[]= {
 	{type_street_nopass, AF_PBH},
 	{type_street_0, AF_ALL},
 	{type_street_1_city, AF_ALL},
 	{type_street_2_city, AF_ALL},
 	{type_street_3_city, AF_ALL},
 	{type_street_4_city, AF_ALL},
-	{type_highway_city, AF_MOTORIZED_FAST}, 
+	{type_highway_city, AF_MOTORIZED_FAST},
 	{type_street_1_land, AF_ALL},
 	{type_street_2_land, AF_ALL},
 	{type_street_3_land, AF_ALL},
@@ -60,9 +60,9 @@ struct default_flags default_flags2[]={
 	{type_cycleway, AF_PBH},
 	{type_track_paved, AF_ALL},
 	{type_track_gravelled, AF_ALL},
-        {type_track_unpaved, AF_ALL},
-        {type_track_ground, AF_ALL},
-        {type_track_grass, AF_ALL},
+	{type_track_unpaved, AF_ALL},
+	{type_track_ground, AF_ALL},
+	{type_track_grass, AF_ALL},
 	{type_footway, AF_PBH},
 	{type_living_street, AF_ALL},
 	{type_street_service, AF_ALL},
@@ -81,7 +81,7 @@ struct default_flags default_flags2[]={
 
 
 
-struct item_name item_names[]={
+struct item_name item_names[]= {
 #define ITEM2(x,y) ITEM(y)
 #define ITEM(x) { type_##x, #x },
 #include "item_def.h"
@@ -229,15 +229,15 @@ item_coord_get_within_selection(struct item *it, struct coord *c, int count, str
 		if (r.lu.y < c[i].y)
 			r.lu.y=c[i].y;
 	}
-        curr=sel;
+	curr=sel;
 	while (curr) {
 		struct coord_rect *sr=&curr->u.c_rect;
 		if (r.lu.x <= sr->rl.x && r.rl.x >= sr->lu.x &&
-		    r.lu.y >= sr->rl.y && r.rl.y <= sr->lu.y)
+		                r.lu.y >= sr->rl.y && r.rl.y <= sr->lu.y)
 			return ret;
 		curr=curr->next;
 	}
-        return 0;
+	return 0;
 }
 
 /**
@@ -263,8 +263,8 @@ item_coord_get_pro(struct item *it, struct coord *c, int count, enum projection 
 	int ret=item_coord_get(it, c, count);
 	int i;
 	enum projection from=map_projection(it->map);
-	if (from != to) 
-		for (i = 0 ; i < count ; i++) 
+	if (from != to)
+		for (i = 0 ; i < count ; i++)
 			transform_from_to(c+i, from, c+i, to);
 	return ret;
 }
@@ -281,7 +281,7 @@ item_coord_get_pro(struct item *it, struct coord *c, int count, enum projection 
  *
  * @return True on success, false on failure
  */
-int 
+int
 item_coord_is_node(struct item *it)
 {
 	if (it->meth->item_coord_is_node)
@@ -387,14 +387,14 @@ struct item * item_new(char *type, int zoom)
 }
 
 enum item_type
-item_from_name(const char *name)
-{
+item_from_name(const char *name) {
 	int i;
 
 	if (item_hash)
 		return GPOINTER_TO_INT(g_hash_table_lookup(item_hash, name));
 
-	for (i=0 ; i < sizeof(item_names)/sizeof(struct item_name) ; i++) {
+	for (i=0 ; i < sizeof(item_names)/sizeof(struct item_name) ; i++)
+	{
 		if (! strcmp(item_names[i].name, name))
 			return item_names[i].item;
 	}
@@ -410,7 +410,7 @@ item_to_name(enum item_type item)
 		if (item_names[i].item == item)
 			return item_names[i].name;
 	}
-	return NULL; 
+	return NULL;
 }
 
 struct item_hash {
@@ -451,25 +451,25 @@ item_id_equal(const void *a, const void *b)
 }
 
 /**
- * @brief Derive item id_lo and id_hi from pointer, considering pointer could be 32 or 64 bit wide but both ids are 32 bit. 
+ * @brief Derive item id_lo and id_hi from pointer, considering pointer could be 32 or 64 bit wide but both ids are 32 bit.
  *
  * @param it reference to the item.
  * @param id pointer to derive item id from.
  * @return  Nothing.
  */
 void
-item_id_from_ptr(struct item *item, void *id) 
+item_id_from_ptr(struct item *item, void *id)
 {
 #if !defined(__LP64__) && !defined(__LLP64__) && !defined(WIN64)
 	item->id_lo=(int) id;
 	item->id_hi=0;
 #else
 #	ifndef _MSC_VER
-		item->id_lo=((long long)id)&0xFFFFFFFFll;
+	item->id_lo=((long long)id)&0xFFFFFFFFll;
 #	else
-		item->id_lo=((long long)id)&0xFFFFFFFFi64;
+	item->id_lo=((long long)id)&0xFFFFFFFFi64;
 #	endif
-		item->id_hi=((long long)id)>>32;
+	item->id_hi=((long long)id)>>32;
 #endif
 }
 
@@ -487,7 +487,7 @@ void
 item_hash_insert(struct item_hash *h, struct item *item, void *val)
 {
 	struct item *hitem=g_new(struct item, 1);
-        *hitem=*item;
+	*hitem=*item;
 	dbg(lvl_info,"inserting (0x%x,0x%x) into %p", item->id_hi, item->id_lo, h->h);
 	g_hash_table_insert(h->h, hitem, val);
 }
@@ -540,7 +540,7 @@ item_dump_attr(struct item *item, struct map *map, FILE *out)
 {
 	struct attr attr;
 	fprintf(out,"type=%s", item_to_name(item->type));
-	while (item_attr_get(item, attr_any, &attr)) 
+	while (item_attr_get(item, attr_any, &attr))
 		fprintf(out," %s='%s'", attr_to_name(attr.type), attr_to_text(&attr, map, 1));
 }
 
@@ -552,7 +552,7 @@ item_dump_filedesc(struct item *item, struct map *map, FILE *out)
 	struct coord *ca=g_alloca(sizeof(struct coord)*max);
 
 	count=item_coord_get(item, ca, item->type < type_line ? 1: max);
-	if (item->type < type_line) 
+	if (item->type < type_line)
 		fprintf(out,"mg:0x%x 0x%x ", ca[0].x, ca[0].y);
 	item_dump_attr(item, map, out);
 	fprintf(out,"\n");

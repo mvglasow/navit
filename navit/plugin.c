@@ -110,8 +110,8 @@ static void *
 g_module_open(char *name, int flags)
 {
 	return dlopen(name,
-		(flags & G_MODULE_BIND_LAZY ? RTLD_LAZY : RTLD_NOW) |
-		(flags & G_MODULE_BIND_LOCAL ? RTLD_LOCAL : RTLD_GLOBAL));
+	              (flags & G_MODULE_BIND_LAZY ? RTLD_LAZY : RTLD_NOW) |
+	              (flags & G_MODULE_BIND_LOCAL ? RTLD_LOCAL : RTLD_GLOBAL));
 }
 
 static char *
@@ -158,7 +158,7 @@ plugin_new_from_path(char *plugin)
 #ifdef USE_PLUGINS
 	struct plugin *ret;
 	if (! g_module_supported()) {
-	       return NULL;
+		return NULL;
 	}
 	ret=g_new0(struct plugin, 1);
 	ret->name=g_strdup(plugin);
@@ -269,7 +269,8 @@ plugins_new(void)
 }
 
 struct plugin *
-plugin_new(struct attr *parent, struct attr **attrs) {
+plugin_new(struct attr *parent, struct attr **attrs)
+{
 #ifdef USE_PLUGINS
 	struct attr *path_attr, *attr;
 	struct file_wordexp *we;
@@ -301,7 +302,7 @@ plugin_new(struct attr *parent, struct attr **attrs) {
 
 	we=file_wordexp_new(path_attr->u.str);
 	count=file_wordexp_get_count(we);
-	array=file_wordexp_get_array(we);	
+	array=file_wordexp_get_array(we);
 	dbg(lvl_info,"expanded to %d words",count);
 	if (count != 1 || file_exists(array[0])) {
 		for (i = 0 ; i < count ; i++) {
@@ -327,7 +328,7 @@ plugin_new(struct attr *parent, struct attr **attrs) {
 			plugin_set_lazy(pl, lazy);
 			plugin_set_ondemand(pl, ondemand);
 			if (!pls && active) {
-				if (!plugin_load(pl)) 
+				if (!plugin_load(pl))
 					plugin_set_active(pl, 0);
 				else
 					plugin_call_init(pl);
@@ -337,7 +338,7 @@ plugin_new(struct attr *parent, struct attr **attrs) {
 	file_wordexp_destroy(we);
 	return pl;
 #else
-    return 0;
+	return 0;
 #endif
 }
 
@@ -349,7 +350,7 @@ plugins_init(struct plugins *pls)
 	GList *l;
 
 	l=pls->list;
-	if (l){
+	if (l) {
 		while (l) {
 			pl=l->data;
 			if (! plugin_get_ondemand(pl)) {
@@ -421,12 +422,13 @@ plugin_get_category(enum plugin_category category, const char *category_name, co
 			mod_name++;
 		else
 			mod_name=pl->name;
-		if (!g_ascii_strncasecmp(mod_name, filename, strlen(filename)) || !g_ascii_strncasecmp(mod_name, corename, strlen(corename))) {
+		if (!g_ascii_strncasecmp(mod_name, filename, strlen(filename))
+		                || !g_ascii_strncasecmp(mod_name, corename, strlen(corename))) {
 			dbg(lvl_debug, "Loading module \"%s\"",pl->name) ;
-			if (plugin_get_active(pl)) 
-				if (!plugin_load(pl)) 
+			if (plugin_get_active(pl))
+				if (!plugin_load(pl))
 					plugin_set_active(pl, 0);
-			if (plugin_get_active(pl)) 
+			if (plugin_get_active(pl))
 				plugin_call_init(pl);
 			if ((result=find_by_name(category, name))) {
 				g_free(filename);

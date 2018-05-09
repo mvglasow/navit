@@ -124,7 +124,7 @@ gui_internal_escape(enum escape_mode mode, char *in)
 	while (*src) {
 		if ((*src == '"' || *src == '\\') && (mode & (escape_mode_string | escape_mode_quote)))
 			len++;
-		if (*src == '"' && mode == escape_mode_html_quote) 
+		if (*src == '"' && mode == escape_mode_html_quote)
 			len+=strlen(quot);
 		else if (*src == '\'' && mode == escape_mode_html_apos)
 			len+=strlen(apos);
@@ -262,8 +262,8 @@ gui_internal_cmd2_waypoints(struct gui_priv *this, char *function, struct attr *
 static void
 gui_internal_cmd_enter_coord(struct gui_priv *this, char *function, struct attr **in, struct attr ***out, int *valid)
 {
-        struct widget *w, *wb, *wk, *wr, *we, *wnext, *row;
-        wb=gui_internal_menu(this, _("Enter Coordinates"));
+	struct widget *w, *wb, *wk, *wr, *we, *wnext, *row;
+	wb=gui_internal_menu(this, _("Enter Coordinates"));
 	w=gui_internal_box_new(this, gravity_center|orientation_vertical|flags_expand|flags_fill);
 	gui_internal_widget_append(wb, w);
 	wr=gui_internal_box_new(this, gravity_top_center|orientation_vertical|flags_expand|flags_fill);
@@ -271,23 +271,24 @@ gui_internal_cmd_enter_coord(struct gui_priv *this, char *function, struct attr 
 	we=gui_internal_box_new(this, gravity_left_center|orientation_horizontal|flags_fill);
 	gui_internal_widget_append(wr, we);
 
-/*
-        w=gui_internal_box_new(this, gravity_left_top|orientation_vertical|flags_expand|flags_fill);
-        gui_internal_widget_append(wb, w);
+	/*
+	        w=gui_internal_box_new(this, gravity_left_top|orientation_vertical|flags_expand|flags_fill);
+	        gui_internal_widget_append(wb, w);
 
-        we=gui_internal_box_new(this, gravity_left_center|orientation_horizontal|flags_fill);
-        gui_internal_widget_append(w, we);*/
-        gui_internal_widget_append(we, wk=gui_internal_label_new(this, _("Latitude Longitude")));
-        wk->state |= STATE_EDIT|STATE_EDITABLE|STATE_CLEAR;
-        wk->background=this->background;
-        wk->flags |= flags_expand|flags_fill;
-        wk->func = gui_internal_call_linked_on_finish;
-        gui_internal_widget_append(we, wnext=gui_internal_image_new(this, image_new_xs(this, "gui_active")));
-        wnext->state |= STATE_SENSITIVE;
-        wnext->func = gui_internal_cmd_enter_coord_clicked; 
-        wnext->data=wk;
-        wk->data=wnext;
-	row=gui_internal_text_new(this, _("Enter coordinates, for example:"), gravity_top_center|flags_fill|orientation_vertical);
+	        we=gui_internal_box_new(this, gravity_left_center|orientation_horizontal|flags_fill);
+	        gui_internal_widget_append(w, we);*/
+	gui_internal_widget_append(we, wk=gui_internal_label_new(this, _("Latitude Longitude")));
+	wk->state |= STATE_EDIT|STATE_EDITABLE|STATE_CLEAR;
+	wk->background=this->background;
+	wk->flags |= flags_expand|flags_fill;
+	wk->func = gui_internal_call_linked_on_finish;
+	gui_internal_widget_append(we, wnext=gui_internal_image_new(this, image_new_xs(this, "gui_active")));
+	wnext->state |= STATE_SENSITIVE;
+	wnext->func = gui_internal_cmd_enter_coord_clicked;
+	wnext->data=wk;
+	wk->data=wnext;
+	row=gui_internal_text_new(this, _("Enter coordinates, for example:"),
+	                          gravity_top_center|flags_fill|orientation_vertical);
 	gui_internal_widget_append(wr,row);
 	row=gui_internal_text_new(this, "52.5219N 19.4127E", gravity_top_center|flags_fill|orientation_vertical);
 	gui_internal_widget_append(wr,row);
@@ -312,13 +313,14 @@ gui_internal_cmd2_town(struct gui_priv *this, char *function, struct attr **in, 
 }
 
 static void
-gui_internal_cmd2_setting_vehicle(struct gui_priv *this, char *function, struct attr **in, struct attr ***out, int *valid)
+gui_internal_cmd2_setting_vehicle(struct gui_priv *this, char *function, struct attr **in, struct attr ***out,
+                                  int *valid)
 {
 	struct attr attr,attr2,vattr;
 	struct widget *w,*wb,*wl;
 	struct attr_iter *iter;
 	struct attr active_vehicle;
-    
+
 	iter=navit_attr_iter_new();
 	if (navit_get_attr(this->nav, attr_vehicle, &attr, iter) && !navit_get_attr(this->nav, attr_vehicle, &attr2, iter)) {
 		vehicle_get_attr(attr.u.vehicle, attr_name, &vattr, NULL);
@@ -338,8 +340,9 @@ gui_internal_cmd2_setting_vehicle(struct gui_priv *this, char *function, struct 
 	while(navit_get_attr(this->nav, attr_vehicle, &attr, iter)) {
 		vehicle_get_attr(attr.u.vehicle, attr_name, &vattr, NULL);
 		wl=gui_internal_button_new_with_callback(this, vattr.u.str,
-			image_new_xs(this, attr.u.vehicle == active_vehicle.u.vehicle ? "gui_active" : "gui_inactive"), gravity_left_center|orientation_horizontal|flags_fill,
-			gui_internal_cmd_vehicle_settings, attr.u.vehicle);
+		                image_new_xs(this, attr.u.vehicle == active_vehicle.u.vehicle ? "gui_active" : "gui_inactive"),
+		                gravity_left_center|orientation_horizontal|flags_fill,
+		                gui_internal_cmd_vehicle_settings, attr.u.vehicle);
 		wl->text=g_strdup(vattr.u.str);
 		gui_internal_widget_append(w, wl);
 	}
@@ -360,26 +363,28 @@ gui_internal_cmd2_setting_rules(struct gui_priv *this, char *function, struct at
 	off.u.num=0;
 	on.type=off.type=attr_tracking;
 	gui_internal_widget_append(w,
-		gui_internal_button_navit_attr_new(this, _("Lock on road"), gravity_left_center|orientation_horizontal|flags_fill,
-			&on, &off));
+	                           gui_internal_button_navit_attr_new(this, _("Lock on road"), gravity_left_center|orientation_horizontal|flags_fill,
+	                                           &on, &off));
 	on.u.num=0;
 	off.u.num=-1;
 	on.type=off.type=attr_orientation;
 	gui_internal_widget_append(w,
-		gui_internal_button_navit_attr_new(this, _("Northing"), gravity_left_center|orientation_horizontal|flags_fill,
-			&on, &off));
+	                           gui_internal_button_navit_attr_new(this, _("Northing"), gravity_left_center|orientation_horizontal|flags_fill,
+	                                           &on, &off));
 	on.u.num=1;
 	off.u.num=0;
 	on.type=off.type=attr_follow_cursor;
 	gui_internal_widget_append(w,
-		gui_internal_button_navit_attr_new(this, _("Map follows Vehicle"), gravity_left_center|orientation_horizontal|flags_fill,
-			&on, &off));
+	                           gui_internal_button_navit_attr_new(this, _("Map follows Vehicle"),
+	                                           gravity_left_center|orientation_horizontal|flags_fill,
+	                                           &on, &off));
 	on.u.num=1;
 	off.u.num=0;
 	on.type=off.type=attr_waypoints_flag;
 	gui_internal_widget_append(w,
-			gui_internal_button_navit_attr_new(this, _("Plan with Waypoints"), gravity_left_center|orientation_horizontal|flags_fill,
-					&on, &off));
+	                           gui_internal_button_navit_attr_new(this, _("Plan with Waypoints"),
+	                                           gravity_left_center|orientation_horizontal|flags_fill,
+	                                           &on, &off));
 	gui_internal_menu_render(this);
 }
 
@@ -414,13 +419,14 @@ gui_internal_cmd2_setting_maps(struct gui_priv *this, char *function, struct att
 			if (!map_get_attr(attr.u.map, attr_active, &active, NULL))
 				active.u.num=1;
 			wma=gui_internal_button_new_with_callback(this, label, image_new_xs(this, active.u.num ? "gui_active" : "gui_inactive"),
-			gravity_left_center|orientation_horizontal|flags_fill,
-			gui_internal_cmd_map_download, attr.u.map);
+			                gravity_left_center|orientation_horizontal|flags_fill,
+			                gui_internal_cmd_map_download, attr.u.map);
 		} else {
 			wma=gui_internal_button_map_attr_new(this, label, gravity_left_center|orientation_horizontal|flags_fill,
-				attr.u.map, &on, &off, 1);
-		}	
-		gui_internal_widget_append(w, row=gui_internal_widget_table_row_new(this,gravity_left|orientation_horizontal|flags_fill));
+			                                     attr.u.map, &on, &off, 1);
+		}
+		gui_internal_widget_append(w, row=gui_internal_widget_table_row_new(this,
+		                                  gravity_left|orientation_horizontal|flags_fill));
 		gui_internal_widget_append(row, wma);
 		g_free(label);
 	}
@@ -430,7 +436,8 @@ gui_internal_cmd2_setting_maps(struct gui_priv *this, char *function, struct att
 }
 
 static void
-gui_internal_cmd2_setting_layout(struct gui_priv *this, char *function, struct attr **in, struct attr ***out, int *valid)
+gui_internal_cmd2_setting_layout(struct gui_priv *this, char *function, struct attr **in, struct attr ***out,
+                                 int *valid)
 {
 	struct attr attr;
 	struct widget *w,*wb,*wl,*row;
@@ -442,9 +449,10 @@ gui_internal_cmd2_setting_layout(struct gui_priv *this, char *function, struct a
 	gui_internal_widget_append(wb, w);
 	iter=navit_attr_iter_new();
 	while(navit_get_attr(this->nav, attr_layout, &attr, iter)) {
-		gui_internal_widget_append(w, row=gui_internal_widget_table_row_new(this,gravity_left|orientation_horizontal|flags_fill));
+		gui_internal_widget_append(w, row=gui_internal_widget_table_row_new(this,
+		                                  gravity_left|orientation_horizontal|flags_fill));
 		wl=gui_internal_button_navit_attr_new(this, attr.u.layout->name, gravity_left_center|orientation_horizontal|flags_fill,
-			&attr, NULL);
+		                                      &attr, NULL);
 		gui_internal_widget_append(row, wl);
 	}
 	navit_attr_iter_destroy(iter);
@@ -454,15 +462,16 @@ gui_internal_cmd2_setting_layout(struct gui_priv *this, char *function, struct a
 /*
  * @brief Displays Route Height Profile
  *
- * displays a heightprofile if a route is active and 
+ * displays a heightprofile if a route is active and
  * some heightinfo is provided by means of a map
  *
  * the name of the file providing the heightlines must
  * comply with *.heightlines.bin
- * 
+ *
  */
 static void
-gui_internal_cmd2_route_height_profile(struct gui_priv *this, char *function, struct attr **in, struct attr ***out, int *valid)
+gui_internal_cmd2_route_height_profile(struct gui_priv *this, char *function, struct attr **in, struct attr ***out,
+                                       int *valid)
 {
 	struct widget * menu, *box;
 	struct map * map=NULL;
@@ -514,14 +523,13 @@ gui_internal_cmd2_route_height_profile(struct gui_priv *this, char *function, st
 			msh=mapset_open(ms);
 			while ((map=mapset_next(msh, 1))) {
 				struct attr data_attr;
-				if (map_get_attr(map, attr_data, &data_attr, NULL)){
+				if (map_get_attr(map, attr_data, &data_attr, NULL)) {
 					dbg(lvl_debug,"map name = %s",data_attr.u.str);
-					if (strstr(data_attr.u.str,".heightlines.bin")){
+					if (strstr(data_attr.u.str,".heightlines.bin")) {
 						dbg(lvl_info,"reading heightlines from map %s",data_attr.u.str);
 						mr=map_rect_new(map, &sel);
 						heightmap_installed = TRUE;
-					}
-					else {
+					} else {
 						dbg(lvl_debug,"ignoring map %s",data_attr.u.str);
 					}
 				}
@@ -540,7 +548,7 @@ gui_internal_cmd2_route_height_profile(struct gui_priv *this, char *function, st
 				}
 			}
 			mapset_close(msh);
-			if (!heightmap_installed){
+			if (!heightmap_installed) {
 				char *text;
 				struct widget *w;
 				text=g_strdup_printf("%s",_("please install a map *.heightlines.bin to provide elevationdata"));
@@ -596,7 +604,7 @@ gui_internal_cmd2_route_height_profile(struct gui_priv *this, char *function, st
 			}
 		}
 	}
-	while (heightlines){
+	while (heightlines) {
 		heightline=heightlines;
 		heightlines=heightlines->next;
 		g_free(heightline);
@@ -604,7 +612,7 @@ gui_internal_cmd2_route_height_profile(struct gui_priv *this, char *function, st
 	if(mr)
 		map_rect_destroy(mr);
 
-	if(diagram_points_count < 2){
+	if(diagram_points_count < 2) {
 		char *text;
 		struct widget *w;
 		text=g_strdup_printf("%s",_("The route must cross at least 2 heightlines"));
@@ -637,7 +645,7 @@ gui_internal_cmd2_route_height_profile(struct gui_priv *this, char *function, st
 	dbg(lvl_debug,"%d,%d %dx%d", box->p.x, box->p.y, box->w, box->h);
 	x=dbbox.lu.x;
 	first=1;
-	if (diagram_points_count > 1 && dbbox.rl.x != dbbox.lu.x && dbbox.lu.y != dbbox.rl.y){
+	if (diagram_points_count > 1 && dbbox.rl.x != dbbox.lu.x && dbbox.lu.y != dbbox.rl.y) {
 		for (;;) {
 			min=NULL;
 			diagram_point=diagram_points;
@@ -661,9 +669,9 @@ gui_internal_cmd2_route_height_profile(struct gui_priv *this, char *function, st
 		}
 	}
 
-	struct point pTopLeft={0, box->p.y + 10};
-	struct point pBottomLeft={0, box->h + box->p.y - 2};
-	struct point pBottomRight={box->w - 100, box->h + box->p.y - 2};
+	struct point pTopLeft= {0, box->p.y + 10};
+	struct point pBottomLeft= {0, box->h + box->p.y - 2};
+	struct point pBottomRight= {box->w - 100, box->h + box->p.y - 2};
 	char* minele_text=g_strdup_printf("%d m", min_ele);
 	char* maxele_text=g_strdup_printf("%d m", max_ele);
 	char* distance_text=g_strdup_printf("%.3f km", distance/1000.0);
@@ -671,7 +679,7 @@ gui_internal_cmd2_route_height_profile(struct gui_priv *this, char *function, st
 	graphics_draw_text_std(this->gra, 10, minele_text, &pBottomLeft);
 	graphics_draw_text_std(this->gra, 10, distance_text, &pBottomRight);
 
-	while (diagram_points){
+	while (diagram_points) {
 		diagram_point=diagram_points;
 		diagram_points=diagram_points->next;
 		g_free(diagram_point);
@@ -679,7 +687,8 @@ gui_internal_cmd2_route_height_profile(struct gui_priv *this, char *function, st
 }
 
 static void
-gui_internal_cmd2_route_description(struct gui_priv *this, char *function, struct attr **in, struct attr ***out, int *valid)
+gui_internal_cmd2_route_description(struct gui_priv *this, char *function, struct attr **in, struct attr ***out,
+                                    int *valid)
 {
 
 
@@ -687,17 +696,17 @@ gui_internal_cmd2_route_description(struct gui_priv *this, char *function, struc
 	struct widget * box;
 
 
-	if(! this->vehicle_cb)
-	{
-	  /**
-	   * Register the callback on vehicle updates.
-	   */
-	  this->vehicle_cb = callback_new_attr_1(callback_cast(gui_internal_route_update),
-						       attr_position_coord_geo,this);
-	  navit_add_callback(this->nav,this->vehicle_cb);
+	if(! this->vehicle_cb) {
+		/**
+		 * Register the callback on vehicle updates.
+		 */
+		this->vehicle_cb = callback_new_attr_1(callback_cast(gui_internal_route_update),
+		                                       attr_position_coord_geo,this);
+		navit_add_callback(this->nav,this->vehicle_cb);
 	}
 
-	this->route_data.route_table = gui_internal_widget_table_new(this,gravity_left_top | flags_fill | flags_expand |orientation_vertical,1);
+	this->route_data.route_table = gui_internal_widget_table_new(this,
+	                               gravity_left_top | flags_fill | flags_expand |orientation_vertical,1);
 
 	menu=gui_internal_menu(this,_("Route Description"));
 
@@ -740,7 +749,7 @@ gui_internal_cmd2_pois(struct gui_priv *this, char *function, struct attr **in, 
 		if (in[2] && ATTR_IS_INT(in[2]->type))
 			param->AddressFilterType=in[2]->u.num;
 	}
-	
+
 	transform_from_geo(pro.u.projection,in[0]->u.coord_geo,&c);
 	w->c.x=c.x;
 	w->c.y=c.y;
@@ -824,10 +833,8 @@ gui_internal_cmd2_network_info(struct gui_priv *this, char *function, struct att
 	getifaddrs(&addrs);
 	tmp = addrs;
 
-	while (tmp)
-	{
-		if (tmp->ifa_addr && tmp->ifa_addr->sa_family == AF_INET)
-		{
+	while (tmp) {
+		if (tmp->ifa_addr && tmp->ifa_addr->sa_family == AF_INET) {
 			struct sockaddr_in *pAddr = (struct sockaddr_in *)tmp->ifa_addr;
 			if(g_ascii_strncasecmp(tmp->ifa_name,"lo",2 ) ) {
 				text=g_strdup_printf("%s: %s", tmp->ifa_name, inet_ntoa(pAddr->sin_addr));
@@ -862,7 +869,7 @@ gui_internal_cmd_formerdests(struct gui_priv *this, char *function, struct attr 
 		return;
 
 	formerdests=attr.u.map;
-	if(!formerdests) 
+	if(!formerdests)
 		return;
 
 	mr_formerdests=map_rect_new(formerdests, NULL);
@@ -876,7 +883,7 @@ gui_internal_cmd_formerdests(struct gui_priv *this, char *function, struct attr 
 	wb->background=this->background;
 
 	w=gui_internal_box_new(this,
-			gravity_top_center|orientation_vertical|flags_expand|flags_fill);
+	                       gravity_top_center|orientation_vertical|flags_expand|flags_fill);
 	w->spy=this->spacing*2;
 	gui_internal_widget_append(wb, w);
 	while ((item=map_rect_get_item(mr_formerdests))) {
@@ -892,9 +899,9 @@ gui_internal_cmd_formerdests(struct gui_priv *this, char *function, struct attr 
 		gui_internal_widget_prepend(tbl, row);
 		label_full=attr.u.str;
 		wbm=gui_internal_button_new_with_callback(this, label_full,
-				image_new_xs(this, "gui_active"),
-				gravity_left_center|orientation_horizontal|flags_fill,
-				gui_internal_cmd_position, NULL);
+		                image_new_xs(this, "gui_active"),
+		                gravity_left_center|orientation_horizontal|flags_fill,
+		                gui_internal_cmd_position, NULL);
 		gui_internal_widget_append(row,wbm);
 		if (item_coord_get(item, &c, 1)) {
 			wbm->c.x=c.x;
@@ -902,13 +909,13 @@ gui_internal_cmd_formerdests(struct gui_priv *this, char *function, struct attr 
 			wbm->c.pro=projection;
 			wbm->name=g_strdup(label_full);
 			wbm->text=g_strdup(label_full);
-			wbm->data=(void*)8; //Mark us as a former destination 
+			wbm->data=(void*)8; //Mark us as a former destination
 			wbm->prefix=g_strdup(label_full);
 		}
 	}
-	if (!tbl){
-        	wbm=gui_internal_text_new(this, _("- No former destinations available -"), 
-		    gravity_left_center|orientation_horizontal|flags_fill);
+	if (!tbl) {
+		wbm=gui_internal_text_new(this, _("- No former destinations available -"),
+		                          gravity_left_center|orientation_horizontal|flags_fill);
 		gui_internal_widget_append(w, wbm);
 	}
 	gui_internal_menu_render(this);
@@ -927,7 +934,8 @@ gui_internal_cmd2_bookmarks(struct gui_priv *this, char *function, struct attr *
 }
 
 static void
-gui_internal_cmd2_abort_navigation(struct gui_priv *this, char *function, struct attr **in, struct attr ***out, int *valid)
+gui_internal_cmd2_abort_navigation(struct gui_priv *this, char *function, struct attr **in, struct attr ***out,
+                                   int *valid)
 {
 	navit_set_destination(this->nav, NULL, NULL, 0);
 }
@@ -982,9 +990,11 @@ gui_internal_cmd_log(struct gui_priv *this)
 	wl=gui_internal_box_new(this, gravity_left_top|orientation_vertical|flags_expand|flags_fill);
 	gui_internal_widget_append(w, wl);
 	if (this->keyboard)
-		gui_internal_widget_append(w, gui_internal_keyboard(this, VKBD_FLAG_2 | gui_internal_keyboard_init_mode(getenv("LANG"))));
+		gui_internal_widget_append(w, gui_internal_keyboard(this,
+		                           VKBD_FLAG_2 | gui_internal_keyboard_init_mode(getenv("LANG"))));
 	else
-		gui_internal_keyboard_show_native(this, w, VKBD_FLAG_2 | gui_internal_keyboard_init_mode(getenv("LANG")), getenv("LANG"));
+		gui_internal_keyboard_show_native(this, w, VKBD_FLAG_2 | gui_internal_keyboard_init_mode(getenv("LANG")),
+		                                  getenv("LANG"));
 	gui_internal_menu_render(this);
 	gui_internal_leave(this);
 }
@@ -1084,13 +1094,13 @@ static char *
 gui_internal_append_attr(char *str, enum escape_mode mode, char *pre, struct attr *attr, char *post)
 {
 	char *astr=NULL;
-	if (ATTR_IS_STRING(attr->type)) 
+	if (ATTR_IS_STRING(attr->type))
 		astr=gui_internal_escape(mode, attr->u.str);
 	else if (ATTR_IS_COORD_GEO(attr->type)) {
 		char *str2=coordinates_geo(attr->u.coord_geo, '\n');
 		astr=gui_internal_escape(mode, str2);
 		g_free(str2);
-	} else if (ATTR_IS_INT(attr->type)) 
+	} else if (ATTR_IS_INT(attr->type))
 		astr=g_strdup_printf("%ld",attr->u.num);
 	else
 		astr=g_strdup_printf("Unsupported type %s",attr_to_name(attr->type));
@@ -1125,7 +1135,7 @@ gui_internal_onclick(struct attr ***in, char **onclick, char *set)
 {
 	struct attr **i=*in;
 	char *c,*str=NULL,*args=NULL,*sep="";
-	
+
 	if (!*i || !ATTR_IS_STRING((*i)->type) || !(*i)->u.str)
 		goto error;
 	str=g_strdup((*i)->u.str);
@@ -1165,7 +1175,7 @@ gui_internal_onclick(struct attr ***in, char **onclick, char *set)
 					g_free(arg);
 					replacement=g_strdup("");
 				}
-			}	
+			}
 			if (!replacement) {
 				dbg(lvl_error,"Unsupported format string %s",format);
 				goto error;
@@ -1206,7 +1216,7 @@ gui_internal_cmd_img(struct gui_priv * this, char *function, struct attr **in, s
 	char *str=g_strdup("<img"),*suffix=NULL,*onclick=g_strdup(""),*html;
 
 	if (ATTR_IS_STRING((*in)->type)) {
-	       	if ((*in)->u.str && strlen((*in)->u.str)) 
+		if ((*in)->u.str && strlen((*in)->u.str))
 			str=gui_internal_append_attr(str, escape_mode_string|escape_mode_html, " class=", *in, "");
 		in++;
 	} else {
@@ -1214,7 +1224,7 @@ gui_internal_cmd_img(struct gui_priv * this, char *function, struct attr **in, s
 		goto error;
 	}
 	if (ATTR_IS_STRING((*in)->type) && (*in)->u.str) {
-	       	if ((*in)->u.str && strlen((*in)->u.str)) {
+		if ((*in)->u.str && strlen((*in)->u.str)) {
 			str=gui_internal_append_attr(str, escape_mode_string|escape_mode_html, " src=", *in, "");
 		}
 		in++;
@@ -1223,7 +1233,7 @@ gui_internal_cmd_img(struct gui_priv * this, char *function, struct attr **in, s
 		goto error;
 	}
 	if (ATTR_IS_STRING((*in)->type) && (*in)->u.str) {
-	       	if ((*in)->u.str && strlen((*in)->u.str)) {
+		if ((*in)->u.str && strlen((*in)->u.str)) {
 			suffix=gui_internal_append_attr(NULL, escape_mode_html, ">", *in, "</img>");
 		} else {
 			suffix=g_strdup("/>");
@@ -1361,9 +1371,9 @@ void
 gui_internal_command_init(struct gui_priv *this, struct attr **attrs)
 {
 	struct attr *attr;
-        if ((attr=attr_search(attrs, NULL, attr_callback_list))) {
+	if ((attr=attr_search(attrs, NULL, attr_callback_list))) {
 		command_add_table(attr->u.callback_list, commands, sizeof(commands)/sizeof(struct command_table), this);
-        }
+	}
 }
 
 

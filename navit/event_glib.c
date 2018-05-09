@@ -29,8 +29,7 @@ static GMainLoop *loop;
 static void event_glib_main_loop_run(void)
 {
 	loop = g_main_loop_new (NULL, TRUE);
-	if (g_main_loop_is_running (loop))
-	{
+	if (g_main_loop_is_running (loop)) {
 		g_main_loop_run (loop);
 	}
 }
@@ -73,7 +72,7 @@ event_glib_add_watch(int fd, enum event_watch_cond cond, struct callback *cb)
 	case event_watch_cond_except:
 		flags=G_IO_ERR|G_IO_HUP;
 		break;
-	}	
+	}
 	ret->source = g_io_add_watch(ret->iochan, flags, event_glib_call_watch, (gpointer)cb);
 	return ret;
 }
@@ -114,7 +113,8 @@ event_glib_add_timeout(int timeout, int multi, struct callback *cb)
 {
 	struct event_timeout *ret=g_new0(struct event_timeout, 1);
 	ret->cb=cb;
-	ret->source = g_timeout_add(timeout, multi ? (GSourceFunc)event_glib_call_timeout_multi : (GSourceFunc)event_glib_call_timeout_single, (gpointer)ret);
+	ret->source = g_timeout_add(timeout,
+	                            multi ? (GSourceFunc)event_glib_call_timeout_multi : (GSourceFunc)event_glib_call_timeout_single, (gpointer)ret);
 
 	return ret;
 }
@@ -161,13 +161,13 @@ event_glib_remove_idle(struct event_idle *ev)
 static void
 event_glib_call_callback(struct callback_list *cb)
 {
-/* 
- Idea for implementation:
- Create a pipe then use add_watch
- add callback to a queue
- from here write to the pipe to wakeup the pool
- then from the gui thread process the callback queue
-*/
+	/*
+	 Idea for implementation:
+	 Create a pipe then use add_watch
+	 add callback to a queue
+	 from here write to the pipe to wakeup the pool
+	 then from the gui thread process the callback queue
+	*/
 }
 
 static struct event_methods event_glib_methods = {

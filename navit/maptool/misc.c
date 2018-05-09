@@ -153,10 +153,10 @@ phase1_map(GList *maps, FILE *out_ways, FILE *out_nodes)
 						item_bin_add_attr(item_bin, &attr);
 						map_convert_free(attr.u.str);
 					}
-				} else 
+				} else
 					item_bin_add_attr(item_bin, &attr);
 			}
-			if (item->type >= type_line) 
+			if (item->type >= type_line)
 				item_bin_write(item_bin, out_ways);
 			else
 				item_bin_write(item_bin, out_nodes);
@@ -171,60 +171,60 @@ item_order_by_type(enum item_type type)
 {
 	int max=14;
 	switch (type) {
-		case type_town_label_1e7:
-		case type_town_label_5e6:
-			max=3;
-			break;
-		case type_town_label_2e6:
-		case type_town_label_1e6:
-			max=5;
-			break;
-		case type_town_label_5e5:
-		case type_district_label_1e7:
-		case type_district_label_5e6:
-		case type_district_label_2e6:
-		case type_district_label_1e6:
-		case type_district_label_5e5:
-			max=6;
-			break;
-		case type_town_label_2e5:
-		case type_town_label_1e5:
-		case type_district_label_2e5:
-		case type_district_label_1e5:
-		case type_street_n_lanes:
-		case type_highway_city:
-		case type_highway_land:
-		case type_ramp:
-			max=8;
-			break;
-		case type_town_label_5e4:
-		case type_town_label_2e4:
-		case type_town_label_1e4:
-		case type_district_label_5e4:
-		case type_district_label_2e4:
-		case type_district_label_1e4:
+	case type_town_label_1e7:
+	case type_town_label_5e6:
+		max=3;
+		break;
+	case type_town_label_2e6:
+	case type_town_label_1e6:
+		max=5;
+		break;
+	case type_town_label_5e5:
+	case type_district_label_1e7:
+	case type_district_label_5e6:
+	case type_district_label_2e6:
+	case type_district_label_1e6:
+	case type_district_label_5e5:
+		max=6;
+		break;
+	case type_town_label_2e5:
+	case type_town_label_1e5:
+	case type_district_label_2e5:
+	case type_district_label_1e5:
+	case type_street_n_lanes:
+	case type_highway_city:
+	case type_highway_land:
+	case type_ramp:
+		max=8;
+		break;
+	case type_town_label_5e4:
+	case type_town_label_2e4:
+	case type_town_label_1e4:
+	case type_district_label_5e4:
+	case type_district_label_2e4:
+	case type_district_label_1e4:
+		max=9;
+		break;
+	case type_poly_water_tiled:
+		if(experimental)
 			max=9;
-			break;
-		case type_poly_water_tiled:
-			if(experimental)
-				max=9;
-			break;
-		case type_street_4_land:
-		case type_street_4_city:
-			max=10;
-			break;
-		case type_town_label_5e3:
-		case type_town_label_2e3:
-		case type_town_label_1e3:
-		case type_district_label_5e3:
-		case type_district_label_2e3:
-		case type_district_label_1e3:
-		case type_street_3_city:
-		case type_street_3_land:
-			max=12;
-			break;
-		default:
-			break;
+		break;
+	case type_street_4_land:
+	case type_street_4_city:
+		max=10;
+		break;
+	case type_town_label_5e3:
+	case type_town_label_2e3:
+	case type_town_label_1e3:
+	case type_district_label_5e3:
+	case type_district_label_2e3:
+	case type_district_label_1e3:
+	case type_street_3_city:
+	case type_street_3_land:
+		max=12;
+		break;
+	default:
+		break;
 	}
 	return max;
 }
@@ -318,7 +318,8 @@ phase4(FILE **in, int in_count, int with_range, char *suffix, FILE *tilesdir_out
 }
 
 static int
-process_slice(FILE **in, FILE **reference, int in_count, int with_range, long long size, char *suffix, struct zip_info *zip_info)
+process_slice(FILE **in, FILE **reference, int in_count, int with_range, long long size, char *suffix,
+              struct zip_info *zip_info)
 {
 	struct tile_head *th;
 	char *slice_data,*zip_data;
@@ -350,7 +351,7 @@ process_slice(FILE **in, FILE **reference, int in_count, int with_range, long lo
 	info.tilesdir_out=NULL;
 	phase34(&info, zip_info, in, reference, in_count, with_range);
 
-	for (th=tile_head_root;th;th=th->next) {
+	for (th=tile_head_root; th; th=th->next) {
 		if (!th->process)
 			continue;
 		if (th->name[0]) {

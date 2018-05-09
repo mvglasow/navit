@@ -105,8 +105,8 @@ town_attr_get(void *priv_data, enum attr_type attr_type, struct attr *attr)
 		twn->attr_next=attr_none;
 		return 1;
 	default:
-                dbg(lvl_warning, "Don't know about attribute %d[%04X]=%s yet",
-			attr_type, attr_type, attr_to_name(attr_type));
+		dbg(lvl_warning, "Don't know about attribute %d[%04X]=%s yet",
+		    attr_type, attr_type, attr_to_name(attr_type));
 		return 0;
 	}
 	return 1;
@@ -138,11 +138,11 @@ town_get_data(struct town_priv *twn, unsigned char **p)
 	twn->postal_code2=get_string(p);
 	twn->unknown4=get_u32_unal(p);
 }
-                            /*0 1 2 3 4 5 6 7  8  9  10 11 12 13 14 15 16 17 18 */
-static unsigned char limit[]={0,1,2,2,4,6,8,10,11,13,14,14,14,20,20,20,20,20,20};
+/*0 1 2 3 4 5 6 7  8  9  10 11 12 13 14 15 16 17 18 */
+static unsigned char limit[]= {0,1,2,2,4,6,8,10,11,13,14,14,14,20,20,20,20,20,20};
 
-static enum item_type town_item[]={type_town_label_5e1, type_town_label_1e2, type_town_label_2e2, type_town_label_5e2, type_town_label_1e3, type_town_label_1e3, type_town_label_2e3, type_town_label_5e3, type_town_label_1e4, type_town_label_2e4, type_town_label_5e4, type_town_label_1e5, type_town_label_1e5, type_town_label_2e5, type_town_label_5e5, type_town_label_1e6, type_town_label_2e6};
-static enum item_type district_item[]={type_district_label_5e1, type_district_label_1e2, type_district_label_2e2, type_district_label_5e2, type_district_label_1e3, type_district_label_1e3, type_district_label_2e3, type_district_label_5e3, type_district_label_1e4, type_district_label_2e4, type_district_label_5e4, type_district_label_1e5, type_district_label_1e5, type_district_label_2e5, type_district_label_5e5, type_district_label_1e6, type_district_label_2e6};
+static enum item_type town_item[]= {type_town_label_5e1, type_town_label_1e2, type_town_label_2e2, type_town_label_5e2, type_town_label_1e3, type_town_label_1e3, type_town_label_2e3, type_town_label_5e3, type_town_label_1e4, type_town_label_2e4, type_town_label_5e4, type_town_label_1e5, type_town_label_1e5, type_town_label_2e5, type_town_label_5e5, type_town_label_1e6, type_town_label_2e6};
+static enum item_type district_item[]= {type_district_label_5e1, type_district_label_1e2, type_district_label_2e2, type_district_label_5e2, type_district_label_1e3, type_district_label_1e3, type_district_label_2e3, type_district_label_5e3, type_district_label_1e4, type_district_label_2e4, type_district_label_5e4, type_district_label_1e5, type_district_label_1e5, type_district_label_2e5, type_district_label_5e5, type_district_label_1e6, type_district_label_2e6};
 int
 town_get(struct map_rect_priv *mr, struct town_priv *twn, struct item *item)
 {
@@ -158,7 +158,7 @@ town_get(struct map_rect_priv *mr, struct town_priv *twn, struct item *item)
 			switch(twn->type) {
 			case 1:
 				size=twn->size;
-				if (size >= sizeof(town_item)/sizeof(enum item_type)) 
+				if (size >= sizeof(town_item)/sizeof(enum item_type))
 					size=sizeof(town_item)/sizeof(enum item_type)-1;
 				item->type=town_item[size];
 				break;
@@ -168,7 +168,7 @@ town_get(struct map_rect_priv *mr, struct town_priv *twn, struct item *item)
 					size++;
 				if (size == 5 && twn->order < 14)
 					size+=2;
-				if (size >= sizeof(district_item)/sizeof(enum item_type)) 
+				if (size >= sizeof(district_item)/sizeof(enum item_type))
 					size=sizeof(district_item)/sizeof(enum item_type)-1;
 				item->type=district_item[size];
 				break;
@@ -208,8 +208,8 @@ town_get_byid(struct map_rect_priv *mr, struct town_priv *twn, int id_hi, int id
 static int
 town_search_compare(unsigned char **p, struct map_rect_priv *mr)
 {
-        int country, d;
-        char *name;
+	int country, d;
+	char *name;
 
 	if (mr->search_type == attr_town_postal) {
 		mr->search_blk_count=1;
@@ -274,7 +274,8 @@ town_search_get_item(struct map_rect_priv *mr)
 	}
 	if (! mr->search_blk_count)
 		return NULL;
-	dbg(lvl_debug,"block 0x%x offset 0x%x", block_offset_get_block(mr->search_blk_off), block_offset_get_offset(mr->search_blk_off));
+	dbg(lvl_debug,"block 0x%x offset 0x%x", block_offset_get_block(mr->search_blk_off),
+	    block_offset_get_offset(mr->search_blk_off));
 	block_get_byindex(mr->m->file[mr->current_file], block_offset_get_block(mr->search_blk_off), &mr->b);
 	mr->b.p=mr->b.block_start+block_offset_get_offset(mr->search_blk_off);
 	town_get(mr, &mr->town, &mr->item);

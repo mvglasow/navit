@@ -68,8 +68,8 @@ void
 item_bin_add_coord_reverse(struct item_bin *ib, struct coord *c, int count)
 {
 	int i;
-	for (i = count-1 ; i >= 0 ; i--) 
-		item_bin_add_coord(ib, &c[i], 1);	
+	for (i = count-1 ; i >= 0 ; i--)
+		item_bin_add_coord(ib, &c[i], 1);
 }
 
 void
@@ -96,7 +96,7 @@ item_bin_copy_coord(struct item_bin *ib, struct item_bin *from, int dir)
 		item_bin_add_coord(ib, c, count);
 		return;
 	}
-	for (i = 1 ; i <= count ; i++) 
+	for (i = 1 ; i <= count ; i++)
 		item_bin_add_coord(ib, &c[count-i], 1);
 }
 
@@ -120,12 +120,12 @@ item_bin_add_coord_rect(struct item_bin *ib, struct rect *r)
 int
 attr_bin_write_data(struct attr_bin *ab, enum attr_type type, void *data, int size)
 {
-       int pad=(4-(size%4))%4;
-       ab->type=type;
-       memcpy(ab+1, data, size);
-       memset((unsigned char *)(ab+1)+size, 0, pad);
-       ab->len=(size+pad)/4+1;
-       return ab->len+1;
+	int pad=(4-(size%4))%4;
+	ab->type=type;
+	memcpy(ab+1, data, size);
+	memset((unsigned char *)(ab+1)+size, 0, pad);
+	ab->len=(size+pad)/4+1;
+	return ab->len+1;
 }
 
 int
@@ -151,17 +151,17 @@ item_bin_add_attr(struct item_bin *ib, struct attr *attr)
 		ab->type=attr->type;
 		ab->len=1;
 		abptr=(int *)(ab+1);
-                while (attr->u.attrs[i].type) {
-                        int size=attr_bin_write_attr((struct attr_bin *)abptr, &attr->u.attrs[i]);
-                        ab->len+=size;
-                        abptr+=size;
-                        i++;
-                }
-                ib->len+=ab->len+1;
+		while (attr->u.attrs[i].type) {
+			int size=attr_bin_write_attr((struct attr_bin *)abptr, &attr->u.attrs[i]);
+			ab->len+=size;
+			abptr+=size;
+			i++;
+		}
+		ib->len+=ab->len+1;
 
 	} else
 		ib->len+=attr_bin_write_attr(ab, attr);
-	
+
 }
 
 void
@@ -289,7 +289,8 @@ item_bin_write_clipped(struct item_bin *ib, struct tile_parameter *param, struct
 	int i;
 	bbox((struct coord *)(ib+1), ib->clen/2, &tile_data.item_bbox);
 	tile_data.buffer[0]='\0';
-	tile_data.tile_depth=tile(&tile_data.item_bbox, NULL, tile_data.buffer, param->max, param->overlap, &tile_data.tile_bbox);
+	tile_data.tile_depth=tile(&tile_data.item_bbox, NULL, tile_data.buffer, param->max, param->overlap,
+	                          &tile_data.tile_bbox);
 	if (tile_data.tile_depth == param->max || tile_data.tile_depth >= param->min) {
 		item_bin_write_to_sink(ib, out, &tile_data);
 		return;
@@ -576,7 +577,7 @@ item_bin_sort_file(char *in_file, char *out_file, struct rect *r, int *size)
 			dbg_assert(fwrite(ib, (ib->len+1)*4, 1, f)==1);
 			if (r) {
 				for (k = 0 ; k < ib->clen/2 ; k++) {
-					if (rc) 
+					if (rc)
 						bbox_extend(&c[k], r);
 					else {
 						r->l=c[k];
@@ -691,7 +692,7 @@ clip_polygon(struct item_bin *ib, struct rect *r, struct tile_parameter *param, 
 			ib_in=ib2;
 			ib_out=ib1;
 		} else {
-		       ib_in=ib1;
+			ib_in=ib1;
 			ib_out=ib2;
 		}
 	}

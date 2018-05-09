@@ -52,18 +52,18 @@ osd_new(struct attr *parent, struct attr **attrs)
 
 	if (! type)
 		return NULL;
-        new=plugin_get_category_osd(type->u.str);
-        if (! new) {
+	new=plugin_get_category_osd(type->u.str);
+	if (! new) {
 		dbg(lvl_error, "invalid OSD type '%s'", type->u.str);
-                return NULL;
+		return NULL;
 	}
-        o=g_new0(struct osd, 1);
+	o=g_new0(struct osd, 1);
 	o->attrs=attr_list_dup(attrs);
 	cbl.type=attr_callback_list;
 	cbl.u.callback_list=callback_list_new();
 	o->attrs=attr_generic_prepend_attr(o->attrs, &cbl);
 
-        o->priv=new(parent->u.navit, &o->meth, o->attrs);
+	o->priv=new(parent->u.navit, &o->meth, o->attrs);
 	if (o->priv) {
 		o->func=&osd_func;
 		navit_object_ref((struct navit_object *)o);
@@ -73,14 +73,14 @@ osd_new(struct attr *parent, struct attr **attrs)
 		o=NULL;
 	}
 	dbg(lvl_debug,"new osd %p",o);
-        return o;
+	return o;
 }
 
 int
 osd_get_attr(struct osd *osd, enum attr_type type, struct attr *attr, struct attr_iter *iter)
 {
 	int ret=0;
-	if(osd && osd->meth.get_attr) 
+	if(osd && osd->meth.get_attr)
 		/* values for ret: -1: Not possible, 0: Ignored by driver, 1 valid */
 		ret=osd->meth.get_attr(osd->priv, type, attr);
 	if (ret == -1)
@@ -94,7 +94,7 @@ int
 osd_set_attr(struct osd *osd, struct attr* attr)
 {
 	int ret=0;
-	if(osd && osd->meth.set_attr) 
+	if(osd && osd->meth.set_attr)
 		/* values for ret: -1: Not possible, 0: Ignored by driver, 1 set and store, 2 set, don't store */
 		ret=osd->meth.set_attr(osd->priv, attr);
 	if (ret == -1)
@@ -153,7 +153,7 @@ osd_std_click(struct osd_item *this, struct navit *nav, int pressed, int button,
 	if (navit_ignore_button(nav))
 		return;
 	this->pressed = pressed;
-	if (pressed && this->command) 
+	if (pressed && this->command)
 		osd_evaluate_command(this, nav);
 }
 
@@ -162,13 +162,13 @@ osd_std_resize(struct osd_item *item)
 {
 	graphics_overlay_resize(item->gr, &item->p, item->w, item->h, 1);
 }
- 
+
 /**
  * @brief Calculates the size and position of an OSD item.
  *
  * If the geometry of the OSD item is specified relative to screen dimensions,
  * this function will set its absolute dimensions accordingly. If relative width
- * or relative height is set to 0% (int value is equal to ATTR_REL_RELSHIFT), 
+ * or relative height is set to 0% (int value is equal to ATTR_REL_RELSHIFT),
  * object width (height) is not changed here, for button and image osds it means
  * to derive values from the underlying image.
  *
@@ -193,10 +193,10 @@ osd_std_calculate_sizes(struct osd_item *item, int w, int h)
 		padding = graphics_get_data(item->gr, "padding");
 		if (padding) {
 			dbg(lvl_debug, "Got padding=%p for item=%p (item->gr=%p): left=%d top=%d right=%d bottom=%d",
-					padding, item, item->gr, padding->left, padding->top, padding->right, padding->bottom);
+			    padding, item, item->gr, padding->left, padding->top, padding->right, padding->bottom);
 		} else {
 			dbg(lvl_debug, "Got padding=%p for item=%p (item->gr=%p)",
-					padding, item, item->gr);
+			    padding, item, item->gr);
 		}
 	} else
 		dbg(lvl_warning, "cannot get padding for item=%p: item->gr is NULL", item);
@@ -256,7 +256,7 @@ osd_std_calculate_sizes_and_redraw(struct osd_item *item, struct osd_priv *priv,
 }
 
 static void
-osd_std_keypress(struct osd_item *item, struct navit *nav, char *key) 
+osd_std_keypress(struct osd_item *item, struct navit *nav, char *key)
 {
 #if 0
 	int i;
@@ -268,7 +268,7 @@ osd_std_keypress(struct osd_item *item, struct navit *nav, char *key)
 		dbg(lvl_debug,"accesskey:0x%02x",item->accesskey[i]);
 	}
 #endif
-	if ( ! graphics_is_disabled(item->gr) && item->accesskey && key && !strcmp(key, item->accesskey)) 
+	if ( ! graphics_is_disabled(item->gr) && item->accesskey && key && !strcmp(key, item->accesskey))
 		osd_evaluate_command(item, nav);
 }
 
@@ -292,7 +292,7 @@ osd_std_reconfigure(struct osd_item *item, struct command_saved *cs)
 	dbg(lvl_debug, "enter, item=%p, cs=%p", item, cs);
 	if (!command_saved_error(cs)) {
 		item->configured = !! command_saved_get_int(cs);
-		if (item->gr && !(item->flags & DISABLE_OVERLAY)) 
+		if (item->gr && !(item->flags & DISABLE_OVERLAY))
 			graphics_overlay_disable(item->gr, !item->configured);
 	} else {
 		err = command_error_to_text(command_saved_error(cs));
@@ -360,12 +360,12 @@ osd_set_std_attr(struct attr **attrs, struct osd_item *item, int flags)
 	attr = attr_search(attrs, NULL, attr_font_size);
 	if (attr)
 		item->font_size = attr->u.num;
-	
+
 	attr=attr_search(attrs, NULL, attr_background_color);
 	if (attr)
 		item->color_bg=*attr->u.color;
 	attr = attr_search(attrs, NULL, attr_command);
-	if (attr) 
+	if (attr)
 		item->command = g_strdup(attr->u.str);
 	attr=attr_search(attrs, NULL, attr_text_color);
 	if (attr)
@@ -405,7 +405,7 @@ osd_std_config(struct osd_item *item, struct navit *navit)
 		item->configured = !!(attr.u.num & item->osd_configuration);
 	}
 
-	if (item->gr && !(item->flags & DISABLE_OVERLAY)) 
+	if (item->gr && !(item->flags & DISABLE_OVERLAY))
 		graphics_overlay_disable(item->gr, !item->configured);
 }
 
@@ -454,7 +454,7 @@ osd_set_std_graphic(struct navit *nav, struct osd_item *item, struct osd_priv *p
 
 	if (padding) {
 		dbg(lvl_debug, "Got padding=%p for item=%p: left=%d top=%d right=%d bottom=%d",
-				padding, item, padding->left, padding->top, padding->right, padding->bottom);
+		    padding, item, padding->left, padding->top, padding->right, padding->bottom);
 		w -= (padding->left + padding->right);
 		h -= (padding->top + padding->bottom);
 	} else

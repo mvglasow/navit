@@ -22,8 +22,7 @@
 #include "debug.h"
 #include "xmlconfig.h"
 
-struct profile_option
-{
+struct profile_option {
 	NAVIT_OBJECT
 };
 

@@ -69,12 +69,10 @@ popup_traffic_distortion(struct item *item, char *attr)
 {
 	/* add the configuration directory to the name of the file to use */
 	char *dist_filename = g_strjoin(NULL, navit_get_user_data_directory(TRUE),
-									"/distortion.txt", NULL);
-	if (dist_filename)					/* if we built the filename */
-	{
+	                                "/distortion.txt", NULL);
+	if (dist_filename) {				/* if we built the filename */
 		FILE *map=fopen(dist_filename,"a");
-		if (map)						/* if the file was opened */
-		{
+		if (map) {					/* if the file was opened */
 			struct coord c;
 			struct map_rect *mr;
 			fprintf(map,"type=traffic_distortion %s\n",attr);
@@ -84,9 +82,7 @@ popup_traffic_distortion(struct item *item, char *attr)
 				fprintf(map,"0x%x 0x%x\n",c.x,c.y);
 			}
 			fclose(map);
-		}
-		else
-		{
+		} else {
 			dbg(lvl_error,"could not open file for distortions !!");
 
 		} /* else - if (map) */
@@ -95,7 +91,7 @@ popup_traffic_distortion(struct item *item, char *attr)
 
 } /* end: popup_traffic_distortion(..) */
 
- 
+
 static void
 popup_traffic_distortion_blocked(struct item *item)
 {
@@ -145,7 +141,7 @@ popup_set_visitbefore(struct navit *nav, struct pcoord *pc,int visitbefore)
 	dstcount_new=navit_get_destination_count(nav)+1;
 	dst=g_alloca(dstcount_new*sizeof(struct pcoord));
 	navit_get_destinations(nav,dst,dstcount_new);
-	for (i=dstcount_new-1;i>visitbefore;i--){
+	for (i=dstcount_new-1; i>visitbefore; i--) {
 		dst[i]=dst[i-1];
 	}
 	dst[visitbefore]=*pc;
@@ -158,7 +154,7 @@ popup_set_visitbefore(struct navit *nav, struct pcoord *pc,int visitbefore)
 static void
 popup_set_bookmark(struct navit *nav, struct pcoord *pc)
 {
-    struct attr attr;
+	struct attr attr;
 	struct coord c;
 	struct coord_geo g;
 	char buffer[1024];
@@ -169,9 +165,9 @@ popup_set_bookmark(struct navit *nav, struct pcoord *pc)
 	coord_format(g.lat,g.lng,DEGREES_MINUTES_SECONDS,buffer_geo,sizeof(buffer_geo));
 	sprintf(buffer,"Map Point %s", buffer_geo);
 	if (!gui_add_bookmark(navit_get_gui(nav), pc, buffer)) {
-        navit_get_attr(nav, attr_bookmarks, &attr, NULL);
+		navit_get_attr(nav, attr_bookmarks, &attr, NULL);
 		bookmarks_add_bookmark(attr.u.bookmarks, pc, buffer);
-    }
+	}
 }
 
 
@@ -249,11 +245,12 @@ popup_show_visitbefore(struct navit *nav,struct pcoord *pc, void *menu)
 	char buffer[100];
 	int i, dstcount;
 	dstcount=navit_get_destination_count(nav);
-	if (dstcount>=1){
+	if (dstcount>=1) {
 		menuvisitbefore=popup_printf(menu, menu_type_submenu, _("Visit before..."));
-		for (i=0;i<dstcount;i++){
+		for (i=0; i<dstcount; i++) {
 			sprintf(buffer,_("Waypoint %d"),i+1);
-			popup_printf_cb(menuvisitbefore, menu_type_menu, callback_new_3(callback_cast(popup_set_visitbefore), nav, pc,i), buffer);
+			popup_printf_cb(menuvisitbefore, menu_type_menu, callback_new_3(callback_cast(popup_set_visitbefore), nav, pc,i),
+			                buffer);
 		}
 	}
 }
@@ -276,7 +273,7 @@ popup_show_attr(void *menu, struct item *item, enum attr_type attr_type)
 	struct attr attr;
 	memset(&attr, 0, sizeof(attr));
 	attr.type=attr_type;
-	if (item_attr_get(item, attr_type, &attr)) 
+	if (item_attr_get(item, attr_type, &attr))
 		popup_show_attr_val(menu, &attr);
 }
 #endif
@@ -295,12 +292,12 @@ popup_show_attrs(struct map *map, void *menu, struct item *item)
 	struct attr attr;
 	for (;;) {
 		memset(&attr, 0, sizeof(attr));
-		if (item_attr_get(item, attr_any, &attr)) 
+		if (item_attr_get(item, attr_any, &attr))
 			popup_show_attr_val(map, menu, &attr);
 		else
 			break;
 	}
-	
+
 #endif
 }
 
@@ -331,7 +328,7 @@ popup_show_item(struct navit *nav, void *popup, struct displayitem *di)
 
 	dbg_assert(diitem);
 
-	if (label) 
+	if (label)
 		menu=popup_printf(popup, menu_type_submenu, "%s '%s' (%d coords)", item_to_name(diitem->type), label, count);
 	else
 		menu=popup_printf(popup, menu_type_submenu, "%s (%d coords)", item_to_name(diitem->type), count);
@@ -361,9 +358,12 @@ popup_show_item(struct navit *nav, void *popup, struct displayitem *di)
 					c->pro = transform_get_projection(navit_get_trans(nav));
 					c->x = co.x;
 					c->y = co.y;
-					popup_printf_cb(menu_item, menu_type_menu, callback_new_2(callback_cast(popup_set_position), nav, c), _("Set as position"));
-					popup_printf_cb(menu_item, menu_type_menu, callback_new_2(callback_cast(popup_set_destination), nav, c), _("Set as destination"));
-					popup_printf_cb(menu_item, menu_type_menu, callback_new_2(callback_cast(popup_set_bookmark), nav, c), _("Add as bookmark"));
+					popup_printf_cb(menu_item, menu_type_menu, callback_new_2(callback_cast(popup_set_position), nav, c),
+					                _("Set as position"));
+					popup_printf_cb(menu_item, menu_type_menu, callback_new_2(callback_cast(popup_set_destination), nav, c),
+					                _("Set as destination"));
+					popup_printf_cb(menu_item, menu_type_menu, callback_new_2(callback_cast(popup_set_bookmark), nav, c),
+					                _("Add as bookmark"));
 				}
 			}
 		}
@@ -372,18 +372,21 @@ popup_show_item(struct navit *nav, void *popup, struct displayitem *di)
 		popup_printf(menu, menu_type_menu, "(No map)");
 	}
 	if (item_get_default_flags(diitem->type)) {
-		int speeds[]={5,10,20,30,40,50,60,70,80,90,100};
-		int delays[]={1,2,3,5,10,15,20,30,45,60,75,90,120,150,180,240,300};
+		int speeds[]= {5,10,20,30,40,50,60,70,80,90,100};
+		int delays[]= {1,2,3,5,10,15,20,30,45,60,75,90,120,150,180,240,300};
 		int i;
 		menu_dist=popup_printf(menu, menu_type_submenu, "Traffic distortion");
-		popup_printf_cb(menu_dist, menu_type_menu, callback_new_1(callback_cast(popup_traffic_distortion_blocked), diitem), "Blocked");
+		popup_printf_cb(menu_dist, menu_type_menu, callback_new_1(callback_cast(popup_traffic_distortion_blocked), diitem),
+		                "Blocked");
 		menu_item=popup_printf(menu_dist, menu_type_submenu,"Max speed");
 		for (i = 0 ; i < sizeof(speeds)/sizeof(int); i++) {
-			popup_printf_cb(menu_item, menu_type_menu, callback_new_2(callback_cast(popup_traffic_distortion_speed), diitem, speeds[i]), "%d km/h",speeds[i]);
+			popup_printf_cb(menu_item, menu_type_menu, callback_new_2(callback_cast(popup_traffic_distortion_speed), diitem,
+			                speeds[i]), "%d km/h",speeds[i]);
 		}
 		menu_item=popup_printf(menu_dist, menu_type_submenu,"Delay");
 		for (i = 0 ; i < sizeof(delays)/sizeof(int); i++) {
-			popup_printf_cb(menu_item, menu_type_menu, callback_new_2(callback_cast(popup_traffic_distortion_delay), diitem, delays[i]*600), "%d min",delays[i]);
+			popup_printf_cb(menu_item, menu_type_menu, callback_new_2(callback_cast(popup_traffic_distortion_delay), diitem,
+			                delays[i]*600), "%d min",delays[i]);
 		}
 	}
 }
@@ -430,7 +433,8 @@ popup(struct navit *nav, int button, struct point *p)
 	c.x = co.x;
 	c.y = co.y;
 	popup_printf_cb(men, menu_type_menu, callback_new_2(callback_cast(popup_set_position), nav, &c), _("Set as position"));
-	popup_printf_cb(men, menu_type_menu, callback_new_2(callback_cast(popup_set_destination), nav, &c), _("Set as destination"));
+	popup_printf_cb(men, menu_type_menu, callback_new_2(callback_cast(popup_set_destination), nav, &c),
+	                _("Set as destination"));
 	popup_show_visitbefore(nav,&c,men);
 	popup_printf_cb(men, menu_type_menu, callback_new_2(callback_cast(popup_set_bookmark), nav, &c), _("Add as bookmark"));
 	popup_display(nav, popup, p);

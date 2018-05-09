@@ -5,7 +5,7 @@
 
 static int print;
 
-static char *types[]={"node","way","relation"};
+static char *types[]= {"node","way","relation"};
 
 struct o5m {
 	unsigned char buffer[65536*2];
@@ -55,7 +55,7 @@ get_uval(unsigned char **p)
 	for (;;) {
 		c=*((*p)++);
 		ret+=((unsigned long long)c & 0x7f) << shift;
-		if (!(c & 0x80)) 
+		if (!(c & 0x80))
 			return ret;
 		shift+=7;
 	}
@@ -96,11 +96,11 @@ static void
 get_strings_ref(struct string_table *st, int ref, char **s1, char **s2)
 {
 	int pos=st->pos-ref;
-	
+
 	if (pos < 0)
 		pos+=15000;
 	*s1=st->strings[pos];
-	if (s2) 
+	if (s2)
 		*s2=*s1+strlen(*s1)+1;
 }
 
@@ -165,7 +165,7 @@ o5m_print_version(struct o5m *o, int tags)
 
 static void
 o5m_print_end(char c)
-{	
+{
 	printf("\t</%s>\n",types[c-0x10]);
 }
 
@@ -189,7 +189,7 @@ map_collect_data_osm_o5m(FILE *in, struct maptool_osm *osm)
 	o.buffer_end=o.buffer;
 	o.error=0;
 	o.in=in;
-	
+
 	fill_buffer(&o,1);
 	for (;;) {
 		if (buffer_end(&o, 1)) {
@@ -219,7 +219,7 @@ map_collect_data_osm_o5m(FILE *in, struct maptool_osm *osm)
 				if (o.timestamp) {
 					o.changeset+=get_sval(&o.buffer_start);
 					ref=get_uval(&o.buffer_start);
-					if (ref) 
+					if (ref)
 						get_strings_ref(&st, ref, &uidstr, &o.user);
 					else
 						get_strings(&st, &o.buffer_start, &uidstr, &o.user);
@@ -241,7 +241,7 @@ map_collect_data_osm_o5m(FILE *in, struct maptool_osm *osm)
 				break;
 			case 0x11:
 				osm_add_way(o.id);
-				rlen=get_uval(&o.buffer_start);	
+				rlen=get_uval(&o.buffer_start);
 				tags=end > o.buffer_start;
 				rend=o.buffer_start+rlen;
 				if (print)
@@ -255,7 +255,7 @@ map_collect_data_osm_o5m(FILE *in, struct maptool_osm *osm)
 				break;
 			case 0x12:
 				osm_add_relation(o.id);
-				rlen=get_uval(&o.buffer_start);	
+				rlen=get_uval(&o.buffer_start);
 				tags=end > o.buffer_start;
 				rend=o.buffer_start+rlen;
 				if (print)
@@ -264,7 +264,7 @@ map_collect_data_osm_o5m(FILE *in, struct maptool_osm *osm)
 					long long delta=get_sval(&o.buffer_start);
 					int r;
 					ref=get_uval(&o.buffer_start);
-					if (ref) 
+					if (ref)
 						get_strings_ref(&st, ref, &role, NULL);
 					else
 						get_strings(&st, &o.buffer_start, &role, NULL);
@@ -283,7 +283,7 @@ map_collect_data_osm_o5m(FILE *in, struct maptool_osm *osm)
 			while (end > o.buffer_start) {
 				char *k, *v;
 				ref=get_uval(&o.buffer_start);
-				if (ref) 
+				if (ref)
 					get_strings_ref(&st, ref, &k, &v);
 				else
 					get_strings(&st, &o.buffer_start, &k, &v);
@@ -335,7 +335,7 @@ map_collect_data_osm_o5m(FILE *in, struct maptool_osm *osm)
 			break;
 		default:
 			fprintf(stderr,"Unknown tag 0x%x\n",c);
-			/* Fall through */
+		/* Fall through */
 		case 0xdc: /* File timestamp: silently ignore it */
 			len=get_uval(&o.buffer_start);
 			if (o.buffer_start > o.buffer_end) {

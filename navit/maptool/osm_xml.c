@@ -82,7 +82,7 @@ osm_xml_decode_entities(char *buffer)
 			len=strlen(entities[i].entity);
 			if (!strncmp(pos, entities[i].entity, len)) {
 				*pos=entities[i].c;
-			 	memmove(pos+1, pos+len, strlen(pos+len)+1);
+				memmove(pos+1, pos+len, strlen(pos+len)+1);
 				break;
 			}
 		}
@@ -155,18 +155,18 @@ parse_member(char *p)
 		return 0;
 	if (!osm_xml_get_attribute(p, "role", role_buffer, BUFFER_SIZE))
 		return 0;
-	if (!strcmp(type_buffer,"node")) 
+	if (!strcmp(type_buffer,"node"))
 		type=rel_member_node;
-	else if (!strcmp(type_buffer,"way")) 
+	else if (!strcmp(type_buffer,"way"))
 		type=rel_member_way;
-	else if (!strcmp(type_buffer,"relation")) 
+	else if (!strcmp(type_buffer,"relation"))
 		type=rel_member_relation;
 	else {
 		fprintf(stderr,"Unknown type '%s'\n",type_buffer);
 		return 0;
 	}
 	osm_add_member(type, atoll(ref_buffer), role_buffer);
-	
+
 	return 1;
 }
 
@@ -181,7 +181,8 @@ parse_nd(char *p)
 }
 
 static int
-xml_declaration_in_line(char* buffer){
+xml_declaration_in_line(char* buffer)
+{
 	return !strncmp(buffer, "<?xml ", 6);
 }
 
@@ -192,9 +193,9 @@ map_collect_data_osm(FILE *in, struct maptool_osm *osm)
 	char buffer[BUFFER_SIZE];
 	char *p;
 	sig_alrm(0);
-	if (!fgets(buffer, size, in) || !xml_declaration_in_line(buffer)){
+	if (!fgets(buffer, size, in) || !xml_declaration_in_line(buffer)) {
 		fprintf(stderr,"FATAL: First line does not start with XML declaration;\n"
-			       "this does not look like a valid OSM file.\n");
+		        "this does not look like a valid OSM file.\n");
 		exit(EXIT_FAILURE);
 	}
 	while (fgets(buffer, size, in)) {
@@ -202,7 +203,7 @@ map_collect_data_osm(FILE *in, struct maptool_osm *osm)
 		if (! p) {
 			fprintf(stderr,"FATAL: wrong line in input data (does not start with '<'): %s\n", buffer);
 			fprintf(stderr,"This does not look like a valid OSM file.\n"
-		                "Note that maptool can only process OSM files without wrapped or empty lines.\n");
+			        "Note that maptool can only process OSM files without wrapped or empty lines.\n");
 			exit(EXIT_FAILURE);
 		}
 		if (!strncmp(p, "<osm ",5)) {

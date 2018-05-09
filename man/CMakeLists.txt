@@ -1,5 +1,13 @@
-INSTALL(FILES maptool.1 DESTINATION ${MAN_DIR})
-if(NOT DEFINED NAVIT_BINARY)
-   set(NAVIT_BINARY navit)
-endif()   
-INSTALL(FILES navit.1 DESTINATION ${MAN_DIR} RENAME ${NAVIT_BINARY}.1)
+INSTALL (FILES maptool .1 DESTINATION $
+	 {
+	 MAN_DIR}
+
+)if (NOT DEFINED NAVIT_BINARY)
+  set (NAVIT_BINARY navit) endif ()INSTALL (FILES navit .1 DESTINATION $
+					    {
+					    MAN_DIR}
+					    RENAME $
+					    {
+					    NAVIT_BINARY}
+
+					    .1)

@@ -119,9 +119,9 @@ gui_internal_menu(struct gui_priv *this, const char *label)
 
 	gui_internal_search_idle_end(this);
 	topbox=gui_internal_box_new_with_label(this, 0, label);
-        topbox->w=this->root.w;
-        topbox->h=this->root.h;
-        gui_internal_widget_append(&this->root, topbox);
+	topbox->w=this->root.w;
+	topbox->h=this->root.h;
+	gui_internal_widget_append(&this->root, topbox);
 	menu=gui_internal_box_new(this, gravity_left_center|orientation_vertical);
 
 	if (padding) {
@@ -137,7 +137,7 @@ gui_internal_menu(struct gui_priv *this, const char *label)
 	}
 	menu->background=this->background;
 	gui_internal_apply_config(this);
- 	topbox->menu_data=g_new0(struct menu_data, 1);
+	topbox->menu_data=g_new0(struct menu_data, 1);
 	gui_internal_widget_append(topbox, menu);
 	w=gui_internal_top_bar(this);
 	gui_internal_widget_append(menu, w);
@@ -185,19 +185,19 @@ gui_internal_menu(struct gui_priv *this, const char *label)
 	}
 	gui_internal_widget_pack(this, topbox);
 	gui_internal_widget_reset_pack(this, topbox);
-        topbox->w=this->root.w;
-        topbox->h=this->root.h;
-		if (padding) {
-			menu->p.x = padding->left;
-			menu->p.y = padding->top;
-			menu->w = topbox->w - padding->left - padding->right;
-			menu->h = topbox->h - padding->top - padding->bottom;
-		} else {
-			menu->p.x = 0;
-			menu->p.y = 0;
-			menu->w = topbox->w;
-			menu->h = topbox->h;
-		}
+	topbox->w=this->root.w;
+	topbox->h=this->root.h;
+	if (padding) {
+		menu->p.x = padding->left;
+		menu->p.y = padding->top;
+		menu->w = topbox->w - padding->left - padding->right;
+		menu->h = topbox->h - padding->top - padding->bottom;
+	} else {
+		menu->p.x = 0;
+		menu->p.y = 0;
+		menu->w = topbox->w;
+		menu->h = topbox->h;
+	}
 	return w;
 }
 
@@ -244,23 +244,24 @@ gui_internal_top_bar(struct gui_priv *this)
 	GList *res=NULL,*l;
 	int width,width_used=0,use_sep=0,incomplete=0;
 	struct graphics_gc *foreground=(this->flags & 256 ? this->background : this->text_foreground);
-/* flags
-        1:Don't expand bar to screen width
-        2:Don't show Map Icon
-        4:Don't show Home Icon
-        8:Show only current menu
-        16:Don't use menu titles as button
-        32:Show navit version
-	64:Show time
-	128:Show help
-	256:Use background for menu headline
-	512:Set osd_configuration and zoom to route when setting position
-	1024:Don't show back button
-	2048:No highlighting of keyboard
-	4096:Center menu title
-*/
+	/* flags
+	        1:Don't expand bar to screen width
+	        2:Don't show Map Icon
+	        4:Don't show Home Icon
+	        8:Show only current menu
+	        16:Don't use menu titles as button
+	        32:Show navit version
+		64:Show time
+		128:Show help
+		256:Use background for menu headline
+		512:Set osd_configuration and zoom to route when setting position
+		1024:Don't show back button
+		2048:No highlighting of keyboard
+		4096:Center menu title
+	*/
 
-	w=gui_internal_box_new(this, (this->flags & 4096 ? gravity_center : gravity_left_center)|orientation_horizontal|(this->flags & 1 ? 0:flags_fill));
+	w=gui_internal_box_new(this, (this->flags & 4096 ? gravity_center : gravity_left_center)|orientation_horizontal|
+	                       (this->flags & 1 ? 0:flags_fill));
 	w->bl=this->spacing;
 	w->spx=this->spacing;
 	w->background=this->background2;
@@ -273,8 +274,8 @@ gui_internal_top_bar(struct gui_priv *this)
 	width=this->root.w-w->bl;
 	if (! (this->flags & 2)) {
 		wm=gui_internal_button_new_with_callback(this, NULL,
-			image_new_s(this, "gui_map"), gravity_center|orientation_vertical,
-			gui_internal_cmd_return, NULL);
+		                image_new_s(this, "gui_map"), gravity_center|orientation_vertical,
+		                gui_internal_cmd_return, NULL);
 		wm->speech=g_strdup(_("Back to map"));
 		gui_internal_widget_pack(this, wm);
 		gui_internal_widget_append(w, wm);
@@ -282,8 +283,8 @@ gui_internal_top_bar(struct gui_priv *this)
 	}
 	if (! (this->flags & 4)) {
 		wh=gui_internal_button_new_with_callback(this, NULL,
-			image_new_s(this, "gui_home"), gravity_center|orientation_vertical,
-			gui_internal_cmd_main_menu, NULL);
+		                image_new_s(this, "gui_home"), gravity_center|orientation_vertical,
+		                gui_internal_cmd_main_menu, NULL);
 		wh->speech=g_strdup(_("Main Menu"));
 		gui_internal_widget_pack(this, wh);
 		gui_internal_widget_append(w, wh);

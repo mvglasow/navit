@@ -90,12 +90,12 @@ NP_Initialize(NPNetscapeFuncs * bFuncs, NPPluginFuncs * pFuncs)
 
 	fillPluginFunctionTable(pFuncs);
 	err =
-	    sBrowserFuncs->getvalue(NULL, NPNVSupportsXEmbedBool,
-				    (void *) &supportsXEmbed);
+	        sBrowserFuncs->getvalue(NULL, NPNVSupportsXEmbedBool,
+	                                (void *) &supportsXEmbed);
 	if (err != NPERR_NO_ERROR || supportsXEmbed != true)
 		return NPERR_INCOMPATIBLE_VERSION_ERROR;
 	err =
-	    sBrowserFuncs->getvalue(NULL, NPNVToolkit, (void *) &toolkit);
+	        sBrowserFuncs->getvalue(NULL, NPNVToolkit, (void *) &toolkit);
 
 	if (err != NPERR_NO_ERROR || toolkit != NPNVGtk2)
 		return NPERR_INCOMPATIBLE_VERSION_ERROR;
@@ -141,25 +141,25 @@ NP_Shutdown()
 
 NPError
 NPP_New(NPMIMEType pluginType, NPP instance, uint16_t mode, int16_t argc,
-	char *argn[], char *argv[], NPSavedData * saved)
+        char *argn[], char *argv[], NPSavedData * saved)
 {
-	char *args[]={"/usr/bin/navit",NULL};
+	char *args[]= {"/usr/bin/navit",NULL};
 	// Make sure we can render this plugin
 	NPBool browserSupportsWindowless = false;
 	sBrowserFuncs->getvalue(instance, NPNVSupportsWindowless,
-				&browserSupportsWindowless);
+	                        &browserSupportsWindowless);
 	if (!browserSupportsWindowless) {
 		printf("Windowless mode not supported by the browser\n");
 		return NPERR_GENERIC_ERROR;
 	}
 #if 0
 	sBrowserFuncs->setvalue(instance, NPPVpluginWindowBool,
-				(void *) true);
+	                        (void *) true);
 #endif
 
 	// set up our our instance data
 	InstanceData *instanceData =
-	    (InstanceData *) malloc(sizeof(InstanceData));
+	        (InstanceData *) malloc(sizeof(InstanceData));
 	if (!instanceData)
 		return NPERR_OUT_OF_MEMORY_ERROR;
 	memset(instanceData, 0, sizeof(InstanceData));
@@ -202,13 +202,13 @@ NPP_SetWindow(NPP instance, NPWindow * window)
 		fprintf(stderr,"Failed to set window\n");
 		return NPERR_GENERIC_ERROR;
 	}
-	
+
 	return NPERR_NO_ERROR;
 }
 
 NPError
 NPP_NewStream(NPP instance, NPMIMEType type, NPStream * stream,
-	      NPBool seekable, uint16_t * stype)
+              NPBool seekable, uint16_t * stype)
 {
 	return NPERR_GENERIC_ERROR;
 }
@@ -227,7 +227,7 @@ NPP_WriteReady(NPP instance, NPStream * stream)
 
 int32_t
 NPP_Write(NPP instance, NPStream * stream, int32_t offset, int32_t len,
-	  void *buffer)
+          void *buffer)
 {
 	return 0;
 }
@@ -263,7 +263,7 @@ NPP_HandleEvent(NPP instance, void *event)
 
 	GdkNativeWindow nativeWinId = (XID) (instanceData->window.window);
 	GdkDrawable *gdkWindow =
-	    GDK_DRAWABLE(gdk_window_foreign_new(nativeWinId));
+	        GDK_DRAWABLE(gdk_window_foreign_new(nativeWinId));
 	drawWindow(instanceData, gdkWindow);
 	g_object_unref(gdkWindow);
 #endif
@@ -273,7 +273,7 @@ NPP_HandleEvent(NPP instance, void *event)
 
 void
 NPP_URLNotify(NPP instance, const char *URL, NPReason reason,
-	      void *notifyData)
+              void *notifyData)
 {
 
 }
@@ -303,7 +303,7 @@ allocate(NPP npp, NPClass * aClass)
 		ret->class = aClass;
 		ret->instanceData = npp->pdata;
 		fprintf(stderr, "instanceData for %p is %p\n", ret,
-			ret->instanceData);
+		        ret->instanceData);
 	}
 	return (NPObject *) ret;
 }
@@ -330,16 +330,15 @@ hasMethod(NPObject * npobj, NPIdentifier name)
 	if (name == sBrowserFuncs->getstringidentifier("nativeMethod"))
 		return true;
 	if (name ==
-	    sBrowserFuncs->getstringidentifier("anotherNativeMethod"))
+	                sBrowserFuncs->getstringidentifier("anotherNativeMethod"))
 		return true;
 
 	return false;
 }
 
 enum attr_type
-variant_to_attr_type(const NPVariant *variant)
-{
-	if (NPVARIANT_IS_STRING(*variant)) 
+variant_to_attr_type(const NPVariant *variant) {
+	if (NPVARIANT_IS_STRING(*variant))
 		return attr_from_name(NPVARIANT_TO_STRING(*variant).utf8characters);
 	return attr_none;
 }
@@ -381,21 +380,24 @@ invoke(NPObject * npobj, NPIdentifier name, const NPVariant * args,
 		if (!argCount || !NPVARIANT_IS_STRING(args[0]))
 			return false;
 		if (navit_get_attr(obj->attr.u.navit, attr_callback_list, &attr, NULL)) {
-                	int valid=0;
-                	callback_list_call_attr_4(attr.u.callback_list, attr_command, NPVARIANT_TO_STRING(args[0]), NULL, NULL, &valid);
+			int valid=0;
+			callback_list_call_attr_4(attr.u.callback_list, attr_command, NPVARIANT_TO_STRING(args[0]), NULL, NULL, &valid);
 		}
-	    	err=sBrowserFuncs->getvalue(obj->instanceData->npp, NPNVWindowNPObject, (void *) &window);
+		err=sBrowserFuncs->getvalue(obj->instanceData->npp, NPNVWindowNPObject, (void *) &window);
 		fprintf(stderr,"error1:%d\n",err);
 		//OBJECT_TO_NPVARIANT(window, *result);
-		err=sBrowserFuncs->invoke(obj->instanceData->npp, window, sBrowserFuncs->getstringidentifier("Array"), window, 0, result);
+		err=sBrowserFuncs->invoke(obj->instanceData->npp, window, sBrowserFuncs->getstringidentifier("Array"), window, 0,
+		                          result);
 		fprintf(stderr,"error2:%d\n",err);
 		INT32_TO_NPVARIANT(23, value);
-		err=sBrowserFuncs->setproperty(obj->instanceData->npp, NPVARIANT_TO_OBJECT(*result), sBrowserFuncs->getintidentifier(0), &value);
+		err=sBrowserFuncs->setproperty(obj->instanceData->npp, NPVARIANT_TO_OBJECT(*result), sBrowserFuncs->getintidentifier(0),
+		                               &value);
 		INT32_TO_NPVARIANT(42, value);
-		err=sBrowserFuncs->setproperty(obj->instanceData->npp, NPVARIANT_TO_OBJECT(*result), sBrowserFuncs->getintidentifier(1), &value);
+		err=sBrowserFuncs->setproperty(obj->instanceData->npp, NPVARIANT_TO_OBJECT(*result), sBrowserFuncs->getintidentifier(1),
+		                               &value);
 		fprintf(stderr,"error3:%d\n",err);
-		
-		
+
+
 		//VOID_TO_NPVARIANT(*result);
 		return true;
 	}
@@ -408,8 +410,8 @@ invoke(NPObject * npobj, NPIdentifier name, const NPVariant * args,
 		}
 		s=g_strdup_printf("[NavitObject %s]",attr_to_name(obj->attr.type));
 		STRINGZ_TO_NPVARIANT(strdup(s), *result);
-		g_free(s);	
-		return true;	
+		g_free(s);
+		return true;
 	}
 	if (name == sBrowserFuncs->getstringidentifier("nativeMethod")) {
 		result->type = NPVariantType_Int32;
@@ -417,7 +419,7 @@ invoke(NPObject * npobj, NPIdentifier name, const NPVariant * args,
 		return true;
 	}
 	if (name ==
-	    sBrowserFuncs->getstringidentifier("anotherNativeMethod")) {
+	                sBrowserFuncs->getstringidentifier("anotherNativeMethod")) {
 		result->type = NPVariantType_Int32;
 		result->value.intValue = 42;
 		return true;
@@ -428,7 +430,7 @@ invoke(NPObject * npobj, NPIdentifier name, const NPVariant * args,
 
 bool
 invokeDefault(NPObject * npobj, const NPVariant * args, uint32_t argCount,
-	      NPVariant * result)
+              NPVariant * result)
 {
 	fprintf(stderr, "invokeDefault\n");
 	return false;
@@ -530,7 +532,7 @@ NPError
 NPP_GetValue(NPP instance, NPPVariable variable, void *value)
 {
 	fprintf(stderr, "NPP_GetValue %d %d\n", variable,
-		NPPVpluginScriptableNPObject);
+	        NPPVpluginScriptableNPObject);
 	if (variable == NPPVpluginNeedsXEmbed) {
 		*((NPBool *) value) = true;
 		fprintf(stderr, "Xembedd\n");
@@ -539,7 +541,7 @@ NPP_GetValue(NPP instance, NPPVariable variable, void *value)
 
 	if (variable == NPPVpluginScriptableNPObject) {
 		*(NPObject **) value =
-		    sBrowserFuncs->createobject(instance, &navitclass);
+		        sBrowserFuncs->createobject(instance, &navitclass);
 		return NPERR_NO_ERROR;
 	}
 	return NPERR_GENERIC_ERROR;

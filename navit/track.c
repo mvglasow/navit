@@ -42,8 +42,7 @@
 
 struct object_func tracking_func;
 
-struct tracking_line
-{
+struct tracking_line {
 	struct street_data *street;
 	struct tracking_line *next;
 	int angle[0];
@@ -78,7 +77,7 @@ struct cdf_data {
 	struct pcoord *pos_hist;
 	int *dir_hist;
 	double last_dist;
-	struct pcoord last_out; 
+	struct pcoord last_out;
 	int last_dir;
 };
 
@@ -140,15 +139,16 @@ tracking_init_cdf(struct cdf_data *cdf, int hist_size)
 // Minimum average speed
 #define CDF_MINAVG 1.f
 // Maximum average speed
-#define CDF_MAXAVG 6.f // only ~ 20 km/h 
-		// We need a low value here because otherwise we would extrapolate whenever we are not accelerating
+#define CDF_MAXAVG 6.f // only ~ 20 km/h
+// We need a low value here because otherwise we would extrapolate whenever we are not accelerating
 
 // Mininum distance (square of it..), below which we ignore gps updates
 #define CDF_MINDIST 49 // 7 meters, I guess this value has to be changed for pedestrians.
 
 #if 0
 static void
-tracking_process_cdf(struct cdf_data *cdf, struct pcoord *pin, struct pcoord *pout, int dirin, int *dirout, int cur_speed, time_t fixtime)
+tracking_process_cdf(struct cdf_data *cdf, struct pcoord *pin, struct pcoord *pout, int dirin, int *dirout,
+                     int cur_speed, time_t fixtime)
 {
 	struct cdf_speed *speed,*sc,*sl;
 	double speed_avg;
@@ -184,7 +184,7 @@ tracking_process_cdf(struct cdf_data *cdf, struct pcoord *pin, struct pcoord *po
 	if (sl) {
 		sl->next = NULL;
 	}
-   
+
 	while (sc) {
 		sl = sc->next;
 		g_free(sc);
@@ -193,7 +193,7 @@ tracking_process_cdf(struct cdf_data *cdf, struct pcoord *pin, struct pcoord *po
 
 	if (speed_avg < CDF_MINAVG) {
 		speed_avg = CDF_MINAVG;
-	} else if (speed_avg > CDF_MAXAVG) { 
+	} else if (speed_avg > CDF_MAXAVG) {
 		speed_avg = CDF_MAXAVG;
 	}
 
@@ -215,30 +215,32 @@ tracking_process_cdf(struct cdf_data *cdf, struct pcoord *pin, struct pcoord *po
 
 		cdf->pos_hist[cdf->first_pos] = *pin;
 		cdf->dir_hist[cdf->first_pos] = dirin;
-		
+
 		*pout = *pin;
 		*dirout = dirin;
 	} else if (cdf->poscount > 0) {
-		
+
 		double mx,my; // Average position's x and y values
 		double sx,sy; // Support vector
 		double dx,dy; // Difference between average and current position
 		double len;   // Length of support vector
-		double dist;  
+		double dist;
 
 		mx = my = 0;
 		sx = sy = 0;
 
 		for (i = 0; i < cdf->poscount; i++) {
-			mx += (double)cdf->pos_hist[((cdf->first_pos + i) % cdf->hist_size)].x / cdf->poscount; 
-			my += (double)cdf->pos_hist[((cdf->first_pos + i) % cdf->hist_size)].y / cdf->poscount; 
+			mx += (double)cdf->pos_hist[((cdf->first_pos + i) % cdf->hist_size)].x / cdf->poscount;
+			my += (double)cdf->pos_hist[((cdf->first_pos + i) % cdf->hist_size)].y / cdf->poscount;
 
-			
+
 			if (i != 0) {
-				sx += cdf->pos_hist[((cdf->first_pos + i) % cdf->hist_size)].x - cdf->pos_hist[((cdf->first_pos + i - 1) % cdf->hist_size)].x;
-				sy += cdf->pos_hist[((cdf->first_pos + i) % cdf->hist_size)].y - cdf->pos_hist[((cdf->first_pos + i - 1) % cdf->hist_size)].y;
+				sx += cdf->pos_hist[((cdf->first_pos + i) % cdf->hist_size)].x - cdf->pos_hist[((cdf->first_pos + i - 1) %
+				                cdf->hist_size)].x;
+				sy += cdf->pos_hist[((cdf->first_pos + i) % cdf->hist_size)].y - cdf->pos_hist[((cdf->first_pos + i - 1) %
+				                cdf->hist_size)].y;
 			}
-			
+
 		}
 
 		if (cdf->poscount > 1) {
@@ -254,25 +256,25 @@ tracking_process_cdf(struct cdf_data *cdf, struct pcoord *pin, struct pcoord *po
 			// direction of that position
 			sx = sin((double)cdf->dir_hist[cdf->first_pos] / 180 * M_PI);
 			sy = cos((double)cdf->dir_hist[cdf->first_pos] / 180 * M_PI);
-			*dirout = cdf->dir_hist[cdf->first_pos];	
+			*dirout = cdf->dir_hist[cdf->first_pos];
 		}
 
-		
+
 		dx = pin->x - mx;
 		dy = pin->y - my;
 		dist = dx * sx + dy * sy;
 
 		if (cdf->extrapolating && (dist < cdf->last_dist)) {
 			dist = cdf->last_dist;
-		} 
+		}
 
 		cdf->last_dist = dist;
 		cdf->extrapolating = 1;
 
-	  pout->x = (int)rint(mx + sx * dist);
-	  pout->y = (int)rint(my + sy * dist);
+		pout->x = (int)rint(mx + sx * dist);
+		pout->y = (int)rint(my + sy * dist);
 		pout->pro = pin->pro;
-		
+
 	} else {
 		// We should extrapolate, but don't have an old position available
 		*pout = *pin;
@@ -281,7 +283,7 @@ tracking_process_cdf(struct cdf_data *cdf, struct pcoord *pin, struct pcoord *po
 
 	if (cdf->available) {
 		int dx,dy;
-		
+
 		dx = pout->x - cdf->last_out.x;
 		dy = pout->y - cdf->last_out.y;
 
@@ -295,7 +297,7 @@ tracking_process_cdf(struct cdf_data *cdf, struct pcoord *pin, struct pcoord *po
 	cdf->last_dir = *dirout;
 
 	cdf->available = 1;
-} 
+}
 #endif
 
 int
@@ -420,7 +422,7 @@ tracking_get_angles(struct tracking_line *tl)
 {
 	int i;
 	struct street_data *sd=tl->street;
-	for (i = 0 ; i < sd->count-1 ; i++) 
+	for (i = 0 ; i < sd->count-1 ; i++)
 		tl->angle[i]=transform_get_angle_delta(&sd->c[i], &sd->c[i+1], 0);
 }
 
@@ -445,15 +447,15 @@ street_data_within_selection(struct street_data *sd, struct map_selection *sel)
 		if (r.lu.y < sd->c[i].y)
 			r.lu.y=sd->c[i].y;
 	}
-        curr=sel;
+	curr=sel;
 	while (curr) {
 		struct coord_rect *sr=&curr->u.c_rect;
 		if (r.lu.x <= sr->rl.x && r.rl.x >= sr->lu.x &&
-		    r.lu.y >= sr->rl.y && r.rl.y <= sr->lu.y)
+		                r.lu.y >= sr->rl.y && r.rl.y <= sr->lu.y)
 			return 1;
 		curr=curr->next;
 	}
-        return 0;
+	return 0;
 }
 
 
@@ -546,15 +548,15 @@ tracking_angle_delta(struct tracking *tr, int vehicle_angle, int street_angle, i
 {
 	int full=180,ret=360,fwd=0,rev=0;
 	struct vehicleprofile *profile=tr->vehicleprofile;
-	
+
 	if (profile) {
-	    fwd=((flags & profile->flags_forward_mask) == profile->flags);
-	    rev=((flags & profile->flags_reverse_mask) == profile->flags);
+		fwd=((flags & profile->flags_forward_mask) == profile->flags);
+		rev=((flags & profile->flags_reverse_mask) == profile->flags);
 	}
 	if (fwd || rev) {
 		if (!fwd || !rev) {
 			full=360;
-			if (rev) 
+			if (rev)
 				street_angle=(street_angle+180)%360;
 		}
 		ret=tracking_angle_abs_diff(vehicle_angle, street_angle, full);
@@ -595,7 +597,7 @@ tracking_is_on_route(struct tracking *tr, struct route *rt, struct item *item)
 	return tr->route_pref;
 #else
 	return 0;
-#endif	
+#endif
 }
 
 static int
@@ -603,7 +605,8 @@ tracking_value(struct tracking *tr, struct tracking_line *t, int offset, struct 
 {
 	int value=0;
 	struct street_data *sd=t->street;
-	dbg(lvl_info, "%d: (0x%x,0x%x)-(0x%x,0x%x)", offset, sd->c[offset].x, sd->c[offset].y, sd->c[offset+1].x, sd->c[offset+1].y);
+	dbg(lvl_info, "%d: (0x%x,0x%x)-(0x%x,0x%x)", offset, sd->c[offset].x, sd->c[offset].y, sd->c[offset+1].x,
+	    sd->c[offset+1].y);
 	if (flags & 1) {
 		struct coord c1, c2, cp;
 		c1.x = sd->c[offset].x;
@@ -616,7 +619,7 @@ tracking_value(struct tracking *tr, struct tracking_line *t, int offset, struct 
 	}
 	if (value >= min)
 		return value;
-	if (flags & 2) 
+	if (flags & 2)
 		value += tracking_angle_delta(tr, tr->curr_angle, t->angle[offset], sd->flags)*tr->angle_pref>>4;
 	if (value >= min)
 		return value;
@@ -633,7 +636,7 @@ tracking_value(struct tracking *tr, struct tracking_line *t, int offset, struct 
 		if (roadprofile && tr->speed > roadprofile->speed * tr->overspeed_percent_pref/ 100)
 			value += tr->overspeed_pref;
 	}
-	if ((flags & 64) && !!(sd->flags & AF_UNDERGROUND) != tr->no_gps) 
+	if ((flags & 64) && !!(sd->flags & AF_UNDERGROUND) != tr->no_gps)
 		value+=200;
 	return value;
 }
@@ -670,17 +673,17 @@ tracking_update(struct tracking *tr, struct vehicle *v, struct vehicleprofile *v
 		return;
 	}
 	if (!vehicle_get_attr(tr->vehicle, attr_position_speed, &speed_attr, NULL) ||
-	    !vehicle_get_attr(tr->vehicle, attr_position_direction, &direction_attr, NULL) ||
-	    !vehicle_get_attr(tr->vehicle, attr_position_coord_geo, &coord_geo, NULL)) {
+	                !vehicle_get_attr(tr->vehicle, attr_position_direction, &direction_attr, NULL) ||
+	                !vehicle_get_attr(tr->vehicle, attr_position_coord_geo, &coord_geo, NULL)) {
 		dbg(lvl_error,"failed to get position data %d %d %d",
-		vehicle_get_attr(tr->vehicle, attr_position_speed, &speed_attr, NULL),
-	    vehicle_get_attr(tr->vehicle, attr_position_direction, &direction_attr, NULL),
-	    vehicle_get_attr(tr->vehicle, attr_position_coord_geo, &coord_geo, NULL));
+		    vehicle_get_attr(tr->vehicle, attr_position_speed, &speed_attr, NULL),
+		    vehicle_get_attr(tr->vehicle, attr_position_direction, &direction_attr, NULL),
+		    vehicle_get_attr(tr->vehicle, attr_position_coord_geo, &coord_geo, NULL));
 		return;
 	}
 	if (tr->tunnel_extrapolation) {
 		struct attr fix_type;
-		if (!vehicle_get_attr(tr->vehicle, attr_position_fix_type, &fix_type, NULL)) 
+		if (!vehicle_get_attr(tr->vehicle, attr_position_fix_type, &fix_type, NULL))
 			fix_type.u.num=2;
 		if (fix_type.u.num) {
 			tr->no_gps=0;
@@ -688,7 +691,8 @@ tracking_update(struct tracking *tr, struct vehicle *v, struct vehicleprofile *v
 		} else
 			tr->no_gps=1;
 	}
-	if (!vehicleprofile_get_attr(vehicleprofile,attr_static_speed,&static_speed,NULL) || !vehicleprofile_get_attr(vehicleprofile,attr_static_distance,&static_distance,NULL)) {
+	if (!vehicleprofile_get_attr(vehicleprofile,attr_static_speed,&static_speed,NULL)
+	                || !vehicleprofile_get_attr(vehicleprofile,attr_static_distance,&static_distance,NULL)) {
 		static_speed.u.num=3;
 		static_distance.u.num=10;
 		dbg(lvl_debug,"Using defaults for static position detection");
@@ -699,7 +703,8 @@ tracking_update(struct tracking *tr, struct vehicle *v, struct vehicleprofile *v
 	tr->valid=attr_position_valid_valid;
 	transform_from_geo(pro, coord_geo.u.coord_geo, &tr->curr_in);
 	if ((speed < static_speed.u.num && transform_distance(pro, &tr->last_in, &tr->curr_in) < static_distance.u.num )) {
-		dbg(lvl_debug,"static speed %f coord 0x%x,0x%x vs 0x%x,0x%x",speed,tr->last_in.x,tr->last_in.y, tr->curr_in.x, tr->curr_in.y);
+		dbg(lvl_debug,"static speed %f coord 0x%x,0x%x vs 0x%x,0x%x",speed,tr->last_in.x,tr->last_in.y, tr->curr_in.x,
+		    tr->curr_in.y);
 		tr->valid=attr_position_valid_static;
 		tr->speed=0;
 		return;
@@ -719,7 +724,8 @@ tracking_update(struct tracking *tr, struct vehicle *v, struct vehicleprofile *v
 		if (time-tr->time == 1) {
 			dbg(lvl_debug,"extrapolating speed from %f and %f (%f)",tr->speed, speed, speed-tr->speed);
 			espeed=speed+(speed-tr->speed)*lag.u.num/10;
-			dbg(lvl_debug,"extrapolating angle from %f and %f (%d)",tr->direction, direction, tracking_angle_diff(direction,tr->direction,360));
+			dbg(lvl_debug,"extrapolating angle from %f and %f (%d)",tr->direction, direction, tracking_angle_diff(direction,
+			                tr->direction,360));
 			edirection=direction+tracking_angle_diff(direction,tr->direction,360)*lag.u.num/10;
 		} else {
 			dbg(lvl_debug,"no speed and direction extrapolation");
@@ -746,7 +752,7 @@ tracking_update(struct tracking *tr, struct vehicle *v, struct vehicleprofile *v
 		tr->last_updated=tr->curr_in;
 		dbg(lvl_debug,"update end");
 	}
-	
+
 	tr->street_direction=0;
 	t=tr->lines;
 	tr->curr_line=NULL;
@@ -763,13 +769,13 @@ tracking_update(struct tracking *tr, struct vehicle *v, struct vehicleprofile *v
 				tr->curr[0]=sd->c[i];
 				tr->curr[1]=sd->c[i+1];
 				tr->direction_matched=t->angle[i];
-				dbg(lvl_debug,"lpnt.x=0x%x,lpnt.y=0x%x pos=%d %d+%d+%d+%d=%d", lpnt.x, lpnt.y, i, 
-					transform_distance_line_sq(&sd->c[i], &sd->c[i+1], &cin, &lpnt_tmp),
-					tracking_angle_delta(tr, tr->curr_angle, t->angle[i], 0)*tr->angle_pref,
-					tracking_is_connected(tr, tr->last, &sd->c[i]) ? tr->connected_pref : 0,
-					lpnt.x == tr->last_out.x && lpnt.y == tr->last_out.y ? tr->nostop_pref : 0,
-					value
-				);
+				dbg(lvl_debug,"lpnt.x=0x%x,lpnt.y=0x%x pos=%d %d+%d+%d+%d=%d", lpnt.x, lpnt.y, i,
+				    transform_distance_line_sq(&sd->c[i], &sd->c[i+1], &cin, &lpnt_tmp),
+				    tracking_angle_delta(tr, tr->curr_angle, t->angle[i], 0)*tr->angle_pref,
+				    tracking_is_connected(tr, tr->last, &sd->c[i]) ? tr->connected_pref : 0,
+				    lpnt.x == tr->last_out.x && lpnt.y == tr->last_out.y ? tr->nostop_pref : 0,
+				    value
+				   );
 				tr->curr_out.x=lpnt.x;
 				tr->curr_out.y=lpnt.y;
 				tr->coord_geo_valid=0;
@@ -791,7 +797,7 @@ tracking_update(struct tracking *tr, struct vehicle *v, struct vehicleprofile *v
 		tr->street_direction=0;
 	}
 	if (tr->curr_line && (tr->curr_line->street->flags & AF_UNDERGROUND)) {
-		if (tr->no_gps) 
+		if (tr->no_gps)
 			tr->tunnel=1;
 	} else if (tr->tunnel) {
 		tr->speed=0;
@@ -899,7 +905,7 @@ tracking_new(struct attr *parent, struct attr **attrs)
 		hist_size.u.num = 0;
 	}
 	if (attrs) {
-		for (;*attrs; attrs++) 
+		for (; *attrs; attrs++)
 			tracking_set_attr_do(this, *attrs, 1);
 	}
 
@@ -923,7 +929,7 @@ tracking_set_route(struct tracking *this, struct route *rt)
 void
 tracking_destroy(struct tracking *tr)
 {
-	if (tr->attr) 
+	if (tr->attr)
 		attr_free(tr->attr);
 	tracking_flush(tr);
 	callback_list_destroy(tr->callback_list);
@@ -970,7 +976,7 @@ struct map_rect_priv {
 	char *str;
 };
 
-static void 
+static void
 tracking_map_item_coord_rewind(void *priv_data)
 {
 	struct map_rect_priv *this=priv_data;
@@ -988,10 +994,10 @@ tracking_map_item_coord_get(void *priv_data, struct coord *c, int count)
 		pro = map_projection(this->curr->street->item.map);
 		if (projection_mg != pro) {
 			transform_from_to(&this->curr->street->c[this->ccount+this->coord],
-				pro,
-				c ,projection_mg);
+			                  pro,
+			                  c,projection_mg);
 		} else
-		*c=this->curr->street->c[this->ccount+this->coord];
+			*c=this->curr->street->c[this->ccount+this->coord];
 		dbg(lvl_debug,"coord %d 0x%x,0x%x",this->ccount,c->x,c->y);
 		this->ccount++;
 		ret++;
@@ -1027,47 +1033,53 @@ tracking_map_item_attr_get(void *priv_data, enum attr_type attr_type, struct att
 	case attr_debug:
 		switch(this_->debug_idx) {
 		case 0:
-                        this_->debug_idx++;
-			this_->str=attr->u.str=g_strdup_printf("overall: %d (limit %d)",tracking_value(tr, this_->curr, this_->coord, &lpnt, INT_MAX/2, -1), tr->offroad_limit_pref);
-                        return 1;
+			this_->debug_idx++;
+			this_->str=attr->u.str=g_strdup_printf("overall: %d (limit %d)",tracking_value(tr, this_->curr, this_->coord, &lpnt,
+			                                       INT_MAX/2, -1), tr->offroad_limit_pref);
+			return 1;
 		case 1:
 			this_->debug_idx++;
 			c=&this_->curr->street->c[this_->coord];
 			value=tracking_value(tr, this_->curr, this_->coord, &lpnt, INT_MAX/2, 1);
-                        this_->str=attr->u.str=g_strdup_printf("distance: (0x%x,0x%x) from (0x%x,0x%x)-(0x%x,0x%x) at (0x%x,0x%x) %d",
-				tr->curr_in.x, tr->curr_in.y,
-				c[0].x, c[0].y, c[1].x, c[1].y,
-				lpnt.x, lpnt.y, value);
+			this_->str=attr->u.str=g_strdup_printf("distance: (0x%x,0x%x) from (0x%x,0x%x)-(0x%x,0x%x) at (0x%x,0x%x) %d",
+			                                       tr->curr_in.x, tr->curr_in.y,
+			                                       c[0].x, c[0].y, c[1].x, c[1].y,
+			                                       lpnt.x, lpnt.y, value);
 			return 1;
 		case 2:
 			this_->debug_idx++;
-                        this_->str=attr->u.str=g_strdup_printf("angle: %d to %d (flags %d) %d",
-				tr->curr_angle, this_->curr->angle[this_->coord], this_->curr->street->flags & 3,
-				tracking_value(tr, this_->curr, this_->coord, &lpnt, INT_MAX/2, 2));
+			this_->str=attr->u.str=g_strdup_printf("angle: %d to %d (flags %d) %d",
+			                                       tr->curr_angle, this_->curr->angle[this_->coord], this_->curr->street->flags & 3,
+			                                       tracking_value(tr, this_->curr, this_->coord, &lpnt, INT_MAX/2, 2));
 			return 1;
 		case 3:
 			this_->debug_idx++;
-                        this_->str=attr->u.str=g_strdup_printf("connected: %d", tracking_value(tr, this_->curr, this_->coord, &lpnt, INT_MAX/2, 4));
+			this_->str=attr->u.str=g_strdup_printf("connected: %d", tracking_value(tr, this_->curr, this_->coord, &lpnt, INT_MAX/2,
+			                                       4));
 			return 1;
 		case 4:
 			this_->debug_idx++;
-                        this_->str=attr->u.str=g_strdup_printf("no_stop: %d", tracking_value(tr, this_->curr, this_->coord, &lpnt, INT_MAX/2, 8));
+			this_->str=attr->u.str=g_strdup_printf("no_stop: %d", tracking_value(tr, this_->curr, this_->coord, &lpnt, INT_MAX/2,
+			                                       8));
 			return 1;
 		case 5:
 			this_->debug_idx++;
-                        this_->str=attr->u.str=g_strdup_printf("route: %d", tracking_value(tr, this_->curr, this_->coord, &lpnt, INT_MAX/2, 16));
+			this_->str=attr->u.str=g_strdup_printf("route: %d", tracking_value(tr, this_->curr, this_->coord, &lpnt, INT_MAX/2,
+			                                       16));
 			return 1;
 		case 6:
 			this_->debug_idx++;
-                        this_->str=attr->u.str=g_strdup_printf("overspeed: %d", tracking_value(tr, this_->curr, this_->coord, &lpnt, INT_MAX/2, 32));
+			this_->str=attr->u.str=g_strdup_printf("overspeed: %d", tracking_value(tr, this_->curr, this_->coord, &lpnt, INT_MAX/2,
+			                                       32));
 			return 1;
 		case 7:
 			this_->debug_idx++;
-                        this_->str=attr->u.str=g_strdup_printf("tunnel: %d", tracking_value(tr, this_->curr, this_->coord, &lpnt, INT_MAX/2, 64));
+			this_->str=attr->u.str=g_strdup_printf("tunnel: %d", tracking_value(tr, this_->curr, this_->coord, &lpnt, INT_MAX/2,
+			                                       64));
 			return 1;
 		case 8:
 			this_->debug_idx++;
-                        this_->str=attr->u.str=g_strdup_printf("line %p", this_->curr);
+			this_->str=attr->u.str=g_strdup_printf("line %p", this_->curr);
 			return 1;
 		default:
 			this_->attr_next=attr_none;
@@ -1148,7 +1160,7 @@ tracking_map_get_item(struct map_rect_priv *priv)
 		priv->item.id_lo++;
 	}
 	value=tracking_value(priv->tracking, priv->curr, priv->coord, &lpnt, INT_MAX/2, -1);
-	if (value < 64) 
+	if (value < 64)
 		priv->item.type=type_tracking_100;
 	else if (value < 128)
 		priv->item.type=type_tracking_90;
@@ -1182,7 +1194,7 @@ tracking_map_get_item_byid(struct map_rect_priv *priv, int id_hi, int id_lo)
 	struct item *ret;
 	tracking_map_rect_init(priv);
 	while ((ret=tracking_map_get_item(priv))) {
-		if (ret->id_hi == id_hi && ret->id_lo == id_lo) 
+		if (ret->id_hi == id_hi && ret->id_lo == id_lo)
 			return ret;
 	}
 	return NULL;

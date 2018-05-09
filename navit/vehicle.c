@@ -16,12 +16,12 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA  02110-1301, USA.
  */
- 
+
 /** @file vehicle.c
  * @defgroup vehicle-plugins vehicle plugins
  * @ingroup plugins
  * @brief Generic components of the vehicle object.
- * 
+ *
  * This file implements the generic vehicle interface, i.e. everything which is
  * not specific to a single data source.
  *
@@ -80,13 +80,20 @@ struct vehicle {
 
 struct object_func vehicle_func;
 
-static void vehicle_set_default_name(struct vehicle *this);
-static void vehicle_draw_do(struct vehicle *this_);
-static void vehicle_log_nmea(struct vehicle *this_, struct log *log);
-static void vehicle_log_gpx(struct vehicle *this_, struct log *log);
-static void vehicle_log_textfile(struct vehicle *this_, struct log *log);
-static void vehicle_log_binfile(struct vehicle *this_, struct log *log);
-static int vehicle_add_log(struct vehicle *this_, struct log *log);
+static void
+vehicle_set_default_name(struct vehicle *this);
+static void
+vehicle_draw_do(struct vehicle *this_);
+static void
+vehicle_log_nmea(struct vehicle *this_, struct log *log);
+static void
+vehicle_log_gpx(struct vehicle *this_, struct log *log);
+static void
+vehicle_log_textfile(struct vehicle *this_, struct log *log);
+static void
+vehicle_log_binfile(struct vehicle *this_, struct log *log);
+static int
+vehicle_add_log(struct vehicle *this_, struct log *log);
 
 
 
@@ -105,10 +112,10 @@ vehicle_new(struct attr *parent, struct attr **attrs)
 	struct vehicle *this_;
 	struct attr *source;
 	struct vehicle_priv *(*vehicletype_new) (struct vehicle_methods *
-						 meth,
-						 struct callback_list *
-						 cbl,
-						 struct attr ** attrs);
+	                meth,
+	                struct callback_list *
+	                cbl,
+	                struct attr ** attrs);
 	char *type, *colon;
 	struct pcoord center;
 
@@ -158,7 +165,7 @@ vehicle_new(struct attr *parent, struct attr **attrs)
 
 /**
  * @brief Destroys a vehicle
- * 
+ *
  * @param this_ The vehicle to destroy
  */
 void
@@ -321,7 +328,7 @@ vehicle_remove_attr(struct vehicle *this_, struct attr *attr)
  * @param this_ A vehicle
  * @param cursor A cursor
  * @author Ralph Sennhauser (10/2009)
- */ 
+ */
 void
 vehicle_set_cursor(struct vehicle *this_, struct cursor *cursor, int overwrite)
 {
@@ -345,7 +352,7 @@ vehicle_set_cursor(struct vehicle *this_, struct cursor *cursor, int overwrite)
 		graphics_overlay_resize(this_->gra, &this_->cursor_pnt, cursor->w, cursor->h, 0);
 	}
 
-	if (cursor) { 
+	if (cursor) {
 		sc.x=cursor->w/2;
 		sc.y=cursor->h/2;
 		if (!this_->cursor && this_->gra)
@@ -389,7 +396,10 @@ vehicle_draw(struct vehicle *this_, struct graphics *gra, struct point *pnt, int
 		if (this_->gra) {
 			graphics_init(this_->gra);
 			this_->bg=graphics_gc_new(this_->gra);
-			c.r=0; c.g=0; c.b=0; c.a=0;
+			c.r=0;
+			c.g=0;
+			c.b=0;
+			c.a=0;
 			graphics_gc_set_foreground(this_->bg, &c);
 			graphics_background_gc(this_->gra, this_->bg);
 		}
@@ -436,7 +446,7 @@ vehicle_draw_do(struct vehicle *this_)
 
 	attr=this_->attrs;
 	while (attr && *attr) {
-		if ((*attr)->type == attr_name) 
+		if ((*attr)->type == attr_name)
 			label=(*attr)->u.str;
 		attr++;
 	}
@@ -450,9 +460,9 @@ vehicle_draw_do(struct vehicle *this_)
 		if ((*attr)->type == attr_itemgra) {
 			struct itemgra *itm=(*attr)->u.itemgra;
 			dbg(lvl_debug,"speed %d-%d %d", itm->speed_range.min, itm->speed_range.max, speed);
-			if (speed >= itm->speed_range.min && speed <= itm->speed_range.max &&  
-			    angle >= itm->angle_range.min && angle <= itm->angle_range.max &&  
-			    sequence >= itm->sequence_range.min && sequence <= itm->sequence_range.max) {
+			if (speed >= itm->speed_range.min && speed <= itm->speed_range.max &&
+			                angle >= itm->angle_range.min && angle <= itm->angle_range.max &&
+			                sequence >= itm->sequence_range.min && sequence <= itm->sequence_range.max) {
 				graphics_draw_itemgra(this_->gra, itm, this_->trans, label);
 			}
 			if (sequence < itm->sequence_range.max)
@@ -551,8 +561,8 @@ vehicle_log_gpx(struct vehicle *this_, struct log *log)
 	else
 		attr_types=NULL;
 	if (this_->meth.position_attr_get(this_->priv, attr_position_fix_type, &fix_attr)) {
-		if ( fix_attr.u.num == 0 ) 
-			return; 
+		if ( fix_attr.u.num == 0 )
+			return;
 	}
 	if (!this_->meth.position_attr_get(this_->priv, attr_position_coord_geo, &attr))
 		return;
@@ -571,7 +581,8 @@ vehicle_log_gpx(struct vehicle *this_, struct log *log)
 		g_free(this_->gpx_desc);
 		this_->gpx_desc = NULL;
 	}
-	if (attr_types_contains_default(attr_types, attr_position_height,0) && this_->meth.position_attr_get(this_->priv, attr_position_height, &attr))
+	if (attr_types_contains_default(attr_types, attr_position_height,0)
+	                && this_->meth.position_attr_get(this_->priv, attr_position_height, &attr))
 		logstr=g_strconcat_printf(logstr,"\t<ele>%.6f</ele>\n",*attr.u.numd);
 	// <magvar> magnetic variation in degrees; we might use position_magnetic_direction and position_direction to figure it out
 	// <geoidheight> Height (in meters) of geoid (mean sea level) above WGS84 earth ellipsoid. As defined in NMEA GGA message (field 11, which vehicle_wince.c ignores)
@@ -582,20 +593,26 @@ vehicle_log_gpx(struct vehicle *this_, struct log *log)
 	// <sym> Text of GPS symbol name
 	// <type> Type (classification)
 	// <fix> Type of GPS fix {'none'|'2d'|'3d'|'dgps'|'pps'}, leave out if unknown. Similar to position_fix_type but more detailed.
-	if (attr_types_contains_default(attr_types, attr_position_sats_used,0) && this_->meth.position_attr_get(this_->priv, attr_position_sats_used, &attr))
+	if (attr_types_contains_default(attr_types, attr_position_sats_used,0)
+	                && this_->meth.position_attr_get(this_->priv, attr_position_sats_used, &attr))
 		logstr=g_strconcat_printf(logstr,"\t<sat>%d</sat>\n",attr.u.num);
-	if (attr_types_contains_default(attr_types, attr_position_hdop,0) && this_->meth.position_attr_get(this_->priv, attr_position_hdop, &attr))
+	if (attr_types_contains_default(attr_types, attr_position_hdop,0)
+	                && this_->meth.position_attr_get(this_->priv, attr_position_hdop, &attr))
 		logstr=g_strconcat_printf(logstr,"\t<hdop>%.6f</hdop>\n",*attr.u.numd);
 	// <vdop>, <pdop> Vertical and position dilution of precision, no corresponding attribute
-	if (attr_types_contains_default(attr_types, attr_position_direction,0) && this_->meth.position_attr_get(this_->priv, attr_position_direction, &attr))
+	if (attr_types_contains_default(attr_types, attr_position_direction,0)
+	                && this_->meth.position_attr_get(this_->priv, attr_position_direction, &attr))
 		logstr=g_strconcat_printf(logstr,"\t<course>%.1f</course>\n",*attr.u.numd);
-	if (attr_types_contains_default(attr_types, attr_position_speed, 0) && this_->meth.position_attr_get(this_->priv, attr_position_speed, &attr))
+	if (attr_types_contains_default(attr_types, attr_position_speed, 0)
+	                && this_->meth.position_attr_get(this_->priv, attr_position_speed, &attr))
 		logstr=g_strconcat_printf(logstr,"\t<speed>%.2f</speed>\n",(*attr.u.numd / 3.6));
-	if (attr_types_contains_default(attr_types, attr_profilename, 0) && (attrp=attr_search(this_->attrs, NULL, attr_profilename))) {
+	if (attr_types_contains_default(attr_types, attr_profilename, 0)
+	                && (attrp=attr_search(this_->attrs, NULL, attr_profilename))) {
 		logstr=g_strconcat_printf(logstr,"%s\t\t<navit:profilename>%s</navit:profilename>\n",extensions,attrp->u.str);
 		extensions="";
 	}
-	if (attr_types_contains_default(attr_types, attr_position_radius, 0) && this_->meth.position_attr_get(this_->priv, attr_position_radius, &attr)) {
+	if (attr_types_contains_default(attr_types, attr_position_radius, 0)
+	                && this_->meth.position_attr_get(this_->priv, attr_position_radius, &attr)) {
 		logstr=g_strconcat_printf(logstr,"%s\t\t<navit:radius>%.2f</navit:radius>\n",extensions,*attr.u.numd);
 		extensions="";
 	}
@@ -622,8 +639,8 @@ vehicle_log_textfile(struct vehicle *this_, struct log *log)
 	if (!this_->meth.position_attr_get)
 		return;
 	if (this_->meth.position_attr_get(this_->priv, attr_position_fix_type, &fix_attr)) {
-		if (fix_attr.u.num == 0) 
-			return; 
+		if (fix_attr.u.num == 0)
+			return;
 	}
 	if (!this_->meth.position_attr_get(this_->priv, attr_position_coord_geo, &pos_attr))
 		return;
@@ -651,8 +668,8 @@ vehicle_log_binfile(struct vehicle *this_, struct log *log)
 	if (!this_->meth.position_attr_get)
 		return;
 	if (this_->meth.position_attr_get(this_->priv, attr_position_fix_type, &fix_attr)) {
-		if (fix_attr.u.num == 0) 
-			return; 
+		if (fix_attr.u.num == 0)
+			return;
 	}
 	if (!this_->meth.position_attr_get(this_->priv, attr_position_coord_geo, &pos_attr))
 		return;
@@ -681,8 +698,8 @@ vehicle_log_binfile(struct vehicle *this_, struct log *log)
 			struct coord *in=(struct coord *)(buffer_new+3);
 			int count_out=transform_douglas_peucker(in, count, radius, out);
 			memcpy(in, out, count_out*2*sizeof(int));
-			buffer_new[0]+=(count_out-count)*2;	
-			buffer_new[2]+=(count_out-count)*2;	
+			buffer_new[0]+=(count_out-count)*2;
+			buffer_new[2]+=(count_out-count)*2;
 			flags=log_flag_replace_buffer|log_flag_force_flush|log_flag_truncate;
 		} else {
 			flags=log_flag_replace_buffer|log_flag_keep_pointer|log_flag_keep_buffer|log_flag_force_flush;
@@ -706,19 +723,19 @@ vehicle_add_log(struct vehicle *this_, struct log *log)
 	struct callback *cb;
 	struct attr type_attr;
 	if (!log_get_attr(log, attr_type, &type_attr, NULL))
-                return 1;
+		return 1;
 
 	if (!strcmp(type_attr.u.str, "nmea")) {
 		cb=callback_new_attr_2(callback_cast(vehicle_log_nmea), attr_position_coord_geo, this_, log);
 	} else if (!strcmp(type_attr.u.str, "gpx")) {
 		char *header = "<?xml version='1.0' encoding='UTF-8'?>\n"
-			"<gpx version='1.1' creator='Navit http://navit.sourceforge.net'\n"
-			"     xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'\n"
-			"     xmlns:navit='http://www.navit-project.org/schema/navit'\n"
-			"     xmlns='http://www.topografix.com/GPX/1/1'\n"
-			"     xsi:schemaLocation='http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd'>\n"
-			"<trk>\n"
-			"<trkseg>\n";
+		               "<gpx version='1.1' creator='Navit http://navit.sourceforge.net'\n"
+		               "     xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'\n"
+		               "     xmlns:navit='http://www.navit-project.org/schema/navit'\n"
+		               "     xmlns='http://www.topografix.com/GPX/1/1'\n"
+		               "     xsi:schemaLocation='http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd'>\n"
+		               "<trk>\n"
+		               "<trkseg>\n";
 		char *trailer = "</trkseg>\n</trk>\n</gpx>\n";
 		log_set_header(log, header, strlen(header));
 		log_set_trailer(log, trailer, strlen(trailer));

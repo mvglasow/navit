@@ -82,12 +82,12 @@ process_boundaries_setup(FILE *boundaries, struct relations *relations)
 		char *iso=osm_tag_value(ib, "ISO3166-1");
 		int has_subrelations=0;
 		int has_outer_ways=0;
-		
+
 		processed_relations++;
-		
+
 		if(!iso)
 			iso=osm_tag_value(ib, "iso3166-1:alpha2");
-		
+
 		if (admin_level && !strcmp(admin_level, "2")) {
 			if(!iso) {
 				char *int_name=osm_tag_value(ib,"int_name");
@@ -95,15 +95,15 @@ process_boundaries_setup(FILE *boundaries, struct relations *relations)
 					iso="FR";
 			}
 			if (iso) {
-				struct country_table *country=country_from_iso2(iso);	
-				if (!country) 
+				struct country_table *country=country_from_iso2(iso);
+				if (!country)
 					osm_warning("relation",item_bin_get_relationid(ib),0,"Country Boundary contains unknown ISO3166-1 value '%s'\n",iso);
 				else {
 					boundary->iso2=g_strdup(iso);
 					osm_info("relation",item_bin_get_relationid(ib),0,"Country Boundary for '%s'\n",iso);
 				}
 				boundary->country=country;
-			} else 
+			} else
 				osm_warning("relation",item_bin_get_relationid(ib),0,"Country Boundary doesn't contain an ISO3166-1 tag\n");
 		}
 		while ((member=item_bin_get_attr(ib, attr_osm_member, member))) {
@@ -115,10 +115,10 @@ process_boundaries_setup(FILE *boundaries, struct relations *relations)
 
 			if (sscanf(member,RELATION_MEMBER_PARSE_FORMAT,&member_type_numeric,&osm_id,&read) < 2)
 				continue;
-				
+
 			member_type=(enum relation_member_type)member_type_numeric;
 			rolestr=member+read;
-			
+
 			if(member_type==rel_member_node) {
 				if(!strcmp(rolestr,"admin_centre") || !strcmp(rolestr,"admin_center"))
 					boundary->admin_centre=osm_id;
@@ -128,8 +128,7 @@ process_boundaries_setup(FILE *boundaries, struct relations *relations)
 				if (!strcmp(rolestr,"outer") || !strcmp(rolestr,"exclave")) {
 					has_outer_ways=1;
 					role=geom_poly_segment_type_way_outer;
-				}
-				else if (!strcmp(rolestr,"inner") || !strcmp(rolestr,"enclave"))
+				} else if (!strcmp(rolestr,"inner") || !strcmp(rolestr,"enclave"))
 					role=geom_poly_segment_type_way_inner;
 				else if (!strcmp(rolestr,""))
 					role=geom_poly_segment_type_way_unknown;
@@ -146,9 +145,12 @@ process_boundaries_setup(FILE *boundaries, struct relations *relations)
 			}
 		}
 		if(boundary->iso2 && has_subrelations)
-			osm_warning("relation",item_bin_get_relationid(ib),0,"Country boundary '%s' has %d relations as boundary segments. These are not supported yet.\n", boundary->iso2, has_subrelations);
+			osm_warning("relation",item_bin_get_relationid(ib),0,
+			            "Country boundary '%s' has %d relations as boundary segments. These are not supported yet.\n", boundary->iso2,
+			            has_subrelations);
 		if(boundary->iso2 && !has_outer_ways) {
-			osm_warning("relation",item_bin_get_relationid(ib),0,"Skipping country boundary for '%s' because it has no outer ways.\n", boundary->iso2);
+			osm_warning("relation",item_bin_get_relationid(ib),0,
+			            "Skipping country boundary for '%s' because it has no outer ways.\n", boundary->iso2);
 			g_free(boundary->iso2);
 			boundary->iso2=NULL;
 		}
@@ -166,7 +168,7 @@ boundary_find_matches(GList *l, struct coord *c)
 	while (l) {
 		struct boundary *boundary=l->data;
 		if (bbox_contains_coord(&boundary->r, c)) {
-			if (geom_poly_segments_point_inside(boundary->sorted_segments,c) > 0) 
+			if (geom_poly_segments_point_inside(boundary->sorted_segments,c) > 0)
 				ret=g_list_prepend(ret, boundary);
 			ret=g_list_concat(ret,boundary_find_matches(boundary->children, c));
 		}
@@ -201,7 +203,8 @@ dump_hierarchy(GList *l, char *prefix)
 	strcat(newprefix," ");
 	while (l) {
 		struct boundary *boundary=l->data;
-		fprintf(stderr,"%s:%s (0x%x,0x%x)-(0x%x,0x%x)\n",prefix,osm_tag_name(boundary->ib),boundary->r.l.x,boundary->r.l.y,boundary->r.h.x,boundary->r.h.y);
+		fprintf(stderr,"%s:%s (0x%x,0x%x)-(0x%x,0x%x)\n",prefix,osm_tag_name(boundary->ib),boundary->r.l.x,boundary->r.l.y,
+		        boundary->r.h.x,boundary->r.h.y);
 		dump_hierarchy(boundary->children, newprefix);
 		l=g_list_next(l);
 	}
@@ -296,17 +299,17 @@ process_boundaries_finish(GList *boundaries_list)
 				}
 			}
 			sl=g_list_next(sl);
-		}	
+		}
 		ret=process_boundaries_insert(ret, boundary);
 		l=g_list_next(l);
-		if (f) 
+		if (f)
 			fclose(f);
 		if (fu) {
 			if (boundary->country)
 				osm_warning("relation",item_bin_get_relationid(boundary->ib),0,"Broken country polygon '%s'\n",boundary->iso2);
 			fclose(fu);
 		}
-		
+
 	}
 	return ret;
 }

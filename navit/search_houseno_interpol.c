@@ -102,9 +102,10 @@ search_next_house_number_curr_interpol_with_ends(struct house_number_interpolati
 }
 
 static int
-house_number_is_end_number(char* house_number, struct house_number_interpolation *inter) {
+house_number_is_end_number(char* house_number, struct house_number_interpolation *inter)
+{
 	return ( (!strcmp(house_number, inter->first))
-		|| (!strcmp(house_number, inter->last)) );
+	         || (!strcmp(house_number, inter->last)) );
 }
 
 static char *
@@ -112,14 +113,14 @@ search_next_house_number_curr_interpol(struct house_number_interpolation *inter)
 {
 	char* hn=NULL;
 	switch (inter->include_end_nodes) {
-		case end_nodes_yes:
+	case end_nodes_yes:
+		hn=search_next_house_number_curr_interpol_with_ends(inter);
+		break;
+	case end_nodes_no:
+		do {
 			hn=search_next_house_number_curr_interpol_with_ends(inter);
-			break;
-		case end_nodes_no:
-			do {
-				hn=search_next_house_number_curr_interpol_with_ends(inter);
-			} while (hn!=NULL && house_number_is_end_number(hn, inter));
-			break;
+		} while (hn!=NULL && house_number_is_end_number(hn, inter));
+		break;
 	}
 	return hn;
 }
@@ -183,7 +184,8 @@ search_house_number_coordinate(struct item *item, struct house_number_interpolat
 		if (count) {
 			int i,distance_sum=0,hn_distance;
 			int *distances=g_alloca(sizeof(int)*(count-1));
-			dbg(lvl_debug,"count=%d hn_length=%d hn_pos=%d (%s of %s-%s)",count,hn_length,hn_pos,inter->curr,inter->first,inter->last);
+			dbg(lvl_debug,"count=%d hn_length=%d hn_pos=%d (%s of %s-%s)",count,hn_length,hn_pos,inter->curr,inter->first,
+			    inter->last);
 			if (!hn_length) {
 				hn_length=2;
 				hn_pos=1;
@@ -223,13 +225,14 @@ search_match(char *str, char *search, int partial)
 }
 
 char *
-search_next_interpolated_house_number(struct item *item, struct house_number_interpolation *inter, char *inter_match, int inter_partial)
+search_next_interpolated_house_number(struct item *item, struct house_number_interpolation *inter, char *inter_match,
+                                      int inter_partial)
 {
 	while (1) {
 		char *hn;
 		struct attr attr;
 		struct hn_interpol_attr curr_interpol_attr;
-		while((hn=search_next_house_number_curr_interpol(inter))){
+		while((hn=search_next_house_number_curr_interpol(inter))) {
 			if (search_match(hn, inter_match, inter_partial)) {
 				return map_convert_string(item->map, hn);
 			}

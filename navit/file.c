@@ -102,7 +102,8 @@ file_socket_connect(char *host, char *service)
 static void
 file_http_request(struct file *file, char *method, char *host, char *path, char *header, int persistent)
 {
-	char *request=g_strdup_printf("%s %s HTTP/1.0\r\nUser-Agent: navit %s\r\nHost: %s\r\n%s%s%s\r\n",method,path,version,host,persistent?"Connection: Keep-Alive\r\n":"",header?header:"",header?"\r\n":"");
+	char *request=g_strdup_printf("%s %s HTTP/1.0\r\nUser-Agent: navit %s\r\nHost: %s\r\n%s%s%s\r\n",method,path,version,
+	                              host,persistent?"Connection: Keep-Alive\r\n":"",header?header:"",header?"\r\n":"");
 	write(file->fd, request, strlen(request));
 	dbg(lvl_debug,"%s",request);
 	file->requests++;
@@ -137,12 +138,12 @@ file_request_do(struct file *file, struct attr **options, int connect)
 			header=attr->u.str;
 		if ((attr=attr_search(options, NULL, attr_persistent)))
 			persistent=attr->u.num;
-		if (path) 
+		if (path)
 			host[path-name-7]='\0';
 		if (port)
 			*port++='\0';
 		dbg(lvl_debug,"host=%s path=%s",host,path);
-		if (connect) 
+		if (connect)
 			file->fd=file_socket_connect(host,port?port:"80");
 		file_http_request(file,method,host,path,header,persistent);
 		file->special=1;
@@ -161,15 +162,15 @@ file_http_header_end(unsigned char *str, int len)
 			if (str[i]=='\n')
 				return str+i+2;
 			else if (str[i]=='\r' && i+3<len && str[i+2]=='\r' && str[i+3]=='\n')
-			        return str+i+4;
+				return str+i+4;
 			--i;
 		} else if (str[i+1]=='\r') {
 			if (i+4<len && str[i+2]=='\n' && str[i+3]=='\r' && str[i+4]=='\n')
 				return str+i+5;
 			--i;
 		}
-    	}
-  	return NULL;
+	}
+	return NULL;
 }
 
 int
@@ -334,8 +335,8 @@ file_data_read(struct file *file, long long offset, int size)
 	if (file->begin)
 		return file->begin+offset;
 	if (file->cache) {
-		struct file_cache_id id={offset,size,file->name_id,0};
-		ret=cache_lookup(file_cache,&id); 
+		struct file_cache_id id= {offset,size,file->name_id,0};
+		ret=cache_lookup(file_cache,&id);
 		if (ret)
 			return ret;
 		ret=cache_insert_new(file_cache,&id,size);
@@ -377,7 +378,7 @@ file_process_headers(struct file *file, unsigned char *headers)
 		headers=NULL;
 	}
 	cl=g_hash_table_lookup(file->headers, "content-length");
-	if (cl) 
+	if (cl)
 #ifdef HAVE__ATOI64
 		file->size=_atoi64(cl);
 #else
@@ -451,7 +452,7 @@ void
 file_data_flush(struct file *file, long long offset, int size)
 {
 	if (file->cache) {
-		struct file_cache_id id={offset,size,file->name_id,0};
+		struct file_cache_id id= {offset,size,file->name_id,0};
 		cache_flush(file_cache,&id);
 		dbg(lvl_debug,"Flushing "LONGLONG_FMT" %d bytes",offset,size);
 	}
@@ -480,7 +481,7 @@ file_get_contents(char *name, unsigned char **buffer, int *size)
 	*size=file_size(file);
 	*buffer=file_data_read_all(file);
 	file_destroy(file);
-	return 1;	
+	return 1;
 }
 
 
@@ -503,9 +504,9 @@ uncompress_int(Bytef *dest, uLongf *destLen, const Bytef *source, uLong sourceLe
 
 	err = inflate(&stream, Z_FINISH);
 	if (err != Z_STREAM_END) {
-	inflateEnd(&stream);
-	if (err == Z_NEED_DICT || (err == Z_BUF_ERROR && stream.avail_in == 0))
-		return Z_DATA_ERROR;
+		inflateEnd(&stream);
+		if (err == Z_NEED_DICT || (err == Z_BUF_ERROR && stream.avail_in == 0))
+			return Z_DATA_ERROR;
 		return err;
 	}
 	*destLen = stream.total_out;
@@ -522,12 +523,12 @@ file_data_read_compressed(struct file *file, long long offset, int size, int siz
 	uLongf destLen=size_uncomp;
 
 	if (file->cache) {
-		struct file_cache_id id={offset,size,file->name_id,1};
-		ret=cache_lookup(file_cache,&id); 
+		struct file_cache_id id= {offset,size,file->name_id,1};
+		ret=cache_lookup(file_cache,&id);
 		if (ret)
 			return ret;
 		ret=cache_insert_new(file_cache,&id,size_uncomp);
-	} else 
+	} else
 		ret=g_malloc(size_uncomp);
 	lseek(file->fd, offset, SEEK_SET);
 
@@ -603,7 +604,7 @@ void
 file_unmap(struct file *f)
 {
 #if defined(_WIN32) || defined(__CEGCC__)
-    mmap_unmap_win32( f->begin, f->map_handle , f->map_file );
+	mmap_unmap_win32( f->begin, f->map_handle, f->map_file );
 #else
 	munmap(f->begin, f->size);
 #endif
@@ -615,7 +616,7 @@ file_opendir(char *dir)
 {
 	return opendir(dir);
 }
-#else 
+#else
 void *
 file_opendir(char *dir)
 {
@@ -725,10 +726,9 @@ file_destroy(struct file *f)
 		break;
 	}
 
-    if ( f->begin != NULL )
-    {
-        file_unmap( f );
-    }
+	if ( f->begin != NULL ) {
+		file_unmap( f );
+	}
 
 	g_free(f->buffer);
 	g_free(f->name);

@@ -126,7 +126,8 @@ struct img_header {
 static void
 dump_ts(struct timestamp *ts)
 {
-	printf("%d-%02d-%02d %02d:%02d:%02d\n", ts->creation_year, ts->creation_month, ts->creation_day, ts->creation_hour, ts->creation_minute, ts->creation_second);
+	printf("%d-%02d-%02d %02d:%02d:%02d\n", ts->creation_year, ts->creation_month, ts->creation_day, ts->creation_hour,
+	       ts->creation_minute, ts->creation_second);
 }
 
 #if 0
@@ -179,7 +180,7 @@ dump_fat_block(struct fat_block *fat_blk)
 		i++;
 	}
 	printf("size: %d\n", sizeof(*fat_blk));
-	
+
 }
 #endif
 
@@ -288,11 +289,11 @@ get_tag(char *line, char *name, int *pos, char *ret)
 	char *p,*e,*n;
 
 	if (debug)
-		printf("get_tag %s from %s\n", name, line); 
+		printf("get_tag %s from %s\n", name, line);
 	if (! name)
 		return 0;
 	len=strlen(name);
-	if (pos) 
+	if (pos)
 		p=line+*pos;
 	else
 		p=line;
@@ -328,7 +329,7 @@ get_tag(char *line, char *name, int *pos, char *ret)
 				*pos=p-line;
 			return 1;
 		}
-	}	
+	}
 	return 0;
 }
 
@@ -354,8 +355,7 @@ map_charset_garmin_img(struct map_priv *m)
 }
 
 static enum projection
-map_projection_garmin_img(struct map_priv *m)
-{
+map_projection_garmin_img(struct map_priv *m) {
 	return projection_garmin;
 }
 
@@ -408,12 +408,18 @@ dump_tree_header(struct tree_header *tre_hdr)
 {
 	printf("tree_header:\n");
 	dump_file(&tre_hdr->fil_hdr);
-	printf("level: "); dump_offset_len(&tre_hdr->level);
-	printf("subdivision: "); dump_offset_len(&tre_hdr->subdivision);
-	printf("copyright: "); dump_label_data(&tre_hdr->copyright);
-	printf("polyline: "); dump_label_data(&tre_hdr->polyline);
-	printf("polygon: "); dump_label_data(&tre_hdr->polygon);
-	printf("point: "); dump_label_data(&tre_hdr->point);
+	printf("level: ");
+	dump_offset_len(&tre_hdr->level);
+	printf("subdivision: ");
+	dump_offset_len(&tre_hdr->subdivision);
+	printf("copyright: ");
+	dump_label_data(&tre_hdr->copyright);
+	printf("polyline: ");
+	dump_label_data(&tre_hdr->polyline);
+	printf("polygon: ");
+	dump_label_data(&tre_hdr->polygon);
+	printf("point: ");
+	dump_label_data(&tre_hdr->point);
 	printf("len: 0x%x(%d)\n", sizeof(*tre_hdr), sizeof(*tre_hdr));
 }
 
@@ -531,19 +537,22 @@ struct subdivision {
 	struct tcoord center;
 	unsigned short width;
 	unsigned short height;
-	unsigned short next; 
+	unsigned short next;
 } __attribute((packed));
 
 static void
 dump_subdivision(struct subdivision *sub)
 {
 	printf("subdivision:\n");
-	printf("\trgn_offset: "); dump_triple_u(&sub->rgn_offset);
+	printf("\trgn_offset: ");
+	dump_triple_u(&sub->rgn_offset);
 	printf("\ttypes: 0x%x(%d)\n", sub->types, sub->types);
-	printf("\tcenter: "); dump_tcoord(&sub->center);
-	printf("\tsize: 0x%x(%d)x0x%x(%d) %s\n",sub->width & 0x7fff, sub->width & 0x7fff, sub->height, sub->height, sub->width & 0x8000 ? "Terminating" : "");
+	printf("\tcenter: ");
+	dump_tcoord(&sub->center);
+	printf("\tsize: 0x%x(%d)x0x%x(%d) %s\n",sub->width & 0x7fff, sub->width & 0x7fff, sub->height, sub->height,
+	       sub->width & 0x8000 ? "Terminating" : "");
 	printf("\tnext: 0x%x(%d)\n",sub->next, sub->next);
-	
+
 	printf("\tlen: 0x%x(%d)\n", sizeof(*sub), sizeof(*sub));
 }
 
@@ -650,18 +659,19 @@ dump_region_item(struct subdivision *sub, struct file *rgn, struct map_rect_priv
 
 	offset=triple_u(&sub->rgn_offset)+mr->rgn_hdr->offset_len.offset;
 	file_offsets=file_read(rgn, offset, 90*sizeof(unsigned short));
-	printf("0x%x ", offset); dump_hex(file_offsets, 90);
+	printf("0x%x ", offset);
+	dump_hex(file_offsets, 90);
 	for (i=0 ; i < 4 ; i++) {
 		printf("i=%d\n", i);
 		if (sub->types & (0x10 << i)) {
-			if (count) {	
+			if (count) {
 				offsets[i]=&file_offsets[count-1];
 			} else
 				offsets[i]=&count;
 			count++;
 		} else
 			offsets[i]=NULL;
-		
+
 	}
 	count--;
 	count*=2;
@@ -698,10 +708,10 @@ dump_region_item(struct subdivision *sub, struct file *rgn, struct map_rect_priv
 					g.lat=(triple(&sub->center.lat)+(pnt->lat_delta << shift))*conv;
 					printf("%f %f\n", g.lng, g.lat);
 					coord_format(g.lat,g.lng,DEGREES_MINUTES_SECONDS,
-						     buffer,sizeof(buffer));
+					             buffer,sizeof(buffer));
 					printf("%s\n", buffer);
 					dump_label_offset(mr, triple_u(&pnt->lbl_offset));
-					if (pnt->info & 0x80) 
+					if (pnt->info & 0x80)
 						item_offset+=sizeof(*pnt);
 					else
 						item_offset+=sizeof(*pnt)-1;
@@ -750,7 +760,7 @@ dump_tree(struct file *f, struct file *rgn, struct map_rect_priv *mr)
 		dump_subdivision(sub);
 		dump_region_item(sub, rgn, mr);
 		if (sub->width & 0x8000)
-			break;		
+			break;
 		offset+=sizeof(*sub);
 	}
 	file_free(tre_hdr);
@@ -762,7 +772,7 @@ static void
 dump_labels(struct file *f)
 {
 	struct label_header *lbl_hdr;
-	
+
 	lbl_hdr=file_read(f, 0, sizeof(*lbl_hdr));
 	printf("**labels**\n");
 	dump_label(lbl_hdr);
@@ -776,7 +786,7 @@ dump_labels(struct file *f)
 		l+=strlen(l)+1;
 	}
 #endif
-	
+
 }
 #endif
 
@@ -839,19 +849,17 @@ garmin_img_coord_get(void *priv_data, struct coord *c, int count)
 				if (! get_bits(mr,1)) {
 					mr->ply_lngbits+=1;
 					mr->ply_lngsign=0;
-				} else  
-					if (get_bits(mr, 1))
-						mr->ply_lngsign=-1;
-					else
-						mr->ply_lngsign=1;
+				} else if (get_bits(mr, 1))
+					mr->ply_lngsign=-1;
+				else
+					mr->ply_lngsign=1;
 				if (! get_bits(mr,1)) {
 					mr->ply_latbits+=1;
 					mr->ply_latsign=0;
-				} else
-					if (get_bits(mr, 1))
-						mr->ply_latsign=-1;
-					else
-						mr->ply_latsign=1;
+				} else if (get_bits(mr, 1))
+					mr->ply_latsign=-1;
+				else
+					mr->ply_latsign=1;
 				mr->ply_lnglimit=1 << (mr->ply_lngbits-1);
 				mr->ply_latlimit=1 << (mr->ply_latbits-1);
 				mr->ply_lng=mr->ply->lng_delta;
@@ -861,70 +869,70 @@ garmin_img_coord_get(void *priv_data, struct coord *c, int count)
 				c->x=0;
 				c->y=0;
 			} else {
-			if (mr->ply_bitpos + mr->ply_lngbits + mr->ply_latbits > mr->ply_bitcount) {
-				if (debug)
-					printf("out of bits %d + %d + %d >= %d\n", mr->ply_bitpos, mr->ply_lngbits, mr->ply_latbits, mr->ply_bitcount);
-				return ret;
-			}
-			c->x=0;
-			c->y=0;
-			int x,y;
-			for (;;) {
-				x=get_bits(mr,mr->ply_lngbits);
-				if (debug)
-					printf("x %d ", x);
-				if (mr->ply_lngsign || x != mr->ply_lnglimit)
-					break;
-				c->x += x-1;
-			}
-			if (mr->ply_lngsign) {
-				c->x=x*mr->ply_lngsign;
-			} else {
-				if (x >= mr->ply_lnglimit) 
-					c->x = x - (mr->ply_lnglimit << 1) - c->x;
-				else
-					c->x +=x;
-			}
-			for (;;) {
-				y=get_bits(mr,mr->ply_latbits);
-				if (debug)
-					printf("y %d ", y);
-				if (mr->ply_latsign || y != mr->ply_latlimit)
-					break;
-				c->y += y-1;
-			}
-			if (mr->ply_latsign) {
-				c->y=y*mr->ply_latsign;
-			} else {
-				if (y >= mr->ply_latlimit) 
-					c->y = y - (mr->ply_latlimit << 1) - c->y;
-				else
-					c->y +=y;
-			}
-			mr->ply_lng += c->x;
-			mr->ply_lat += c->y;
+				if (mr->ply_bitpos + mr->ply_lngbits + mr->ply_latbits > mr->ply_bitcount) {
+					if (debug)
+						printf("out of bits %d + %d + %d >= %d\n", mr->ply_bitpos, mr->ply_lngbits, mr->ply_latbits, mr->ply_bitcount);
+					return ret;
+				}
+				c->x=0;
+				c->y=0;
+				int x,y;
+				for (;;) {
+					x=get_bits(mr,mr->ply_lngbits);
+					if (debug)
+						printf("x %d ", x);
+					if (mr->ply_lngsign || x != mr->ply_lnglimit)
+						break;
+					c->x += x-1;
+				}
+				if (mr->ply_lngsign) {
+					c->x=x*mr->ply_lngsign;
+				} else {
+					if (x >= mr->ply_lnglimit)
+						c->x = x - (mr->ply_lnglimit << 1) - c->x;
+					else
+						c->x +=x;
+				}
+				for (;;) {
+					y=get_bits(mr,mr->ply_latbits);
+					if (debug)
+						printf("y %d ", y);
+					if (mr->ply_latsign || y != mr->ply_latlimit)
+						break;
+					c->y += y-1;
+				}
+				if (mr->ply_latsign) {
+					c->y=y*mr->ply_latsign;
+				} else {
+					if (y >= mr->ply_latlimit)
+						c->y = y - (mr->ply_latlimit << 1) - c->y;
+					else
+						c->y +=y;
+				}
+				mr->ply_lng += c->x;
+				mr->ply_lat += c->y;
 			}
 			if (debug)
 				printf(": x %d y %d\n", c->x, c->y);
-		
+
 			c->x=triple(&sub->center.lng)+(mr->ply_lng << shift);
 			c->y=triple(&sub->center.lat)+(mr->ply_lat << shift);
 		}
 #if 0
 		c->x-=0x6f160;
-                c->y-=0x181f59;
+		c->y-=0x181f59;
 		c->x+=0x168ca1;
 		c->y+=0x68d815;
 #endif
 		c++;
-		ret++;		
+		ret++;
 		if (mr->rgn_type < 2)
 			return ret;
 	}
 	return ret;
 }
 
-static char * 
+static char *
 get_label_offset(struct map_rect_priv *mr, int offset)
 {
 	g_assert(offset < mr->lbl_hdr->label.offset_len.length);
@@ -938,7 +946,7 @@ garmin_img_attr_rewind(void *priv_data)
 
 static int
 garmin_img_attr_get(void *priv_data, enum attr_type attr_type, struct attr *attr)
-{	
+{
 	struct map_rect_priv *mr=priv_data;
 	int debug=0;
 
@@ -949,7 +957,7 @@ garmin_img_attr_get(void *priv_data, enum attr_type attr_type, struct attr *attr
 			printf("garmin_img_attr_get label\n");
 		attr->type=attr_type;
 		if (mr->rgn_type < 2) {
-			if (mr->label) 
+			if (mr->label)
 				file_free(mr->label);
 			mr->label=get_label_offset(mr, triple_u(&mr->pnt->lbl_offset) & 0x3fffff);
 			attr->u.str=mr->label;
@@ -962,10 +970,10 @@ garmin_img_attr_get(void *priv_data, enum attr_type attr_type, struct attr *attr
 }
 
 static struct item_methods methods_garmin_img = {
-        garmin_img_coord_rewind,
-        garmin_img_coord_get,
-        garmin_img_attr_rewind,
-        garmin_img_attr_get,
+	garmin_img_coord_rewind,
+	garmin_img_coord_get,
+	garmin_img_attr_rewind,
+	garmin_img_attr_get,
 };
 
 static int rgn_next_type(struct map_rect_priv *mr)
@@ -994,12 +1002,12 @@ sub_next(struct map_rect_priv *mr, int next)
 	if (debug)
 		printf("%d left\n", mr->subdiv_level_count);
 	mr->subdiv_level_count--;
-		
+
 #if 0
 	if (next && mr->subdiv[mr->subdiv_current].width & 0x8000)
 		return 1;
 #endif
-	if (debug) 
+	if (debug)
 		dump_hex_r(mr->subdiv+mr->subdiv_pos, 64, 14);
 	mr->subdiv_pos+=next;
 	if (debug)
@@ -1016,7 +1024,7 @@ sub_next(struct map_rect_priv *mr, int next)
 
 	if (! next)
 		next=subdiv_next;
-	if (mr->subdiv_pos+next < mr->tre_hdr->subdivision.length) 
+	if (mr->subdiv_pos+next < mr->tre_hdr->subdivision.length)
 		end=triple_u(&((struct subdivision *)(mr->subdiv+mr->subdiv_pos+next))->rgn_offset)+mr->rgn_hdr->offset_len.offset;
 	else
 		end=mr->rgn_hdr->offset_len.offset+mr->rgn_hdr->offset_len.length;
@@ -1049,7 +1057,7 @@ sub_next(struct map_rect_priv *mr, int next)
 			mr->rgn_items[i].offset=0;
 			mr->rgn_items[i].length=0;
 		}
-		
+
 	}
 	if (first != -1) {
 		mr->rgn_items[first].offset+=count*2;
@@ -1066,7 +1074,7 @@ sub_next(struct map_rect_priv *mr, int next)
 	if (debug)
 		printf("*** offset 0x%x\n", mr->rgn_offset);
 	file_free(offsets);
-	return 0;		
+	return 0;
 }
 
 int item_count;
@@ -1081,7 +1089,7 @@ map_rect_new_garmin_img(struct map_priv *map, struct coord_rect *r, struct layer
 		printf("map_rect_new_garmin_img\n");
 	mr=g_new0(struct map_rect_priv, 1);
 	mr->m=map;
-	if (r) 
+	if (r)
 		mr->r=*r;
 	mr->limit=limit;
 	mr->item.id_hi=0;
@@ -1089,7 +1097,7 @@ map_rect_new_garmin_img(struct map_priv *map, struct coord_rect *r, struct layer
 	mr->item.meth=&methods_garmin_img;
 	mr->item.priv_data=mr;
 	mr->f=fopen(map->filename, "r");
-	
+
 	fread(&img, sizeof(img), 1, mr->f);
 #if 0
 	dump_img(&img);
@@ -1123,23 +1131,23 @@ map_rect_new_garmin_img(struct map_priv *map, struct coord_rect *r, struct layer
 
 	printf("limit=%d\n", limit);
 	if (limit < 3) {
-		mr->subdiv_pos=0; 
+		mr->subdiv_pos=0;
 		mr->subdiv_level_count=1;
 		shift=11;
 	} else if (limit < 6) {
-		mr->subdiv_pos=1*sizeof(struct subdivision); 
+		mr->subdiv_pos=1*sizeof(struct subdivision);
 		mr->subdiv_level_count=5;
 		shift=9;
 	} else if (limit < 8) {
-		mr->subdiv_pos=6*sizeof(struct subdivision); 
+		mr->subdiv_pos=6*sizeof(struct subdivision);
 		mr->subdiv_level_count=9;
 		shift=7;
 	} else if (limit < 10) {
-		mr->subdiv_pos=15*sizeof(struct subdivision); 
+		mr->subdiv_pos=15*sizeof(struct subdivision);
 		mr->subdiv_level_count=143;
 		shift=5;
 	} else {
-		mr->subdiv_pos=158*sizeof(struct subdivision); 
+		mr->subdiv_pos=158*sizeof(struct subdivision);
 		mr->subdiv_level_count=4190;
 		shift=2;
 		subdiv_next=14;
@@ -1201,7 +1209,7 @@ static void
 map_rect_destroy_garmin_img(struct map_rect_priv *mr)
 {
 	fclose(mr->f);
-        g_free(mr);
+	g_free(mr);
 }
 
 
@@ -1246,7 +1254,7 @@ map_rect_get_item_garmin_img(struct map_rect_priv *mr)
 					len=mr->ply->u.p2.bitstream_len;
 				} else
 					len=mr->ply->u.p1.bitstream_len;
-		
+
 				mr->ply_data=file_read(&mr->rgn, mr->rgn_offset, len);
 				mr->rgn_offset += len;
 				mr->ply_bitpos=0;
@@ -1305,13 +1313,13 @@ map_rect_get_item_garmin_img(struct map_rect_priv *mr)
 					}
 				}
 				return &mr->item;
-			} 
+			}
 			if (mr->pnt)
 				file_free(mr->pnt);
 			mr->pnt=file_read(&mr->rgn, mr->rgn_offset, sizeof(*mr->pnt));
 			mr->item.type=type_none;
 			int subtype=mr->pnt->subtype;
-			if (mr->pnt->lbl_offset.data[2] & 0x80) 
+			if (mr->pnt->lbl_offset.data[2] & 0x80)
 				mr->rgn_offset+=9;
 			else {
 				mr->rgn_offset+=8;

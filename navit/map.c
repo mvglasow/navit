@@ -210,8 +210,8 @@ map_requires_conversion(struct map *this_)
 char *map_converted_string_tmp=NULL;
 
 /**
- * @brief Converts a string from a map into a temporary allocated buffer. Conversion is not performed and original string is returned 
- * if map doesn't require conversion. So lifetime of returned value is very limited. 
+ * @brief Converts a string from a map into a temporary allocated buffer. Conversion is not performed and original string is returned
+ * if map doesn't require conversion. So lifetime of returned value is very limited.
  *
  * @param this_ The map the string to be converted is from
  * @param str The string to be converted
@@ -229,7 +229,7 @@ map_convert_string_tmp(struct map *this_, char *str)
 	if(!map_converted_string_tmp) {
 		dbg(lvl_error,"Error converting '%s' from %s to utf-8", str, this_->meth.charset);
 		return str;
-	}	
+	}
 	return map_converted_string_tmp;
 }
 
@@ -275,8 +275,7 @@ map_convert_free(char *str)
  * @return The projection of the map
  */
 enum projection
-map_projection(struct map *this_)
-{
+map_projection(struct map *this_) {
 	return this_->meth.pro;
 }
 
@@ -404,9 +403,9 @@ map_rect_destroy(struct map_rect *mr)
  * used as "handle" to retrieve items from a search.
  */
 struct map_search {
-        struct map *m;
-        struct attr search_attr;
-        void *priv;
+	struct map *m;
+	struct attr search_attr;
+	void *priv;
 };
 
 /**
@@ -422,13 +421,13 @@ struct map_search {
  * strings - a search for a street named "street" would match to "streetfoo", but not to
  * "somestreet". Search is case insensitive.
  *
- * The item passed to this function specifies a "superior item" to "search within" - e.g. a town 
+ * The item passed to this function specifies a "superior item" to "search within" - e.g. a town
  * in which we want to search for a street, or a country in which to search for a town.
  *
  * Please also note that the search for countries is not handled by map plugins but by navit internally -
  * have a look into country.c for details. Because of that every map plugin has to accept a country item
  * to be passed as "superior item".
- * 
+ *
  * Note: If you change something here, please make sure to also update the documentation of mapset_search_new()
  * in mapset.c!
  *
@@ -447,7 +446,8 @@ map_search_new(struct map *m, struct item *item, struct attr *search_attr, int p
 	this_=g_new0(struct map_search,1);
 	this_->m=m;
 	this_->search_attr=*search_attr;
-	if ((search_attr->type >= attr_country_all && search_attr->type <= attr_country_name) || search_attr->type == attr_country_id)
+	if ((search_attr->type >= attr_country_all && search_attr->type <= attr_country_name)
+	                || search_attr->type == attr_country_id)
 		this_->priv=country_search_new(&this_->search_attr, partial);
 	else {
 		if (m->meth.map_search_new) {
@@ -483,7 +483,8 @@ map_search_get_item(struct map_search *this_)
 
 	if (! this_)
 		return NULL;
-	if ((this_->search_attr.type >= attr_country_all && this_->search_attr.type <= attr_country_name) || this_->search_attr.type == attr_country_id)
+	if ((this_->search_attr.type >= attr_country_all && this_->search_attr.type <= attr_country_name)
+	                || this_->search_attr.type == attr_country_id)
 		return country_search_get_item(this_->priv);
 	ret=this_->m->meth.map_search_get_item(this_->priv);
 	if (ret)
@@ -505,7 +506,7 @@ map_search_destroy(struct map_search *this_)
 		country_search_destroy(this_->priv);
 	else {
 		if (this_->m->meth.charset)
-				g_free(this_->search_attr.u.str);
+			g_free(this_->search_attr.u.str);
 		this_->m->meth.map_search_destroy(this_->priv);
 	}
 	g_free(this_);
@@ -652,7 +653,7 @@ map_selection_contains_item_range(struct map_selection *sel, int follow, struct 
 	return 0;
 }
 /**
- * @brief Checks if a selection contains a item 
+ * @brief Checks if a selection contains a item
  *
  * This function checks if a selection contains a item type
  *
@@ -698,7 +699,7 @@ map_dump_filedesc(struct map *map, FILE *out)
 	struct map_rect *mr=map_rect_new(map, NULL);
 	struct item *item;
 
-	while ((item = map_rect_get_item(mr))) 
+	while ((item = map_rect_get_item(mr)))
 		item_dump_filedesc(item, map, out);
 	map_rect_destroy(mr);
 }
@@ -711,7 +712,7 @@ map_dump_file(struct map *map, const char *file)
 	if (f) {
 		map_dump_filedesc(map, f);
 		fclose(f);
-	} else 
+	} else
 		dbg(lvl_error,"failed to open file '%s'",file);
 }
 
@@ -721,13 +722,12 @@ map_dump(struct map *map)
 	map_dump_filedesc(map, stdout);
 }
 
-struct item * 
+struct item *
 map_rect_create_item(struct map_rect *mr, enum item_type type_)
 {
 	if(mr && mr->priv && mr->m) {
 		return mr->m->meth.map_rect_create_item(mr->priv, type_) ;
-	}
-	else {
+	} else {
 		return NULL;
 	}
 }

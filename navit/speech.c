@@ -33,7 +33,7 @@ struct speech {
 
 
 struct speech *
-speech_new(struct attr *parent, struct attr **attrs) 
+speech_new(struct attr *parent, struct attr **attrs)
 {
 	struct speech *this_;
 	struct speech_priv *(*speech_new)(struct speech_methods *meth, struct attr **attrs, struct attr *parent);
@@ -60,7 +60,7 @@ speech_new(struct attr *parent, struct attr **attrs)
 		return NULL;
 	}
 	dbg(lvl_debug,"return %p", this_);
-	
+
 	return this_;
 }
 
@@ -80,7 +80,7 @@ speech_say(struct speech *this_, const char *text)
 }
 
 struct attr active=ATTR_INT(active, 1);
-struct attr *speech_default_attrs[]={
+struct attr *speech_default_attrs[]= {
 	&active,
 	NULL,
 };
@@ -123,7 +123,7 @@ speech_estimate_duration(struct speech *this_, char *str)
 	}
 
 	count = strlen(str);
-	
+
 	return (count * 10) / cps_attr.u.num;
 }
 

@@ -242,7 +242,7 @@ process_way(OSMPBF__PrimitiveBlock *primitive_block, OSMPBF__Way *way, struct ma
 		ref+=way->refs[i];
 		osm_add_nd(ref);
 	}
-	for (i = 0 ; i < way->n_keys ; i++) 
+	for (i = 0 ; i < way->n_keys ; i++)
 		process_tag(primitive_block, way->keys[i], way->vals[i]);
 	osm_end_way(osm);
 }
@@ -260,7 +260,7 @@ process_relation(OSMPBF__PrimitiveBlock *primitive_block, OSMPBF__Relation *rela
 		get_string(rolebuff, sizeof(rolebuff), primitive_block, relation->roles_sid[i], 1);
 		osm_add_member(relation->types[i]+1,ref,rolebuff);
 	}
-	for (i = 0 ; i < relation->n_keys ; i++) 
+	for (i = 0 ; i < relation->n_keys ; i++)
 		process_tag(primitive_block, relation->keys[i], relation->vals[i]);
 	osm_end_relation(osm);
 }

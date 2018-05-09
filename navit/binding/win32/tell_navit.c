@@ -32,8 +32,8 @@
 static LRESULT CALLBACK message_handler( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 {
 	switch(uMsg) {
-		case WM_CREATE: 
-			return 0;
+	case WM_CREATE:
+		return 0;
 	}
 	return TRUE;
 }
@@ -51,28 +51,28 @@ void err(char *fmt, ...)
 	vsnprintf(buf, sizeof(buf), fmt, ap);
 	va_end(ap);
 	switch(errormode) {
-		case 0: /* be silent */
-			break;
-		case 1: 
-			MessageBox(NULL, buf, "tell_navit", MB_ICONERROR|MB_OK);
-			break;
-		case 2:
-			fprintf(stderr,"%s",buf);
-			break;
+	case 0: /* be silent */
+		break;
+	case 1:
+		MessageBox(NULL, buf, "tell_navit", MB_ICONERROR|MB_OK);
+		break;
+	case 2:
+		fprintf(stderr,"%s",buf);
+		break;
 	}
 }
 
 void print_usage(void)
 {
 	err(
-	"tell_navit usage:\n"
-	"tell_navit [options] navit_command\n"
-	"\t-h this help\n"
-	"\t-e <way>: set way to report error messages:\n"
-	"\t\t0 - suppress messages\n"
-	"\t\t1 - use messagebox (default)\n"
-	"\t\t2 - print to stderr\n"
-  );
+	        "tell_navit usage:\n"
+	        "tell_navit [options] navit_command\n"
+	        "\t-h this help\n"
+	        "\t-e <way>: set way to report error messages:\n"
+	        "\t\t0 - suppress messages\n"
+	        "\t\t1 - use messagebox (default)\n"
+	        "\t\t2 - print to stderr\n"
+	);
 }
 
 int main(int argc, char **argv)
@@ -89,7 +89,7 @@ int main(int argc, char **argv)
 
 	if(argc>0) {
 		while((opt = getopt(argc, argv, ":hvc:d:e:s:")) != -1) {
-			switch(opt){
+			switch(opt) {
 			case 'h':
 				print_usage();
 				exit(0);
@@ -104,8 +104,8 @@ int main(int argc, char **argv)
 			}
 		}
 	} else {
-	print_usage();
-	exit(1);
+		print_usage();
+		exit(1);
 	}
 	if(optind==argc) {
 		err("Navit command to execute is needed.");
@@ -113,35 +113,34 @@ int main(int argc, char **argv)
 	}
 
 
-	memset(&wc, 0 , sizeof(WNDCLASS));
+	memset(&wc, 0, sizeof(WNDCLASS));
 	wc.lpfnWndProc	= message_handler;
 	wc.hInstance	= GetModuleHandle(NULL);
 	wc.lpszClassName = g_szClassName;
 
-	if (!RegisterClass(&wc))
-	{
+	if (!RegisterClass(&wc)) {
 		err(TEXT("Window class registration failed\n"));
 		return 1;
 	} else {
 		hwnd = CreateWindow(
-				g_szClassName,
-				TEXT("Tell Navit"),
-				0,
-				0,
-				0,
-				0,
-				0,
-				hWndParent,
-				NULL,
-				GetModuleHandle(NULL),
-				NULL);
+		               g_szClassName,
+		               TEXT("Tell Navit"),
+		               0,
+		               0,
+		               0,
+		               0,
+		               0,
+		               hWndParent,
+		               NULL,
+		               GetModuleHandle(NULL),
+		               NULL);
 		if(!hwnd) {
 			err(TEXT("Can't create hidden window\n"));
 			UnregisterClass(g_szClassName,NULL);
 			return 1;
 		}
 	}
-    
+
 	navitWindow=FindWindow( TEXT("NAVGRA"), NULL );
 	if(!navitWindow) {
 		err(TEXT("Navit window not found\n"));

@@ -149,7 +149,7 @@ tile_collector_process(struct item_bin_sink_func *tile_collector, struct item_bi
 	buffer2=g_malloc((len+(buffer ? buffer[0] : 1))*4);
 	if (buffer) {
 		memcpy(buffer2, buffer, buffer[0]*4);
-	} else 
+	} else
 		buffer2[0]=1;
 	memcpy(buffer2+buffer2[0], ib, len*4);
 	buffer2[0]+=len;

@@ -55,7 +55,7 @@ struct win32_binding_private {
 
 
 /* TODO: do something meaningful here
- * 
+ *
  */
 static int
 win32_cmd_send_signal(struct navit *navit, char *command, struct attr **in, struct attr ***out)
@@ -72,36 +72,38 @@ win32_cmd_send_signal(struct navit *navit, char *command, struct attr **in, stru
 
 
 static struct command_table commands[] = {
-        {"win32_send",command_cast(win32_cmd_send_signal)},
+	{"win32_send",command_cast(win32_cmd_send_signal)},
 };
 
 
 static void
 win32_wm_copydata(struct win32_binding_private *this, int *hwndSender, COPYDATASTRUCT *cpd)
 {
-        struct attr navit;
-        struct navit_binding_w32_msg *msg;
-        navit.type=attr_navit;
-        navit.u.navit=this->navit;
-        if(cpd->dwData!=NAVIT_BINDING_W32_DWDATA) {
-        	dbg(lvl_error,"COPYDATA message came with wrong DWDATA value, expected %d, got %d.",NAVIT_BINDING_W32_DWDATA,cpd->dwData);
-        	return;
-        }
-        if(cpd->cbData<sizeof(*msg)) {
-        	dbg(lvl_error,"COPYDATA message too short, expected >=%d, got %d.",sizeof(*msg),cpd->cbData);
-        	return;
-        }
-        msg=cpd->lpData;
-        if(cpd->dwData!=NAVIT_BINDING_W32_VERSION) {
-        	dbg(lvl_error,"Got request with wrong version number, expected %d, got %d.",NAVIT_BINDING_W32_VERSION,msg->version);
-        	return;
-        }
-        if(strcmp(NAVIT_BINDING_W32_MAGIC,msg->magic)) {
-        	dbg(lvl_error,"Got request with wrong MAGIC, expected %s, got %*s.",NAVIT_BINDING_W32_MAGIC, msg->magic,sizeof(msg->magic));
-        	return;
-        }
+	struct attr navit;
+	struct navit_binding_w32_msg *msg;
+	navit.type=attr_navit;
+	navit.u.navit=this->navit;
+	if(cpd->dwData!=NAVIT_BINDING_W32_DWDATA) {
+		dbg(lvl_error,"COPYDATA message came with wrong DWDATA value, expected %d, got %d.",NAVIT_BINDING_W32_DWDATA,
+		    cpd->dwData);
+		return;
+	}
+	if(cpd->cbData<sizeof(*msg)) {
+		dbg(lvl_error,"COPYDATA message too short, expected >=%d, got %d.",sizeof(*msg),cpd->cbData);
+		return;
+	}
+	msg=cpd->lpData;
+	if(cpd->dwData!=NAVIT_BINDING_W32_VERSION) {
+		dbg(lvl_error,"Got request with wrong version number, expected %d, got %d.",NAVIT_BINDING_W32_VERSION,msg->version);
+		return;
+	}
+	if(strcmp(NAVIT_BINDING_W32_MAGIC,msg->magic)) {
+		dbg(lvl_error,"Got request with wrong MAGIC, expected %s, got %*s.",NAVIT_BINDING_W32_MAGIC, msg->magic,
+		    sizeof(msg->magic));
+		return;
+	}
 	dbg(lvl_debug,"Running command %s", msg->text);
-        command_evaluate(&navit, msg->text);
+	command_evaluate(&navit, msg->text);
 }
 
 static void

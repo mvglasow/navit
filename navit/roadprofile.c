@@ -31,8 +31,8 @@ roadprofile_set_attr_do(struct roadprofile *this, struct attr *attr)
 		this->speed=attr->u.num;
 		break;
 	case attr_maxspeed:
-		this->maxspeed=attr->u.num; 
-		break; 
+		this->maxspeed=attr->u.num;
+		break;
 	case attr_route_weight:
 		this->route_weight=attr->u.num;
 		break;
@@ -51,7 +51,7 @@ roadprofile_new(struct attr *parent, struct attr **attrs)
 	navit_object_ref((struct navit_object *)this_);
 
 	this_->attrs=attr_list_dup(attrs);
-	for (attr=attrs;*attr; attr++) 
+	for (attr=attrs; *attr; attr++)
 		roadprofile_set_attr_do(this_, *attr);
 	return this_;
 }

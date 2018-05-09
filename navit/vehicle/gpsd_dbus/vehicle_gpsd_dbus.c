@@ -75,22 +75,22 @@ vehicle_gpsd_dbus_filter(DBusConnection *connection, DBusMessage *message, void 
 
 	if (dbus_message_is_signal(message, "org.gpsd","fix")) {
 		dbus_message_get_args (message, NULL,
-			DBUS_TYPE_DOUBLE, &time,
-			DBUS_TYPE_INT32,  &mode,
-			DBUS_TYPE_DOUBLE, &ept,
-			DBUS_TYPE_DOUBLE, &latitude,
-			DBUS_TYPE_DOUBLE, &longitude,
-			DBUS_TYPE_DOUBLE, &eph,
-			DBUS_TYPE_DOUBLE, &altitude,
-			DBUS_TYPE_DOUBLE, &epv,
-			DBUS_TYPE_DOUBLE, &track,
-			DBUS_TYPE_DOUBLE, &epd,
-			DBUS_TYPE_DOUBLE, &speed,
-			DBUS_TYPE_DOUBLE, &eps,
-			DBUS_TYPE_DOUBLE, &climb,
-			DBUS_TYPE_DOUBLE, &epc,
-			DBUS_TYPE_STRING, &devname,
-			DBUS_TYPE_INVALID);
+		                       DBUS_TYPE_DOUBLE, &time,
+		                       DBUS_TYPE_INT32,  &mode,
+		                       DBUS_TYPE_DOUBLE, &ept,
+		                       DBUS_TYPE_DOUBLE, &latitude,
+		                       DBUS_TYPE_DOUBLE, &longitude,
+		                       DBUS_TYPE_DOUBLE, &eph,
+		                       DBUS_TYPE_DOUBLE, &altitude,
+		                       DBUS_TYPE_DOUBLE, &epv,
+		                       DBUS_TYPE_DOUBLE, &track,
+		                       DBUS_TYPE_DOUBLE, &epd,
+		                       DBUS_TYPE_DOUBLE, &speed,
+		                       DBUS_TYPE_DOUBLE, &eps,
+		                       DBUS_TYPE_DOUBLE, &climb,
+		                       DBUS_TYPE_DOUBLE, &epc,
+		                       DBUS_TYPE_STRING, &devname,
+		                       DBUS_TYPE_INVALID);
 		if (!isnan(latitude) && !isnan(longitude)) {
 			priv->geo.lat=latitude;
 			priv->geo.lng=longitude;
@@ -154,7 +154,7 @@ vehicle_gpsd_dbus_destroy(struct vehicle_priv *priv)
 
 static int
 vehicle_gpsd_dbus_position_attr_get(struct vehicle_priv *priv,
-			       enum attr_type type, struct attr *attr)
+                                    enum attr_type type, struct attr *attr)
 {
 	switch (type) {
 	case attr_position_height:
@@ -169,19 +169,18 @@ vehicle_gpsd_dbus_position_attr_get(struct vehicle_priv *priv,
 	case attr_position_coord_geo:
 		attr->u.coord_geo = &priv->geo;
 		break;
-	case attr_position_time_iso8601:
-		{
+	case attr_position_time_iso8601: {
 		struct tm tm;
 		if (!priv->fix_time)
 			return 0;
 		if (gmtime_r(&priv->fix_time, &tm)) {
 			strftime(priv->fixiso8601, sizeof(priv->fixiso8601),
-				"%Y-%m-%dT%TZ", &tm);
+			         "%Y-%m-%dT%TZ", &tm);
 			attr->u.str=priv->fixiso8601;
 		} else
 			return 0;
-		}
-		break;
+	}
+	break;
 	default:
 		return 0;
 	}
@@ -230,12 +229,12 @@ static struct vehicle_methods vehicle_gpsd_methods = {
 
 static struct vehicle_priv *
 vehicle_gpsd_dbus_new(struct vehicle_methods
-		      *meth, struct callback_list
-		      *cbl, struct attr **attrs)
+                      *meth, struct callback_list
+                      *cbl, struct attr **attrs)
 {
 	struct vehicle_priv *ret;
-	
-	
+
+
 	ret = g_new0(struct vehicle_priv, 1);
 	ret->attrs = attrs;
 	ret->cbl = cbl;

@@ -87,7 +87,7 @@ speech_cmdline_search(GList *samples, int suffix_len, const char *text, int deco
 					shortest_result_length=g_list_length(result);
 				} else {
 					dbg(lvl_debug,"no (shorter) result found for remaining text '%s', "
-						"trying next sample\n", remaining_text);
+					    "trying next sample\n", remaining_text);
 					g_list_free(recursion_result);
 				}
 			} else {
@@ -112,7 +112,7 @@ struct speech_priv {
 	struct spawn_process_info *spi;
 };
 
-static int 
+static int
 speechd_say(struct speech_priv *this, const char *text)
 {
 	char **cmdv=g_strsplit(this->cmdline," ", -1);
@@ -121,19 +121,19 @@ speechd_say(struct speech_priv *this, const char *text)
 	guint listlen;
 	int samplesmode=0;
 	int i;
-	
-	for(i=0;cmdv[i];i++)
+
+	for(i=0; cmdv[i]; i++)
 		if(strchr(cmdv[i],'%')) {
 			variable_arg_no=i;
 			break;
 		}
-	
+
 	if (this->sample_dir && this->sample_suffix)  {
 		argl=speech_cmdline_search(this->samples, strlen(this->sample_suffix), text, !!(this->flags & 1));
 		samplesmode=1;
 		listlen=g_list_length(argl);
 		dbg(lvl_debug,"For text: '%s', found %d samples.",text,listlen);
-		if (!listlen){
+		if (!listlen) {
 			dbg(lvl_error,"No matching samples found. Cannot speak text: '%s'",text);
 		}
 	} else {
@@ -151,8 +151,8 @@ speechd_say(struct speech_priv *this, const char *text)
 			argv[cmdvlen]=g_strdup("%s");
 			variable_arg_no=cmdvlen;
 		}
-		
-		for(i=0,j=0;j<argc;) {
+
+		for(i=0,j=0; j<argc;) {
 			if( i==variable_arg_no ) {
 				if (samplesmode) {
 					GList *l=argl;
@@ -175,8 +175,8 @@ speechd_say(struct speech_priv *this, const char *text)
 		argv[j]=NULL;
 		if (argl)
 			// No need to free data elements here as they are
-			// still referenced from this->samples 
-			g_list_free(argl); 
+			// still referenced from this->samples
+			g_list_free(argl);
 
 		if(this->spi) {
 			spawn_process_check_status(this->spi,1); // Block until previous spawned speech process is terminated.
@@ -190,8 +190,9 @@ speechd_say(struct speech_priv *this, const char *text)
 }
 
 
-static void 
-speechd_destroy(struct speech_priv *this) {
+static void
+speechd_destroy(struct speech_priv *this)
+{
 	GList *l=this->samples;
 	g_free(this->cmdline);
 	g_free(this->sample_dir);
@@ -211,7 +212,8 @@ static struct speech_methods speechd_meth = {
 };
 
 static struct speech_priv *
-speechd_new(struct speech_methods *meth, struct attr **attrs, struct attr *parent) {
+speechd_new(struct speech_methods *meth, struct attr **attrs, struct attr *parent)
+{
 	struct speech_priv *this;
 	struct attr *attr;
 	attr=attr_search(attrs, NULL, attr_data);

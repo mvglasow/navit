@@ -56,10 +56,14 @@ struct shmem_header {
 #define NAVIT_GD_XPM_TRANSPARENCY_HACK
 #endif
 
-static void emit_callback(struct graphics_priv *priv);
-static void image_setup(struct graphics_priv *gr);
-static struct shmem_header *shm_next(struct graphics_priv *gr);
-static void add_overlays(struct graphics_priv *overlay, gdImagePtr im);
+static void
+emit_callback(struct graphics_priv *priv);
+static void
+image_setup(struct graphics_priv *gr);
+static struct shmem_header *
+shm_next(struct graphics_priv *gr);
+static void
+add_overlays(struct graphics_priv *overlay, gdImagePtr im);
 
 #ifdef NAVIT_GD_XPM_TRANSPARENCY_HACK
 #include <X11/xpm.h>
@@ -67,128 +71,124 @@ static void add_overlays(struct graphics_priv *overlay, gdImagePtr im);
 
 BGD_DECLARE(gdImagePtr) gdImageCreateFromXpm (char *filename)
 {
-  XpmInfo info;
-  XpmImage image;
-  int i, j, k, number;
-  char buf[5];
-  gdImagePtr im = 0;
-  int *pointer;
-  int red = 0, green = 0, blue = 0, alpha = 0;
-  int *colors;
-  int ret;
-  ret = XpmReadFileToXpmImage (filename, &image, &info);
-  if (ret != XpmSuccess)
-    return 0;
+	XpmInfo info;
+	XpmImage image;
+	int i, j, k, number;
+	char buf[5];
+	gdImagePtr im = 0;
+	int *pointer;
+	int red = 0, green = 0, blue = 0, alpha = 0;
+	int *colors;
+	int ret;
+	ret = XpmReadFileToXpmImage (filename, &image, &info);
+	if (ret != XpmSuccess)
+		return 0;
 
-  if (!(im = gdImageCreate (image.width, image.height)))
-    return 0;
+	if (!(im = gdImageCreate (image.width, image.height)))
+		return 0;
 
-  number = image.ncolors;
+	number = image.ncolors;
 	if (overflow2(sizeof (int), number)) {
 		return 0;
 	}
-  colors = (int *) gdMalloc (sizeof (int) * number);
-  if (colors == NULL)
-    return (0);
-  for (i = 0; i < number; i++)
-    {
-      alpha = 0;
-      switch (strlen (image.colorTable[i].c_color))
-	{
-	case 4:
-	  if (!strcasecmp(image.colorTable[i].c_color,"none")) {
-	    red = 0;
-	    green = 0;
-            blue = 0;
-            alpha = 127;
-	  } else {
-    	    buf[1] = '\0';
-	    buf[0] = image.colorTable[i].c_color[1];
-	    red = strtol (buf, NULL, 16);
+	colors = (int *) gdMalloc (sizeof (int) * number);
+	if (colors == NULL)
+		return (0);
+	for (i = 0; i < number; i++) {
+		alpha = 0;
+		switch (strlen (image.colorTable[i].c_color)) {
+		case 4:
+			if (!strcasecmp(image.colorTable[i].c_color,"none")) {
+				red = 0;
+				green = 0;
+				blue = 0;
+				alpha = 127;
+			} else {
+				buf[1] = '\0';
+				buf[0] = image.colorTable[i].c_color[1];
+				red = strtol (buf, NULL, 16);
 
-	    buf[0] = image.colorTable[i].c_color[3];
-	    green = strtol (buf, NULL, 16);
+				buf[0] = image.colorTable[i].c_color[3];
+				green = strtol (buf, NULL, 16);
 
-	    buf[0] = image.colorTable[i].c_color[5];
-	    blue = strtol (buf, NULL, 16);
-          } 
-	  break;
-	case 7:
-	  buf[2] = '\0';
-	  buf[0] = image.colorTable[i].c_color[1];
-	  buf[1] = image.colorTable[i].c_color[2];
-	  red = strtol (buf, NULL, 16);
+				buf[0] = image.colorTable[i].c_color[5];
+				blue = strtol (buf, NULL, 16);
+			}
+			break;
+		case 7:
+			buf[2] = '\0';
+			buf[0] = image.colorTable[i].c_color[1];
+			buf[1] = image.colorTable[i].c_color[2];
+			red = strtol (buf, NULL, 16);
 
-	  buf[0] = image.colorTable[i].c_color[3];
-	  buf[1] = image.colorTable[i].c_color[4];
-	  green = strtol (buf, NULL, 16);
+			buf[0] = image.colorTable[i].c_color[3];
+			buf[1] = image.colorTable[i].c_color[4];
+			green = strtol (buf, NULL, 16);
 
-	  buf[0] = image.colorTable[i].c_color[5];
-	  buf[1] = image.colorTable[i].c_color[6];
-	  blue = strtol (buf, NULL, 16);
-	  break;
-	case 10:
-	  buf[3] = '\0';
-	  buf[0] = image.colorTable[i].c_color[1];
-	  buf[1] = image.colorTable[i].c_color[2];
-	  buf[2] = image.colorTable[i].c_color[3];
-	  red = strtol (buf, NULL, 16);
-	  red /= 64;
+			buf[0] = image.colorTable[i].c_color[5];
+			buf[1] = image.colorTable[i].c_color[6];
+			blue = strtol (buf, NULL, 16);
+			break;
+		case 10:
+			buf[3] = '\0';
+			buf[0] = image.colorTable[i].c_color[1];
+			buf[1] = image.colorTable[i].c_color[2];
+			buf[2] = image.colorTable[i].c_color[3];
+			red = strtol (buf, NULL, 16);
+			red /= 64;
 
-	  buf[0] = image.colorTable[i].c_color[4];
-	  buf[1] = image.colorTable[i].c_color[5];
-	  buf[2] = image.colorTable[i].c_color[6];
-	  green = strtol (buf, NULL, 16);
-	  green /= 64;
+			buf[0] = image.colorTable[i].c_color[4];
+			buf[1] = image.colorTable[i].c_color[5];
+			buf[2] = image.colorTable[i].c_color[6];
+			green = strtol (buf, NULL, 16);
+			green /= 64;
 
-	  buf[0] = image.colorTable[i].c_color[7];
-	  buf[1] = image.colorTable[i].c_color[8];
-	  buf[2] = image.colorTable[i].c_color[9];
-	  blue = strtol (buf, NULL, 16);
-	  blue /= 64;
-	  break;
-	case 13:
-	  buf[4] = '\0';
-	  buf[0] = image.colorTable[i].c_color[1];
-	  buf[1] = image.colorTable[i].c_color[2];
-	  buf[2] = image.colorTable[i].c_color[3];
-	  buf[3] = image.colorTable[i].c_color[4];
-	  red = strtol (buf, NULL, 16);
-	  red /= 256;
+			buf[0] = image.colorTable[i].c_color[7];
+			buf[1] = image.colorTable[i].c_color[8];
+			buf[2] = image.colorTable[i].c_color[9];
+			blue = strtol (buf, NULL, 16);
+			blue /= 64;
+			break;
+		case 13:
+			buf[4] = '\0';
+			buf[0] = image.colorTable[i].c_color[1];
+			buf[1] = image.colorTable[i].c_color[2];
+			buf[2] = image.colorTable[i].c_color[3];
+			buf[3] = image.colorTable[i].c_color[4];
+			red = strtol (buf, NULL, 16);
+			red /= 256;
 
-	  buf[0] = image.colorTable[i].c_color[5];
-	  buf[1] = image.colorTable[i].c_color[6];
-	  buf[2] = image.colorTable[i].c_color[7];
-	  buf[3] = image.colorTable[i].c_color[8];
-	  green = strtol (buf, NULL, 16);
-	  green /= 256;
+			buf[0] = image.colorTable[i].c_color[5];
+			buf[1] = image.colorTable[i].c_color[6];
+			buf[2] = image.colorTable[i].c_color[7];
+			buf[3] = image.colorTable[i].c_color[8];
+			green = strtol (buf, NULL, 16);
+			green /= 256;
 
-	  buf[0] = image.colorTable[i].c_color[9];
-	  buf[1] = image.colorTable[i].c_color[10];
-	  buf[2] = image.colorTable[i].c_color[11];
-	  buf[3] = image.colorTable[i].c_color[12];
-	  blue = strtol (buf, NULL, 16);
-	  blue /= 256;
-	  break;
+			buf[0] = image.colorTable[i].c_color[9];
+			buf[1] = image.colorTable[i].c_color[10];
+			buf[2] = image.colorTable[i].c_color[11];
+			buf[3] = image.colorTable[i].c_color[12];
+			blue = strtol (buf, NULL, 16);
+			blue /= 256;
+			break;
+		}
+
+
+		colors[i] = gdImageColorResolveAlpha(im, red, green, blue, alpha);
+		if (colors[i] == -1)
+			fprintf (stderr, "ARRRGH\n");
 	}
 
-
-      colors[i] = gdImageColorResolveAlpha(im, red, green, blue, alpha);
-      if (colors[i] == -1)
-	fprintf (stderr, "ARRRGH\n");
-    }
-
-  pointer = (int *) image.data;
-  for (i = 0; i < image.height; i++)
-    {
-      for (j = 0; j < image.width; j++)
-	{
-	  k = *pointer++;
-	  gdImageSetPixel (im, j, i, colors[k]);
+	pointer = (int *) image.data;
+	for (i = 0; i < image.height; i++) {
+		for (j = 0; j < image.width; j++) {
+			k = *pointer++;
+			gdImageSetPixel (im, j, i, colors[k]);
+		}
 	}
-    }
-  gdFree (colors);
-  return (im);
+	gdFree (colors);
+	return (im);
 }
 #endif
 
@@ -268,7 +268,7 @@ static void
 gc_set_foreground(struct graphics_gc_priv *gc, struct color *c)
 {
 	gc->color2=*c;
-	gc->color=gdImageColorAllocate(gc->gr->im, c->r>>8, c->g>>8, c->b>>8); 
+	gc->color=gdImageColorAllocate(gc->gr->im, c->r>>8, c->g>>8, c->b>>8);
 }
 
 static void
@@ -280,9 +280,9 @@ gc_set_background(struct graphics_gc_priv *gc, struct color *c)
 static struct graphics_gc_methods gc_methods = {
 	gc_destroy,
 	gc_set_linewidth,
-	gc_set_dashes,	
-	gc_set_foreground,	
-	gc_set_background	
+	gc_set_dashes,
+	gc_set_foreground,
+	gc_set_background
 };
 
 static struct graphics_gc_priv *gc_new(struct graphics_priv *gr, struct graphics_gc_methods *meth)
@@ -298,7 +298,8 @@ static struct graphics_gc_priv *gc_new(struct graphics_priv *gr, struct graphics
 
 
 static struct graphics_image_priv *
-image_new(struct graphics_priv *gr, struct graphics_image_methods *meth, char *name, int *w, int *h, struct point *hot, int rotation)
+image_new(struct graphics_priv *gr, struct graphics_image_methods *meth, char *name, int *w, int *h, struct point *hot,
+          int rotation)
 {
 	FILE *file;
 	struct graphics_image_priv *ret=NULL;
@@ -365,7 +366,7 @@ draw_lines(struct graphics_priv *gr, struct graphics_gc_priv *gc, struct point *
 	for (i = 0 ; i < count-1 ; i++)
 		gdImageLine(gr->im, p[i].x, p[i].y, p[i+1].x, p[i+1].y, gc->dash_count ? gdStyled : cc);
 #else
-	gdImageOpenPolygon(gr->im, (gdPointPtr) p, count, gc->dash_count ? gdStyled : cc);  
+	gdImageOpenPolygon(gr->im, (gdPointPtr) p, count, gc->dash_count ? gdStyled : cc);
 #endif
 }
 
@@ -376,8 +377,8 @@ draw_polygon(struct graphics_priv *gr, struct graphics_gc_priv *gc, struct point
 	if (gr->flags & 8) {
 		gdImageSetAntiAliased(gr->im, cc);
 		cc=gdAntiAliased;
-	}	
-	gdImageFilledPolygon(gr->im, (gdPointPtr) p, count, cc);  
+	}
+	gdImageFilledPolygon(gr->im, (gdPointPtr) p, count, cc);
 }
 
 static void
@@ -405,7 +406,8 @@ draw_circle(struct graphics_priv *gr, struct graphics_gc_priv *gc, struct point 
 
 
 static void
-draw_text(struct graphics_priv *gr, struct graphics_gc_priv *fg, struct graphics_gc_priv *bg, struct graphics_font_priv *font, char *text, struct point *p, int dx, int dy)
+draw_text(struct graphics_priv *gr, struct graphics_gc_priv *fg, struct graphics_gc_priv *bg,
+          struct graphics_font_priv *font, char *text, struct point *p, int dx, int dy)
 {
 	struct font_freetype_text *t;
 	struct font_freetype_glyph *g, **gp;
@@ -423,8 +425,7 @@ draw_text(struct graphics_priv *gr, struct graphics_gc_priv *fg, struct graphics
 		y=p->y << 6;
 		gp=t->glyph;
 		i=t->glyph_count;
-		while (i-- > 0)
-		{
+		while (i-- > 0) {
 			g=*gp++;
 			w=g->w;
 			h=g->h;
@@ -443,8 +444,7 @@ draw_text(struct graphics_priv *gr, struct graphics_gc_priv *fg, struct graphics
 	y=p->y << 6;
 	gp=t->glyph;
 	i=t->glyph_count;
-	while (i-- > 0)
-	{
+	while (i-- > 0) {
 		g=*gp++;
 		w=g->w;
 		h=g->h;
@@ -531,7 +531,7 @@ draw_mode(struct graphics_priv *gr, enum draw_mode_num mode)
 					if (connect(fd, (struct sockaddr *)sockets->data, sizeof(struct sockaddr_in)) < 0) {
 						dbg(lvl_error,"connect failed");
 					} else {
-						size_written=write(fd, data, size);	
+						size_written=write(fd, data, size);
 						dbg(lvl_debug,"size %d vs %d",size, size_written);
 						if (shutdown(fd, SHUT_RDWR) < 0)
 							dbg(lvl_error,"shutdown failed");
@@ -547,7 +547,8 @@ draw_mode(struct graphics_priv *gr, enum draw_mode_num mode)
 	}
 }
 
-static struct graphics_priv * overlay_new(struct graphics_priv *gr, struct graphics_methods *meth, struct point *p, int w, int h, int wraparound);
+static struct graphics_priv *
+overlay_new(struct graphics_priv *gr, struct graphics_methods *meth, struct point *p, int w, int h, int wraparound);
 
 static void
 add_overlays(struct graphics_priv *overlay, gdImagePtr im)
@@ -565,14 +566,14 @@ add_overlays(struct graphics_priv *overlay, gdImagePtr im)
 				unsigned int *src_line=src->tpixels[y];
 				unsigned int *overlay_line=overlay->im->tpixels[y];
 				for (x = 0 ; x < overlay->w ; x++) {
-					if (overlay_line[x] != bgcol) 
+					if (overlay_line[x] != bgcol)
 						res_line[x]=overlay_line[x];
 					else
 						res_line[x]=src_line[x];
 				}
 			}
 			gdImageCopy(im, res, overlay->p.x, overlay->p.y, 0, 0, overlay->w, overlay->h);
-			gdImageDestroy(res);	
+			gdImageDestroy(res);
 			gdImageDestroy(src);
 		} else
 			gdImageCopy(im, overlay->im, overlay->p.x, overlay->p.y, 0, 0, overlay->w, overlay->h);
@@ -585,7 +586,7 @@ get_data(struct graphics_priv *this, char *type)
 {
 	int b;
 	struct point p;
-  	gdImagePtr im = this->im;
+	gdImagePtr im = this->im;
 	dbg(lvl_debug,"type=%s",type);
 	if (!strcmp(type,"window"))
 		return &this->window;
@@ -609,11 +610,11 @@ get_data(struct graphics_priv *this, char *type)
 	}
 	if (sscanf(type,"click_%d_%d_%d",&p.x,&p.y,&b) == 3) {
 		dbg(lvl_debug,"click %d %d %d",p.x,p.y,b);
-        	callback_list_call_attr_3(this->cbl, attr_button, (void *)b, (void *)1, (void *)&p);
+		callback_list_call_attr_3(this->cbl, attr_button, (void *)b, (void *)1, (void *)&p);
 	}
 	if (sscanf(type,"move_%d_%d",&p.x,&p.y) == 2) {
 		dbg(lvl_debug,"move %d %d",p.x,p.y);
-        	callback_list_call_attr_1(this->cbl, attr_motion, (void *)&p);
+		callback_list_call_attr_1(this->cbl, attr_motion, (void *)&p);
 	}
 	return NULL;
 }
@@ -621,7 +622,7 @@ get_data(struct graphics_priv *this, char *type)
 
 static void
 image_free(struct graphics_priv *gr, struct graphics_image_priv *priv)
-{	
+{
 	gdImageDestroy(priv->im);
 	g_free(priv);
 }
@@ -648,7 +649,7 @@ shm_next(struct graphics_priv *gr)
 	}
 	dbg(lvl_debug,"next 0x%x (offset 0x%x)",next-(char *)gr->shm,gr->shmoffset);
 	return (struct shmem_header *)next;
-	
+
 }
 static void
 image_setup(struct graphics_priv *gr)
@@ -772,7 +773,7 @@ set_attr_do(struct graphics_priv *gr, struct attr *attr, int init)
 					g_free(sin);
 				}
 				dbg(lvl_debug,"host=%s port=%s",c,p);
-			} else 
+			} else
 				dbg(lvl_error,"error in format: %s",p);
 			c=n;
 		}
@@ -826,10 +827,10 @@ overlay_new(struct graphics_priv *gr, struct graphics_methods *meth, struct poin
 	dbg(lvl_debug,"enter");
 	ret=g_new0(struct graphics_priv, 1);
 	*meth=graphics_methods;
-        font_freetype_new=plugin_get_category_font("freetype");
-        if (!font_freetype_new)
-                return NULL;
-        font_freetype_new(&ret->freetype_methods);
+	font_freetype_new=plugin_get_category_font("freetype");
+	if (!font_freetype_new)
+		return NULL;
+	font_freetype_new(&ret->freetype_methods);
 	ret->p=*p;
 	ret->w=w;
 	ret->h=h;
@@ -855,14 +856,15 @@ graphics_gd_new(struct navit *nav, struct graphics_methods *meth, struct attr **
 	struct font_priv * (*font_freetype_new)(void *meth);
 	struct graphics_priv *ret;
 	event_request_system("glib","graphics_gd_new");
-        font_freetype_new=plugin_get_category_font("freetype");
-        if (!font_freetype_new)
-                return NULL;
+	font_freetype_new=plugin_get_category_font("freetype");
+	if (!font_freetype_new)
+		return NULL;
 	*meth=graphics_methods;
 	ret=g_new0(struct graphics_priv, 1);
-        font_freetype_new(&ret->freetype_methods);
-        meth->font_new=(struct graphics_font_priv *(*)(struct graphics_priv *, struct graphics_font_methods *, char *,  int, int))ret->freetype_methods.font_new;
-        meth->get_text_bbox=ret->freetype_methods.get_text_bbox;
+	font_freetype_new(&ret->freetype_methods);
+	meth->font_new=(struct graphics_font_priv *(*)(struct graphics_priv *, struct graphics_font_methods *, char *,  int,
+	                int))ret->freetype_methods.font_new;
+	meth->get_text_bbox=ret->freetype_methods.get_text_bbox;
 	ret->cb=callback_new_attr_1(callback_cast(emit_callback), attr_navit, ret);
 	navit_add_callback(nav, ret->cb);
 	ret->cbl=cbl;
@@ -873,7 +875,7 @@ graphics_gd_new(struct navit *nav, struct graphics_methods *meth, struct attr **
 		set_attr_do(ret, *attrs, 1);
 		attrs++;
 	}
-	if (!ret->im) 
+	if (!ret->im)
 		image_create(ret);
 	return ret;
 }
@@ -881,5 +883,5 @@ graphics_gd_new(struct navit *nav, struct graphics_methods *meth, struct attr **
 void
 plugin_init(void)
 {
-        plugin_register_category_graphics("gd", graphics_gd_new);
+	plugin_register_category_graphics("gd", graphics_gd_new);
 }

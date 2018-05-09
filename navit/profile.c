@@ -71,7 +71,7 @@ profile_timer(int level, const char *module, const char *function, const char *f
 		gettimeofday(&curr, NULL);
 		msec=(curr.tv_usec-last[level].tv_usec)/((double)1000)+
 		     (curr.tv_sec-last[level].tv_sec)*1000;
-	
+
 		sprintf(buffer, "profile:%s", module);
 		va_start(ap, fmt);
 		debug_vprintf(lvl_debug, buffer, strlen(buffer), function, strlen(function), 1, fmt, ap);

@@ -37,7 +37,7 @@
 
 #include "navigation.h"         /* for KILOMETERS_TO_MILES */
 
-static struct gtk_poi_search{
+static struct gtk_poi_search {
 	GtkWidget *entry_distance;
 	GtkWidget *label_distance;
 	GtkWidget *treeview_cat;
@@ -52,7 +52,8 @@ static struct gtk_poi_search{
 } gtk_poi_search;
 
 static GdkPixbuf *
-geticon(const char *name){
+geticon(const char *name)
+{
 	GdkPixbuf *icon=NULL;
 	GError *error=NULL;
 	icon=gdk_pixbuf_new_from_file(graphics_icon_path(name),&error);
@@ -72,7 +73,8 @@ category_list_model(struct gtk_poi_search *search)
 	gtk_list_store_append(search->store_cat, &iter);
 	gtk_list_store_set(search->store_cat, &iter, 0, geticon("restaurant.png"), 1, _("Restaurant"), 2, "poi_restaurant", -1);
 	gtk_list_store_append(search->store_cat, &iter);
-	gtk_list_store_set(search->store_cat, &iter,0, geticon("restaurant.png"), 1, _("Restaurant. Fast food"), 2, "poi_fastfood", -1);
+	gtk_list_store_set(search->store_cat, &iter,0, geticon("restaurant.png"), 1, _("Restaurant. Fast food"), 2,
+	                   "poi_fastfood", -1);
 	gtk_list_store_append(search->store_cat, &iter);
 	gtk_list_store_set(search->store_cat, &iter,0, geticon("hotel.png"), 1, _("Hotel"), 2, "poi_hotel", -1);
 	gtk_list_store_append(search->store_cat, &iter);
@@ -86,7 +88,8 @@ category_list_model(struct gtk_poi_search *search)
 	gtk_list_store_append(search->store_cat, &iter);
 	gtk_list_store_set(search->store_cat, &iter,0, geticon("cinema.png"), 1, _("Cinema"), 2, "poi_cinema", -1);
 	gtk_list_store_append(search->store_cat, &iter);
-	gtk_list_store_set(search->store_cat, &iter,0, geticon("rail_station.png"), 1, _("Train station"), 2, "poi_rail_station", -1);
+	gtk_list_store_set(search->store_cat, &iter,0, geticon("rail_station.png"), 1, _("Train station"), 2,
+	                   "poi_rail_station", -1);
 	gtk_list_store_append(search->store_cat, &iter);
 	gtk_list_store_set(search->store_cat, &iter,0, geticon("school.png"), 1, _("School"), 2, "poi_school", -1);
 	gtk_list_store_append(search->store_cat, &iter);
@@ -122,7 +125,7 @@ model_poi (struct gtk_poi_search *search)
 	struct attr attr;
 	int imperial = FALSE;  /* default to using metric measures. */
 	if (navit_get_attr(gtk_poi_search.nav, attr_imperial, &attr, NULL))
-	    imperial=attr.u.num;
+		imperial=attr.u.num;
 
 	if (imperial == FALSE) {
 		/* Input is in kilometers */
@@ -142,7 +145,7 @@ model_poi (struct gtk_poi_search *search)
 	pc.y = center.y;
 
 	//Search in the map, for pois
-	sel=map_selection_rect_new(&pc ,search_distance_meters*transform_scale(abs(center.y)+search_distance_meters*1.5),18);
+	sel=map_selection_rect_new(&pc,search_distance_meters*transform_scale(abs(center.y)+search_distance_meters*1.5),18);
 	gtk_list_store_clear(search->store_poi);
 
 	h=mapset_open(navit_get_mapset(search->nav));
@@ -157,23 +160,23 @@ model_poi (struct gtk_poi_search *search)
 				item_attr_get(item,attr_label,&label_attr);
 				item_coord_get(item,&coord_item,1);
 				idist=transform_distance(1,&center,&coord_item);
-				if (item->type==selected && idist<=search_distance_meters){
+				if (item->type==selected && idist<=search_distance_meters) {
 					char direction[5];
 					gtk_list_store_append(search->store_poi, &iter);
 					get_compass_direction(direction,transform_get_angle_delta(&center,&coord_item,0),1);
 
-                                        /**
-                                         * If the user has selected imperial, translate idist from meters to
-                                         * feet. We convert to feet only, and not miles, because the code
-                                         * sorts on the numeric value of the distance, so it doesn't like two
-                                         * different units. Possible future enhancement?
-                                         */
+					/**
+					 * If the user has selected imperial, translate idist from meters to
+					 * feet. We convert to feet only, and not miles, because the code
+					 * sorts on the numeric value of the distance, so it doesn't like two
+					 * different units. Possible future enhancement?
+					 */
 					if (imperial != FALSE) {
 						idist = idist * (FEET_PER_METER); /* convert meters to feet. */
 					}
 
 					gtk_list_store_set(search->store_poi, &iter, 0,direction, 1,idist,
-						2,g_strdup(label_attr.u.str), 3,coord_item.x, 4,coord_item.y ,-1);
+					                   2,g_strdup(label_attr.u.str), 3,coord_item.x, 4,coord_item.y,-1);
 				}
 			}
 			map_rect_destroy(mr);
@@ -334,9 +337,11 @@ void gtk_gui_poi(struct navit *nav)
 	gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(listbox_cat),search->treeview_cat);
 	search->store_cat = gtk_list_store_new (3, GDK_TYPE_PIXBUF, G_TYPE_STRING, G_TYPE_STRING);
 	renderer=gtk_cell_renderer_pixbuf_new();
-	gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (search->treeview_cat),-1, _(" "), renderer, "pixbuf", 0, NULL);
+	gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (search->treeview_cat),-1, _(" "), renderer, "pixbuf", 0,
+	                NULL);
 	renderer=gtk_cell_renderer_text_new();
-	gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (search->treeview_cat),-1, _("Category"), renderer, "text", 1, NULL);
+	gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (search->treeview_cat),-1, _("Category"), renderer, "text",
+	                1, NULL);
 	search->store_cat_sorted=gtk_tree_model_sort_new_with_model(GTK_TREE_MODEL(search->store_cat));
 	gtk_tree_sortable_set_sort_column_id(GTK_TREE_SORTABLE(search->store_cat_sorted),1,GTK_SORT_ASCENDING);
 	gtk_tree_view_set_model (GTK_TREE_VIEW (search->treeview_cat), category_list_model(search));
@@ -347,11 +352,14 @@ void gtk_gui_poi(struct navit *nav)
 	gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(listbox_poi),search->treeview_poi);
 	search->store_poi = gtk_list_store_new (5, G_TYPE_STRING, G_TYPE_UINT, G_TYPE_STRING, G_TYPE_LONG, G_TYPE_LONG);
 	renderer=gtk_cell_renderer_text_new();
-	gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (search->treeview_poi),-1, _("Direction"), renderer, "text",0,NULL);
+	gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (search->treeview_poi),-1, _("Direction"), renderer, "text",
+	                0,NULL);
 	renderer=gtk_cell_renderer_text_new();
-	gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (search->treeview_poi),-1, _("Distance(m)"), renderer, "text", 1, NULL);
+	gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (search->treeview_poi),-1, _("Distance(m)"), renderer,
+	                "text", 1, NULL);
 	renderer=gtk_cell_renderer_text_new();
-	gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (search->treeview_poi),-1, _("Name"), renderer, "text", 2, NULL);
+	gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (search->treeview_poi),-1, _("Name"), renderer, "text", 2,
+	                NULL);
 	search->store_poi_sorted=gtk_tree_model_sort_new_with_model(GTK_TREE_MODEL(search->store_poi));
 	gtk_tree_sortable_set_sort_column_id(GTK_TREE_SORTABLE(search->store_poi_sorted),1,GTK_SORT_ASCENDING);
 

@@ -46,7 +46,8 @@ typedef struct {
 	struct coord *c;
 } coordObject;
 
-static void coord_destroy_py(coordObject *self);
+static void
+coord_destroy_py(coordObject *self);
 
 PyTypeObject coord_Type = {
 	Obj_HEAD
@@ -64,8 +65,10 @@ typedef struct {
 	struct map *m;
 } mapObject;
 
-static void map_destroy_py(mapObject *self);
-static PyObject *map_getattr_py(PyObject *self, char *name);
+static void
+map_destroy_py(mapObject *self);
+static PyObject *
+map_getattr_py(PyObject *self, char *name);
 
 PyTypeObject map_Type = {
 	Obj_HEAD
@@ -94,7 +97,7 @@ coord_new_py(PyObject *self, PyObject *args)
 static void
 coord_destroy_py(coordObject *self)
 {
-		coord_destroy(self->c);
+	coord_destroy(self->c);
 }
 
 /* *** coord_rect *** */
@@ -105,7 +108,8 @@ typedef struct {
 } coord_rectObject;
 
 
-static void coord_rect_destroy_py(coord_rectObject *self);
+static void
+coord_rect_destroy_py(coord_rectObject *self);
 
 PyTypeObject coord_rect_Type = {
 #if defined(MS_WINDOWS) || defined(__CYGWIN__)
@@ -144,7 +148,8 @@ typedef struct {
 } map_rectObject;
 
 
-static void map_rect_destroy_py(map_rectObject *self);
+static void
+map_rect_destroy_py(map_rectObject *self);
 
 PyTypeObject map_rect_Type = {
 #if defined(MS_WINDOWS) || defined(__CYGWIN__)
@@ -220,7 +225,7 @@ map_new_py(PyObject *self, PyObject *args)
 {
 	mapObject *ret;
 	char *type, *filename;
-	
+
 	if (!PyArg_ParseTuple(args, "ss:navit.map", &type, &filename))
 		return NULL;
 	ret=PyObject_NEW(mapObject, &map_Type);
@@ -255,8 +260,10 @@ typedef struct {
 } mapsetObject;
 
 
-static void mapset_destroy_py(mapsetObject *self);
-static PyObject *mapset_getattr_py(PyObject *self, char *name);
+static void
+mapset_destroy_py(mapsetObject *self);
+static PyObject *
+mapset_getattr_py(PyObject *self, char *name);
 
 PyTypeObject mapset_Type = {
 #if defined(MS_WINDOWS) || defined(__CYGWIN__)
@@ -277,7 +284,9 @@ mapset_add_py(mapsetObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "O:navit.mapset", &map))
 		return NULL;
 	Py_INCREF(map);
-	mapset_add_attr(self->ms, &(struct attr){attr_map,.u.map=map->m});
+	mapset_add_attr(self->ms, &(struct attr) {
+		attr_map,.u.map=map->m
+	});
 	return Py_BuildValue("");
 }
 
@@ -321,7 +330,7 @@ config_load_py(PyObject *self, PyObject *args)
 	return Py_BuildValue("i",ret);
 }
 
-static PyMethodDef navitMethods[]={
+static PyMethodDef navitMethods[]= {
 	{"attr", attr_new_py, METH_VARARGS},
 	{"coord", coord_new_py, METH_VARARGS, "Create a new coordinate point."},
 	{"coord_rect", coord_rect_new_py, METH_VARARGS, "Create a new coordinate rectangle."},
@@ -365,6 +374,6 @@ plugin_init(void)
 			PyRun_SimpleString(buffer);
 		}
 	}
-	
+
 	Py_Finalize();
 }

@@ -76,7 +76,7 @@ nmea_chksum(char *nmea)
 	int i;
 	if (nmea && strlen(nmea) > 3) {
 		unsigned char csum=0;
-		for (i = 1 ; i < strlen(nmea)-4 ; i++) 
+		for (i = 1 ; i < strlen(nmea)-4 ; i++)
 			csum^=(unsigned char)(nmea[i]);
 		sprintf(nmea+strlen(nmea)-3,"%02X\n",csum);
 	}
@@ -84,7 +84,7 @@ nmea_chksum(char *nmea)
 
 static int
 vehicle_demo_position_attr_get(struct vehicle_priv *priv,
-			       enum attr_type type, struct attr *attr)
+                               enum attr_type type, struct attr *attr)
 {
 	char ns='N',ew='E',*timep,*rmc,*gga;
 	int hr,min,sec,year,mon,day;
@@ -104,12 +104,12 @@ vehicle_demo_position_attr_get(struct vehicle_priv *priv,
 		priv->timep=current_to_iso8601();
 		attr->u.str=priv->timep;
 		break;
-       case attr_position_fix_type:
-                attr->u.num = 2;
-                break;
-        case attr_position_sats_used:
-                attr->u.num = 9;
-                break;
+	case attr_position_fix_type:
+		attr->u.num = 2;
+		break;
+	case attr_position_sats_used:
+		attr->u.num = 9;
+		break;
 	case attr_position_nmea:
 		lat=priv->geo.lat;
 		if (lat < 0) {
@@ -124,9 +124,12 @@ vehicle_demo_position_attr_get(struct vehicle_priv *priv,
 		timep=current_to_iso8601();
 		sscanf(timep,"%d-%d-%dT%d:%d:%d",&year,&mon,&day,&hr,&min,&sec);
 		g_free(timep);
-		gga=g_strdup_printf("$GPGGA,%02d%02d%02d,%02.0f%07.4f,%c,%03.0f%07.4f,%c,1,08,2.5,0,M,,,,0000*  \n",hr,min,sec,floor(lat),(lat-floor(lat))*60.0,ns,floor(lng),(lng-floor(lng))*60,ew);
+		gga=g_strdup_printf("$GPGGA,%02d%02d%02d,%02.0f%07.4f,%c,%03.0f%07.4f,%c,1,08,2.5,0,M,,,,0000*  \n",hr,min,sec,
+		                    floor(lat),(lat-floor(lat))*60.0,ns,floor(lng),(lng-floor(lng))*60,ew);
 		nmea_chksum(gga);
-		rmc=g_strdup_printf("$GPRMC,%02d%02d%02d,A,%02.0f%07.4f,%c,%03.0f%07.4f,%c,%3.1f,%3.1f,%02d%02d%02d,,*  \n",hr,min,sec,floor(lat),(lat-floor(lat))*60.0,ns,floor(lng),(lng-floor(lng))*60,ew,priv->speed/1.852,(double)priv->direction,day,mon,year%100);
+		rmc=g_strdup_printf("$GPRMC,%02d%02d%02d,A,%02.0f%07.4f,%c,%03.0f%07.4f,%c,%3.1f,%3.1f,%02d%02d%02d,,*  \n",hr,min,sec,
+		                    floor(lat),(lat-floor(lat))*60.0,ns,floor(lng),(lng-floor(lng))*60,ew,priv->speed/1.852,(double)priv->direction,day,mon,
+		                    year%100);
 		nmea_chksum(rmc);
 		g_free(priv->nmea);
 		priv->nmea=g_strdup_printf("%s%s",gga,rmc);
@@ -214,7 +217,7 @@ vehicle_demo_timer(struct vehicle_priv *priv)
 		return;
 	if (priv->route)
 		route=priv->route;
-	else if (priv->navit) 
+	else if (priv->navit)
 		route=navit_get_route(priv->navit);
 	if (route)
 		route_map=route_get_map(route);
@@ -252,7 +255,7 @@ vehicle_demo_timer(struct vehicle_priv *priv)
 					ci.x = pos.x + dx * len / slen;
 					ci.y = pos.y + dy * len / slen;
 					priv->direction =
-					    transform_get_angle_delta(&pos, &c, 0);
+					        transform_get_angle_delta(&pos, &c, 0);
 					priv->speed=priv->config_speed;
 				} else {
 					ci.x = pos.x;
@@ -262,7 +265,7 @@ vehicle_demo_timer(struct vehicle_priv *priv)
 				}
 				dbg(lvl_debug, "ci=0x%x,0x%x", ci.x, ci.y);
 				transform_to_geo(projection_mg, &ci,
-						 &priv->geo);
+				                 &priv->geo);
 				if (priv->valid != attr_position_valid_valid) {
 					priv->valid = attr_position_valid_valid;
 					callback_list_call_attr_0(priv->cbl, attr_position_valid);
@@ -272,7 +275,7 @@ vehicle_demo_timer(struct vehicle_priv *priv)
 			}
 		}
 	} else {
-		if (priv->position_set) 
+		if (priv->position_set)
 			callback_list_call_attr_0(priv->cbl, attr_position_coord_geo);
 	}
 	if (mr)
@@ -283,8 +286,8 @@ vehicle_demo_timer(struct vehicle_priv *priv)
 
 static struct vehicle_priv *
 vehicle_demo_new(struct vehicle_methods
-		 *meth, struct callback_list
-		 *cbl, struct attr **attrs)
+                 *meth, struct callback_list
+                 *cbl, struct attr **attrs)
 {
 	struct vehicle_priv *ret;
 
@@ -296,7 +299,7 @@ vehicle_demo_new(struct vehicle_methods
 	ret->timer_callback=callback_new_1(callback_cast(vehicle_demo_timer), ret);
 	ret->valid = attr_position_valid_invalid;
 	*meth = vehicle_demo_methods;
-	while (attrs && *attrs) 
+	while (attrs && *attrs)
 		vehicle_demo_set_attr_do(ret, *attrs++);
 	if (!ret->timer)
 		ret->timer=event_add_timeout(ret->interval, 1, ret->timer_callback);

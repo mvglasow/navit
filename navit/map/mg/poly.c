@@ -26,7 +26,7 @@ poly_coord_rewind(void *priv_data)
 {
 	struct poly_priv *poly=priv_data;
 
-	poly->p=poly->subpoly_start;	
+	poly->p=poly->subpoly_start;
 
 }
 
@@ -47,7 +47,7 @@ poly_coord_get(void *priv_data, struct coord *c, int count)
 	return ret;
 }
 
-static void 
+static void
 poly_attr_rewind(void *priv_data)
 {
 	struct poly_priv *poly=priv_data;
@@ -69,10 +69,10 @@ poly_attr_get(void *priv_data, enum attr_type attr_type, struct attr *attr)
 		}
 		return 0;
 	case attr_label:
-                attr->u.str=poly->name;
-                poly->attr_next=attr_none;
-                if (attr->u.str[0])
-                        return 1;
+		attr->u.str=poly->name;
+		poly->attr_next=attr_none;
+		if (attr->u.str[0])
+			return 1;
 		return 0;
 	default:
 		return 0;
@@ -103,7 +103,8 @@ poly_get_data(struct poly_priv *poly, unsigned char **p)
 	poly->order=*(*p)++;
 	poly->type=*(*p)++;
 	poly->polys=get_u32_unal(p);
-	poly->count=(unsigned int *)(*p); (*p)+=poly->polys*sizeof(unsigned int);
+	poly->count=(unsigned int *)(*p);
+	(*p)+=poly->polys*sizeof(unsigned int);
 	poly->count_sum=get_u32_unal(p);
 }
 
@@ -112,9 +113,9 @@ poly_get(struct map_rect_priv *mr, struct poly_priv *poly, struct item *item)
 {
 	struct coord_rect r;
 
-        for (;;) {
-                if (mr->b.p >= mr->b.end)
-                        return 0;
+	for (;;) {
+		if (mr->b.p >= mr->b.end)
+			return 0;
 		if (mr->b.p == mr->b.p_start) {
 			poly->poly_num=0;
 			poly->subpoly_num=0;
@@ -233,7 +234,7 @@ poly_get(struct map_rect_priv *mr, struct poly_priv *poly, struct item *item)
 				mr->b.p=poly->poly_next;
 				continue;
 			}
-		} else 
+		} else
 			mr->b.p=poly->subpoly_next;
 		dbg(lvl_debug,"%d %d %s", poly->subpoly_num_all, mr->b.block_num, poly->name);
 		item->id_lo=poly->subpoly_num_all | (mr->b.block_num << 16);
@@ -242,13 +243,13 @@ poly_get(struct map_rect_priv *mr, struct poly_priv *poly, struct item *item)
 		poly->subpoly_next=mr->b.p+L(poly->count[poly->subpoly_num])*sizeof(struct coord);
 		poly->subpoly_num++;
 		poly->subpoly_num_all++;
-		if (poly->subpoly_num >= poly->polys) 
+		if (poly->subpoly_num >= poly->polys)
 			poly->subpoly_num=0;
 		poly->subpoly_start=poly->p=mr->b.p;
 		item->priv_data=poly;
 		poly->attr_next=attr_label;
 		return 1;
-        }
+	}
 }
 
 int
@@ -256,7 +257,7 @@ poly_get_byid(struct map_rect_priv *mr, struct poly_priv *poly, int id_hi, int i
 {
 	int count=id_lo & 0xffff;
 	int ret=0;
-        block_get_byindex(mr->m->file[mr->current_file], id_lo >> 16, &mr->b);
+	block_get_byindex(mr->m->file[mr->current_file], id_lo >> 16, &mr->b);
 	while (count-- >= 0) {
 		ret=poly_get(mr, poly, item);
 	}

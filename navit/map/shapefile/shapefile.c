@@ -112,7 +112,7 @@ shapefile_coord_get(void *priv_data, struct coord *c, int count)
 	struct map_rect_priv *mr=priv_data;
 	int ret=0;
 	int idx;
-	
+
 	SHPObject *psShape=mr->psShape;
 	while (count) {
 		idx=mr->cidx;
@@ -154,7 +154,7 @@ shapefile_attr_rewind(void *priv_data)
 struct longest_match_list_item {
 	void *data;
 	int match_idx_count;
-	int *match_idx;	
+	int *match_idx;
 };
 
 struct longest_match_list {
@@ -275,12 +275,12 @@ longest_match_add_key_value(struct longest_match *lm, char *k, char *v)
 	int idx;
 
 	strcpy(buffer,"*=*");
-       	if ((idx=(int)(long)g_hash_table_lookup(lm->match_hash, buffer)))
-       	        lm->match_present[idx]=1;
-
-       	sprintf(buffer,"%s=*", k);
 	if ((idx=(int)(long)g_hash_table_lookup(lm->match_hash, buffer)))
-       	        lm->match_present[idx]=2;
+		lm->match_present[idx]=1;
+
+	sprintf(buffer,"%s=*", k);
+	if ((idx=(int)(long)g_hash_table_lookup(lm->match_hash, buffer)))
+		lm->match_present[idx]=2;
 
 	sprintf(buffer,"*=%s", v);
 	if ((idx=(int)(long)g_hash_table_lookup(lm->match_hash, buffer)))
@@ -298,8 +298,8 @@ longest_match_list_find(struct longest_match *lm, struct longest_match_list *lml
 	struct longest_match_list_item *curr;
 	GList *l=lml->longest_match_list_items;
 
-	
-	while (l) {	
+
+	while (l) {
 		sum=0;
 		curr=l->data;
 		for (j = 0 ; j < curr->match_idx_count ; j++) {
@@ -315,7 +315,7 @@ longest_match_list_find(struct longest_match *lm, struct longest_match_list *lml
 			longest=sum;
 			ret=0;
 		}
-		if (sum > 0 && sum == longest && ret < max_list_len) 
+		if (sum > 0 && sum == longest && ret < max_list_len)
 			list[ret++]=curr->data;
 		l=g_list_next(l);
 	}
@@ -406,7 +406,7 @@ attr_resolve(struct map_rect_priv *mr, enum attr_type attr_type, struct attr *at
 	if (attr_type != attr_any)
 		type=attr_to_name(attr_type);
 	if (attr_from_line(mr->line,type,&mr->attr_pos,value,name)) {
-		len=strlen(value);	
+		len=strlen(value);
 		if (value[0] == '$' && value[1] == '{' && value[len-1] == '}') {
 			int found=0;
 			value[len-1]='\0';
@@ -438,7 +438,7 @@ attr_resolve(struct map_rect_priv *mr, enum attr_type attr_type, struct attr *at
 
 static int
 shapefile_attr_get(void *priv_data, enum attr_type attr_type, struct attr *attr)
-{	
+{
 	struct map_rect_priv *mr=priv_data;
 	struct map_priv *m=mr->m;
 	char szTitle[12],*pszTypeName, *str;
@@ -494,10 +494,10 @@ shapefile_attr_get(void *priv_data, enum attr_type attr_type, struct attr *attr)
 }
 
 static struct item_methods methods_shapefile = {
-        shapefile_coord_rewind,
-        shapefile_coord_get,
-        shapefile_attr_rewind,
-        shapefile_attr_get,
+	shapefile_coord_rewind,
+	shapefile_coord_get,
+	shapefile_attr_rewind,
+	shapefile_attr_get,
 };
 
 static struct map_rect_priv *
@@ -510,8 +510,8 @@ map_rect_new_shapefile(struct map_priv *map, struct map_selection *sel)
 	int size;
 	int changed=0;
 	if ((file=file_create(dbfmapfile, 0))) {
-        	size=file_size(file);
-        	data=file_data_read_all(file);
+		size=file_size(file);
+		data=file_data_read_all(file);
 		if (data) {
 			if (!map->dbfmap_data || size != strlen(map->dbfmap_data) || strncmp(data,map->dbfmap_data,size)) {
 				g_free(map->dbfmap_data);
@@ -522,7 +522,7 @@ map_rect_new_shapefile(struct map_priv *map, struct map_selection *sel)
 			}
 			file_data_free(file, data);
 		}
-        	file_destroy(file);
+		file_destroy(file);
 	} else {
 		dbg(lvl_error,"Failed to open %s",dbfmapfile);
 		if (map->dbfmap_data) {
@@ -559,7 +559,7 @@ map_rect_destroy_shapefile(struct map_rect_priv *mr)
 		SHPDestroyObject(mr->psShape);
 	attr_free(mr->attr);
 	g_free(mr->str);
-        g_free(mr);
+	g_free(mr);
 }
 
 static struct item *
@@ -649,7 +649,7 @@ map_new_shapefile(struct map_methods *meth, struct attr **attrs, struct callback
 	char *shapefile,*dbffile;
 	if (! data)
 		return NULL;
-	dbg(lvl_debug,"map_new_shapefile %s", data->u.str);	
+	dbg(lvl_debug,"map_new_shapefile %s", data->u.str);
 	wdata=g_strdup(data->u.str);
 	wexp=file_wordexp_new(wdata);
 	wexp_data=file_wordexp_get_array(wexp);
@@ -670,7 +670,7 @@ map_new_shapefile(struct map_methods *meth, struct attr **attrs, struct callback
 		m->charset=g_strdup(charset->u.str);
 		meth->charset=m->charset;
 	}
-	if (projectionname) 
+	if (projectionname)
 		m->pro=projection_from_name(projectionname->u.str, &m->offset);
 	if (flags)
 		m->flags=flags->u.num;
@@ -779,18 +779,18 @@ static int VSI_SHP_Remove( const char *pszFilename )
 void SASetupDefaultHooks( SAHooks *psHooks )
 
 {
-    psHooks->FOpen   = VSI_SHP_Open;
-    psHooks->FRead   = VSI_SHP_Read;
-    psHooks->FWrite  = VSI_SHP_Write;
-    psHooks->FSeek   = VSI_SHP_Seek;
-    psHooks->FTell   = VSI_SHP_Tell;
-    psHooks->FFlush  = VSI_SHP_Flush;
-    psHooks->FClose  = VSI_SHP_Close;
+	psHooks->FOpen   = VSI_SHP_Open;
+	psHooks->FRead   = VSI_SHP_Read;
+	psHooks->FWrite  = VSI_SHP_Write;
+	psHooks->FSeek   = VSI_SHP_Seek;
+	psHooks->FTell   = VSI_SHP_Tell;
+	psHooks->FFlush  = VSI_SHP_Flush;
+	psHooks->FClose  = VSI_SHP_Close;
 
-    psHooks->Remove  = VSI_SHP_Remove;
-    psHooks->Atof    = atof;
+	psHooks->Remove  = VSI_SHP_Remove;
+	psHooks->Atof    = atof;
 
-    psHooks->Error   = VSI_SHP_Error;
+	psHooks->Error   = VSI_SHP_Error;
 }
 
 

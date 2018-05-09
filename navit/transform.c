@@ -65,23 +65,23 @@ struct transformation {
 	int yaw;		/* Rotation angle */
 	int pitch;
 	int ddd;                /* 3d mode/isometric view active? (0/1) */
- 	int m00,m01,m02;	/* 3d transformation matrix */
- 	int m10,m11,m12;	
- 	int m20,m21,m22;	
+	int m00,m01,m02;	/* 3d transformation matrix */
+	int m10,m11,m12;
+	int m20,m21,m22;
 	int xscale,yscale,wscale;
 	int xscale3d,yscale3d,wscale3d;
 #ifdef ENABLE_ROLL
 	int roll;
 	int hog;
 #endif
- 	navit_float im00,im01,im02;	/* inverse 3d transformation matrix */
- 	navit_float im10,im11,im12;
- 	navit_float im20,im21,im22;
+	navit_float im00,im01,im02;	/* inverse 3d transformation matrix */
+	navit_float im10,im11,im12;
+	navit_float im20,im21,im22;
 	struct map_selection *map_sel;
 	struct map_selection *screen_sel;
 	struct point screen_center;
- 	int screen_dist;
- 	int offx,offy,offz;
+	int screen_dist;
+	int offx,offy,offz;
 	int znear,zfar;
 	struct coord map_center;	/* Center of source rectangle */
 	enum projection pro;
@@ -115,7 +115,7 @@ transform_setup_matrix(struct transformation *t)
 	navit_float yaws=navit_sin(-M_PI*t->yaw/180);
 	navit_float pitchc=navit_cos(-M_PI*t->pitch/180);
 	navit_float pitchs=navit_sin(-M_PI*t->pitch/180);
-#ifdef ENABLE_ROLL	
+#ifdef ENABLE_ROLL
 	navit_float rollc=navit_cos(M_PI*t->roll/180);
 	navit_float rolls=navit_sin(M_PI*t->roll/180);
 #else
@@ -145,9 +145,9 @@ transform_setup_matrix(struct transformation *t)
 	}
 	fac=(1 << POST_SHIFT) * (1 << t->scale_shift) / t->scale;
 	dbg(lvl_debug,"scale_shift=%d order=%d scale=%f fac=%f", t->scale_shift, t->order,t->scale,fac);
-	
-        t->m00=rollc*yawc*fac;
-        t->m01=rollc*yaws*fac;
+
+	t->m00=rollc*yawc*fac;
+	t->m01=rollc*yaws*fac;
 	t->m02=-rolls*fac;
 	t->m10=(pitchs*rolls*yawc-pitchc*yaws)*(-fac);
 	t->m11=(pitchs*rolls*yaws+pitchc*yawc)*(-fac);
@@ -173,11 +173,11 @@ transform_setup_matrix(struct transformation *t)
 		t->wscale=1;
 	}
 	det=(navit_float)t->m00*(navit_float)t->m11*(navit_float)t->m22+
-            (navit_float)t->m01*(navit_float)t->m12*(navit_float)t->m20+
-            (navit_float)t->m02*(navit_float)t->m10*(navit_float)t->m21-
-            (navit_float)t->m02*(navit_float)t->m11*(navit_float)t->m20-
-            (navit_float)t->m01*(navit_float)t->m10*(navit_float)t->m22-
-            (navit_float)t->m00*(navit_float)t->m12*(navit_float)t->m21;
+	    (navit_float)t->m01*(navit_float)t->m12*(navit_float)t->m20+
+	    (navit_float)t->m02*(navit_float)t->m10*(navit_float)t->m21-
+	    (navit_float)t->m02*(navit_float)t->m11*(navit_float)t->m20-
+	    (navit_float)t->m01*(navit_float)t->m10*(navit_float)t->m22-
+	    (navit_float)t->m00*(navit_float)t->m12*(navit_float)t->m21;
 
 	t->im00=(t->m11*t->m22-t->m12*t->m21)/det;
 	t->im01=(t->m02*t->m21-t->m01*t->m22)/det;
@@ -302,7 +302,7 @@ transform_to_geo(enum projection pro, struct coord *c, struct coord_geo *g)
 		zone=(x/1000000);
 		x=x%1000000;
 		transform_utm_to_geo(x, y, zone, northern, g);
-		break;	
+		break;
 	default:
 		break;
 	}
@@ -364,9 +364,9 @@ transform_geo_to_cart(struct coord_geo *geo, navit_float a, navit_float b, struc
 {
 	navit_float n,ee=1-b*b/(a*a);
 	n = a/sqrtf(1-ee*navit_sin(geo->lat)*navit_sin(geo->lat));
-        cart->x=n*navit_cos(geo->lat)*navit_cos(geo->lng);
-        cart->y=n*navit_cos(geo->lat)*navit_sin(geo->lng);
-        cart->z=n*(1-ee)*navit_sin(geo->lat);
+	cart->x=n*navit_cos(geo->lat)*navit_cos(geo->lng);
+	cart->y=n*navit_cos(geo->lat)*navit_sin(geo->lng);
+	cart->z=n*(1-ee)*navit_sin(geo->lat);
 }
 
 
@@ -386,15 +386,13 @@ transform_cart_to_geo(struct coord_geo_cart *cart, navit_float a, navit_float b,
 {
 	navit_float lat,lati,n,ee=1-b*b/(a*a), lng = navit_tan(cart->y/cart->x);
 
-        lat = navit_tan(cart->z / navit_sqrt((cart->x * cart->x) + (cart->y * cart->y)));
-        do
-        {
-                lati = lat;
+	lat = navit_tan(cart->z / navit_sqrt((cart->x * cart->x) + (cart->y * cart->y)));
+	do {
+		lati = lat;
 
-                n = a / navit_sqrt(1-ee*navit_sin(lat)*navit_sin(lat));
-                lat = navit_atan((cart->z + ee * n * navit_sin(lat)) / navit_sqrt(cart->x * cart->x + cart->y * cart->y));
-        }
-        while (fabs(lat - lati) >= 0.000000000000001);
+		n = a / navit_sqrt(1-ee*navit_sin(lat)*navit_sin(lat));
+		lat = navit_atan((cart->z + ee * n * navit_sin(lat)) / navit_sqrt(cart->x * cart->x + cart->y * cart->y));
+	} while (fabs(lat - lati) >= 0.000000000000001);
 
 	geo->lng=lng/M_PI*180;
 	geo->lat=lat/M_PI*180;
@@ -409,11 +407,12 @@ transform_cart_to_geo(struct coord_geo_cart *cart, navit_float a, navit_float b,
  * @author Chuck Gantz- chuck.gantz@globalstar.com
  */
 void
-transform_utm_to_geo(const double UTMEasting, const double UTMNorthing, int ZoneNumber, int NorthernHemisphere, struct coord_geo *geo)
+transform_utm_to_geo(const double UTMEasting, const double UTMNorthing, int ZoneNumber, int NorthernHemisphere,
+                     struct coord_geo *geo)
 {
-//East Longitudes are positive, West longitudes are negative. 
+//East Longitudes are positive, West longitudes are negative.
 //North latitudes are positive, South latitudes are negative
-//Lat and Long are in decimal degrees. 
+//Lat and Long are in decimal degrees.
 
 	double Lat, Long;
 	double k0 = 0.99960000000000004;
@@ -440,9 +439,9 @@ transform_utm_to_geo(const double UTMEasting, const double UTMNorthing, int Zone
 
 	M = y / k0;
 	mu = M/(a*(1-eccSquared/4-3*eccSquared*eccSquared/64-5*eccSquared*eccSquared*eccSquared/256));
-	phi1Rad = mu	+ (3*e1/2-27*e1*e1*e1/32)*sin(2*mu) 
-				+ (21*e1*e1/16-55*e1*e1*e1*e1/32)*sin(4*mu)
-				+(151*e1*e1*e1/96)*sin(6*mu);
+	phi1Rad = mu	+ (3*e1/2-27*e1*e1*e1/32)*sin(2*mu)
+	          + (21*e1*e1/16-55*e1*e1*e1*e1/32)*sin(4*mu)
+	          +(151*e1*e1*e1/96)*sin(6*mu);
 
 	N1 = a/sqrt(1-eccSquared*sin(phi1Rad)*sin(phi1Rad));
 	T1 = tan(phi1Rad)*tan(phi1Rad);
@@ -451,11 +450,11 @@ transform_utm_to_geo(const double UTMEasting, const double UTMNorthing, int Zone
 	D = x/(N1*k0);
 
 	Lat = phi1Rad - (N1*tan(phi1Rad)/R1)*(D*D/2-(5+3*T1+10*C1-4*C1*C1-9*eccPrimeSquared)*D*D*D*D/24
-					+(61+90*T1+298*C1+45*T1*T1-252*eccPrimeSquared-3*C1*C1)*D*D*D*D*D*D/720);
+	                                      +(61+90*T1+298*C1+45*T1*T1-252*eccPrimeSquared-3*C1*C1)*D*D*D*D*D*D/720);
 	Lat = Lat * rad2deg;
 
 	Long = (D-(1+2*T1+C1)*D*D*D/6+(5-2*C1+28*T1-3*C1*C1+8*eccPrimeSquared+24*T1*T1)
-					*D*D*D*D*D/120)/cos(phi1Rad);
+	        *D*D*D*D*D/120)/cos(phi1Rad);
 	Long = LongOrigin + Long * rad2deg;
 
 	geo->lat=Lat;
@@ -480,10 +479,10 @@ static struct coord
 transform_shift_by_center_and_scale(struct transformation *t, struct coord c)
 {
 	struct coord result;
-        result.x = c.x - t->map_center.x;
-        result.y = c.y - t->map_center.y;
-        result.x >>= t->scale_shift;
-        result.y >>= t->scale_shift;
+	result.x = c.x - t->map_center.x;
+	result.y = c.y - t->map_center.y;
+	result.x >>= t->scale_shift;
+	result.y >>= t->scale_shift;
 	return result;
 }
 
@@ -534,7 +533,7 @@ transform_project_onto_view_plane(struct transformation *t, struct coord_3d c)
 static int
 transform_points_too_close(struct point screen_point, struct point screen_point_old, int mindist)
 {
-	if (!mindist){
+	if (!mindist) {
 		return 0;
 	}
 	// approximation of Euclidean distance
@@ -542,7 +541,7 @@ transform_points_too_close(struct point screen_point, struct point screen_point_
 	        abs(screen_point.y - screen_point_old.y)) < mindist;
 }
 
-struct z_clip_result{
+struct z_clip_result {
 	struct coord_3d clipped_coord;
 	int visible;
 	int process_coord_again;
@@ -553,19 +552,19 @@ static struct z_clip_result
 transform_z_clip_if_necessary(struct coord_3d coord, int zlimit, struct z_clip_result clip_result_old)
 {
 	int visibility_changed;
-	struct z_clip_result clip_result={{0,0}, 0, 0, 0};
+	struct z_clip_result clip_result= {{0,0}, 0, 0, 0};
 	clip_result.visible=(coord.z < zlimit ? 0:1);
-	visibility_changed=(clip_result_old.visible != -1)&&(clip_result.visible != clip_result_old.visible); 
+	visibility_changed=(clip_result_old.visible != -1)&&(clip_result.visible != clip_result_old.visible);
 	if (visibility_changed) {
 		clip_result.clipped_coord=transform_z_clip(coord, clip_result_old.clipped_coord, zlimit);
 	} else {
 		clip_result.clipped_coord=coord;
 	}
-	if (clip_result.visible && visibility_changed){
+	if (clip_result.visible && visibility_changed) {
 		// line was clipped, but current point
 		// is visible -> process it again
 		clip_result.process_coord_again=1;
-	}else if (!clip_result.visible && !visibility_changed){
+	} else if (!clip_result.visible && !visibility_changed) {
 		clip_result.skip_coord=1;
 	}
 	return clip_result;
@@ -573,13 +572,13 @@ transform_z_clip_if_necessary(struct coord_3d coord, int zlimit, struct z_clip_r
 
 int
 transform(struct transformation *t, enum projection required_projection, struct coord *input,
-    struct point *result, int count, int mindist, int width, int *width_result)
+          struct point *result, int count, int mindist, int width, int *width_result)
 {
 	struct coord projected_coord, shifted_coord;
 	struct coord_3d rotated_coord;
 	struct point screen_point;
 	int zlimit=t->znear;
-	struct z_clip_result clip_result, clip_result_old={{0,0}, -1, 0, 0};
+	struct z_clip_result clip_result, clip_result_old= {{0,0}, -1, 0, 0};
 	int i,result_idx = 0,result_idx_last=0;
 	dbg(lvl_debug,"count=%d", count);
 	for (i=0; i < count; i++) {
@@ -597,9 +596,9 @@ transform(struct transformation *t, enum projection required_projection, struct 
 		if (t->ddd) {
 			clip_result=transform_z_clip_if_necessary(rotated_coord, zlimit, clip_result_old);
 			clip_result_old=clip_result;
-			if(clip_result.process_coord_again){
+			if(clip_result.process_coord_again) {
 				i--;
-			} else if (clip_result.skip_coord){
+			} else if (clip_result.skip_coord) {
 				continue;
 			}
 #if 0
@@ -615,17 +614,17 @@ transform(struct transformation *t, enum projection required_projection, struct 
 		dbg(lvl_debug,"result: (%d, %d)", screen_point.x, screen_point.y);
 
 		if (i != 0 && i != count-1 &&
-		    (input[i+1].x != input[0].x || input[i+1].y != input[0].y)) {
-			if (transform_points_too_close(screen_point, result[result_idx_last], mindist)){
+		                (input[i+1].x != input[0].x || input[i+1].y != input[0].y)) {
+			if (transform_points_too_close(screen_point, result[result_idx_last], mindist)) {
 				continue;
 			}
-		}		
+		}
 		result[result_idx]=screen_point;
 		if (width_result) {
 			if (t->ddd) {
 				dbg(lvl_debug,"width %d * %d / %d",width,t->wscale,clip_result.clipped_coord.z);
 				width_result[result_idx]=width*t->wscale/clip_result.clipped_coord.z;
-			} else 
+			} else
 				width_result[result_idx]=width;
 		}
 		result_idx_last=result_idx;
@@ -643,13 +642,14 @@ transform_apply_inverse_matrix(struct transformation *t, struct coord_geo_cart *
 }
 
 static int
-transform_zplane_intersection(struct coord_geo_cart *p1, struct coord_geo_cart *p2, navit_float z, struct coord_geo_cart *result)
+transform_zplane_intersection(struct coord_geo_cart *p1, struct coord_geo_cart *p2, navit_float z,
+                              struct coord_geo_cart *result)
 {
 	navit_float dividend=z-p1->z;
 	navit_float divisor=p2->z-p1->z;
 	navit_float q;
 	if (!divisor) {
-		if (dividend) 
+		if (dividend)
 			return 0;	/* no intersection */
 		else
 			return 3;	/* identical planes */
@@ -678,11 +678,11 @@ transform_screen_to_3d(struct transformation *t, struct point *p, navit_float z,
 static int
 transform_reverse_near_far(struct transformation *t, struct point *p, struct coord *c, int near, int far)
 {
-        double xc,yc;
+	double xc,yc;
 	dbg(lvl_debug,"%d,%d",p->x,p->y);
 	if (t->ddd) {
 		struct coord_geo_cart nearc,farc,nears,fars,intersection;
-		transform_screen_to_3d(t, p, near, &nearc);	
+		transform_screen_to_3d(t, p, near, &nearc);
 		transform_screen_to_3d(t, p, far, &farc);
 		transform_apply_inverse_matrix(t, &nearc, &nears);
 		transform_apply_inverse_matrix(t, &farc, &fars);
@@ -691,7 +691,7 @@ transform_reverse_near_far(struct transformation *t, struct point *p, struct coo
 		xc=intersection.x;
 		yc=intersection.y;
 	} else {
-        	double xcn,ycn;
+		double xcn,ycn;
 		xcn=p->x - t->offx;
 		ycn=p->y - t->offy;
 		xc=(xcn*t->im00+ycn*t->im01)*(1 << POST_SHIFT);
@@ -727,8 +727,7 @@ transform_pixels_to_map_distance(struct transformation *transformation, int pixe
 }
 
 enum projection
-transform_get_projection(struct transformation *this_)
-{
+transform_get_projection(struct transformation *this_) {
 	return this_->pro;
 }
 
@@ -770,7 +769,7 @@ transform_get_selection(struct transformation *this_, enum projection pro, int o
 
 	struct map_selection *ret,*curri,*curro;
 	struct coord_geo g;
-	
+
 	ret=map_selection_dup(this_->map_sel);
 	curri=this_->map_sel;
 	curro=ret;
@@ -783,7 +782,8 @@ transform_get_selection(struct transformation *this_, enum projection pro, int o
 			transform_from_geo(pro, &g, &curro->u.c_rect.rl);
 			dbg(lvl_debug,": - %f,%f", g.lat, g.lng);
 		}
-		dbg(lvl_debug,"transform rect for %d is %d,%d - %d,%d", pro, curro->u.c_rect.lu.x, curro->u.c_rect.lu.y, curro->u.c_rect.rl.x, curro->u.c_rect.rl.y);
+		dbg(lvl_debug,"transform rect for %d is %d,%d - %d,%d", pro, curro->u.c_rect.lu.x, curro->u.c_rect.lu.y,
+		    curro->u.c_rect.rl.x, curro->u.c_rect.rl.y);
 		curro->order+=order;
 #if 0
 		curro->u.c_rect.lu.x-=500;
@@ -946,7 +946,7 @@ transform_setup_source_rect(struct transformation *t)
 			struct coord_geo_cart tmp,cg[8];
 			struct coord c;
 			int valid=0;
-			unsigned char edgenodes[]={
+			unsigned char edgenodes[]= {
 				0,1,
 				1,2,
 				2,3,
@@ -958,7 +958,8 @@ transform_setup_source_rect(struct transformation *t)
 				0,4,
 				1,5,
 				2,6,
-				3,7};	
+				3,7
+			};
 			for (i = 0 ; i < 8 ; i++) {
 				transform_screen_to_3d(t, &screen_pnt[i%4], (i >= 4 ? t->zfar:t->znear), &tmp);
 				transform_apply_inverse_matrix(t, &tmp, &cg[i]);
@@ -993,7 +994,7 @@ transform_setup_source_rect(struct transformation *t)
 			msm->u.c_rect.lu.y=max4(screen[0].y,screen[1].y,screen[2].y,screen[3].y);
 		}
 		dbg(lvl_debug,"%dx%d", msm->u.c_rect.rl.x-msm->u.c_rect.lu.x,
-				 msm->u.c_rect.lu.y-msm->u.c_rect.rl.y);
+		    msm->u.c_rect.lu.y-msm->u.c_rect.rl.y);
 		*msm_last=msm;
 		msm_last=&msm->next;
 		ms=ms->next;
@@ -1033,7 +1034,7 @@ transform_distance_garmin(struct coord *c1, struct coord *c2)
 #ifdef USE_HALVESINE
 	static const int earth_radius = 6371*1000; //m change accordingly
 // static const int earth_radius  = 3960; //miles
- 
+
 //Point 1 cords
 	navit_float lat1  = GC2RAD(c1->y);
 	navit_float long1 = GC2RAD(c1->x);
@@ -1048,7 +1049,7 @@ transform_distance_garmin(struct coord *c1, struct coord *c2)
 
 	navit_float sinlat  = navit_sin(dlat/2);
 	navit_float sinlong = navit_sin(dlong/2);
- 
+
 	navit_float a=(sinlat*sinlat)+navit_cos(lat1)*navit_cos(lat2)*(sinlong*sinlong);
 	navit_float c=2*navit_asin(minf(1,navit_sqrt(a)));
 #ifdef AVOID_FLOAT
@@ -1079,10 +1080,10 @@ transform_scale(int y)
 
 #ifdef AVOID_FLOAT
 static int
-tab_sqrt[]={14142,13379,12806,12364,12018,11741,11517,11333,11180,11051,10943,10850,10770,10701,10640,10587,10540,10499,10462,10429,10400,10373,10349,10327,10307,10289,10273,10257,10243,10231,10219,10208};
+tab_sqrt[]= {14142,13379,12806,12364,12018,11741,11517,11333,11180,11051,10943,10850,10770,10701,10640,10587,10540,10499,10462,10429,10400,10373,10349,10327,10307,10289,10273,10257,10243,10231,10219,10208};
 
 static int tab_int_step = 0x20000;
-static int tab_int_scale[]={10000,10002,10008,10019,10033,10052,10076,10103,10135,10171,10212,10257,10306,10359,10417,10479,10546,10617,10693,10773,10858,10947,11041,11140,11243,11352,11465,11582,11705,11833,11965,12103,12246,12394,12547,12706,12870,13039,13214,13395,13581,13773,13971,14174,14384,14600,14822,15050,15285,15526,15774,16028,16289,16557,16832,17114,17404,17700,18005,18316,18636,18964,19299,19643,19995,20355,20724,21102,21489,21885,22290,22705,23129,23563,24007,24461,24926,25401,25886,26383,26891};
+static int tab_int_scale[]= {10000,10002,10008,10019,10033,10052,10076,10103,10135,10171,10212,10257,10306,10359,10417,10479,10546,10617,10693,10773,10858,10947,11041,11140,11243,11352,11465,11582,11705,11833,11965,12103,12246,12394,12547,12706,12870,13039,13214,13395,13581,13773,13971,14174,14384,14600,14822,15050,15285,15526,15774,16028,16289,16557,16832,17114,17404,17700,18005,18316,18636,18964,19299,19643,19995,20355,20724,21102,21489,21885,22290,22705,23129,23563,24007,24461,24926,25401,25886,26383,26891};
 
 int transform_int_scale(int y)
 {
@@ -1090,7 +1091,7 @@ int transform_int_scale(int y)
 	if (y < 0)
 		y=-y;
 	i=y/tab_int_step;
-	if (i < size-1) 
+	if (i < size-1)
 		return tab_int_scale[i]+((tab_int_scale[i+1]-tab_int_scale[i])*(y-i*tab_int_step))/tab_int_step;
 	return tab_int_scale[size-1];
 }
@@ -1100,39 +1101,39 @@ double
 transform_distance(enum projection pro, struct coord *c1, struct coord *c2)
 {
 	if (pro == projection_mg) {
-#ifndef AVOID_FLOAT 
-	double dx,dy,scale=transform_scale((c1->y+c2->y)/2);
-	dx=c1->x-c2->x;
-	dy=c1->y-c2->y;
-	return sqrt(dx*dx+dy*dy)/scale;
+#ifndef AVOID_FLOAT
+		double dx,dy,scale=transform_scale((c1->y+c2->y)/2);
+		dx=c1->x-c2->x;
+		dy=c1->y-c2->y;
+		return sqrt(dx*dx+dy*dy)/scale;
 #else
-	int dx,dy,f,scale=transform_int_scale((c1->y+c2->y)/2);
-	dx=c1->x-c2->x;
-	dy=c1->y-c2->y;
-	if (dx < 0)
-		dx=-dx;
-	if (dy < 0)
-		dy=-dy;
-	while (dx > 20000 || dy > 20000) {
-		dx/=10;
-		dy/=10;
-		scale/=10;
-	}
-	if (! dy)
-		return dx*10000/scale;
-	if (! dx)
-		return dy*10000/scale;
-	if (dx > dy) {
-		f=dx*8/dy-8;
-		if (f >= 32)
+		int dx,dy,f,scale=transform_int_scale((c1->y+c2->y)/2);
+		dx=c1->x-c2->x;
+		dy=c1->y-c2->y;
+		if (dx < 0)
+			dx=-dx;
+		if (dy < 0)
+			dy=-dy;
+		while (dx > 20000 || dy > 20000) {
+			dx/=10;
+			dy/=10;
+			scale/=10;
+		}
+		if (! dy)
 			return dx*10000/scale;
-		return dx*tab_sqrt[f]/scale;
-	} else {
-		f=dy*8/dx-8;
-		if (f >= 32)
+		if (! dx)
 			return dy*10000/scale;
-		return dy*tab_sqrt[f]/scale;
-	}
+		if (dx > dy) {
+			f=dx*8/dy-8;
+			if (f >= 32)
+				return dx*10000/scale;
+			return dx*tab_sqrt[f]/scale;
+		} else {
+			f=dy*8/dx-8;
+			if (f >= 32)
+				return dy*10000/scale;
+			return dy*tab_sqrt[f]/scale;
+		}
 #endif
 	} else if (pro == projection_garmin) {
 		return transform_distance_garmin(c1, c2);
@@ -1156,7 +1157,7 @@ transform_project(enum projection pro, struct coord *c, int distance, int angle,
 		dbg(lvl_error,"Unsupported projection: %d", pro);
 		return;
 	}
-	
+
 }
 
 
@@ -1166,13 +1167,14 @@ transform_polyline_length(enum projection pro, struct coord *c, int count)
 	double ret=0;
 	int i;
 
-	for (i = 0 ; i < count-1 ; i++) 
+	for (i = 0 ; i < count-1 ; i++)
 		ret+=transform_distance(pro, &c[i], &c[i+1]);
 	return ret;
 }
 
 static int
-transform_overflow_possible_if_squared(int count, ...) {
+transform_overflow_possible_if_squared(int count, ...)
+{
 	va_list ap;
 	int i, value, result = 0;
 
@@ -1219,8 +1221,10 @@ int
 transform_distance_sq_pc(struct pcoord *c1, struct pcoord *c2)
 {
 	struct coord p1,p2;
-	p1.x = c1->x; p1.y = c1->y;
-	p2.x = c2->x; p2.y = c2->y;
+	p1.x = c1->x;
+	p1.y = c1->y;
+	p2.x = c2->x;
+	p2.y = c2->y;
 	return transform_distance_sq(&p1, &p2);
 }
 
@@ -1398,7 +1402,7 @@ transform_print_deg(double deg)
 }
 
 #ifdef AVOID_FLOAT
-static int tab_atan[]={0,262,524,787,1051,1317,1584,1853,2126,2401,2679,2962,3249,3541,3839,4142,4452,4770,5095,5430,5774,6128,6494,6873,7265,7673,8098,8541,9004,9490,10000,10538};
+static int tab_atan[]= {0,262,524,787,1051,1317,1584,1853,2126,2401,2679,2962,3249,3541,3839,4142,4452,4770,5095,5430,5774,6128,6494,6873,7265,7673,8098,8541,9004,9490,10000,10538};
 
 static int
 atan2_int_lookup(int val)
@@ -1410,11 +1414,10 @@ atan2_int_lookup(int val)
 		i>>=1;
 		if (val < tab_atan[p])
 			p-=i;
+		else if (val < tab_atan[p+1])
+			return p+(p>>1);
 		else
-			if (val < tab_atan[p+1])
-				return p+(p>>1);
-			else
-				p+=i;
+			p+=i;
 	}
 }
 
@@ -1464,7 +1467,7 @@ transform_get_angle_delta(struct coord *c1, struct coord *c2, int dir)
 {
 	int dx=c2->x-c1->x;
 	int dy=c2->y-c1->y;
-#ifndef AVOID_FLOAT 
+#ifndef AVOID_FLOAT
 	double angle;
 	angle=atan2(dx,dy);
 	angle*=180/M_PI;
@@ -1486,7 +1489,7 @@ transform_within_border(struct transformation *this_, struct point *p, int borde
 	while (ms) {
 		struct point_rect *r=&ms->u.p_rect;
 		if (p->x >= r->lu.x+border && p->x <= r->rl.x-border &&
-		    p->y >= r->lu.y+border && p->y <= r->rl.y-border)
+		                p->y >= r->lu.y+border && p->y <= r->rl.y-border)
 			return 1;
 		ms=ms->next;
 	}
@@ -1504,9 +1507,9 @@ transform_within_dist_point(struct coord *ref, struct coord *c, int dist)
 		return 0;
 	if (c->y+dist < ref->y)
 		return 0;
-	if ((c->x-ref->x)*(c->x-ref->x) + (c->y-ref->y)*(c->y-ref->y) <= dist*dist) 
+	if ((c->x-ref->x)*(c->x-ref->x) + (c->y-ref->y)*(c->y-ref->y) <= dist*dist)
 		return 1;
-        return 0;
+	return 0;
 }
 
 int
@@ -1575,8 +1578,8 @@ transform_within_dist_polygon(struct coord *ref, struct coord *c, int count, int
 	int i, j, ci = 0;
 	for (i = 0, j = count-1; i < count; j = i++) {
 		if ((((c[i].y <= ref->y) && ( ref->y < c[j].y )) ||
-		((c[j].y <= ref->y) && ( ref->y < c[i].y))) &&
-		(ref->x < (c[j].x - c[i].x) * (ref->y - c[i].y) / (c[j].y - c[i].y) + c[i].x))
+		                ((c[j].y <= ref->y) && ( ref->y < c[i].y))) &&
+		                (ref->x < (c[j].x - c[i].x) * (ref->y - c[i].y) / (c[j].y - c[i].y) + c[i].x))
 			ci = !ci;
 	}
 	if (! ci) {
@@ -1626,7 +1629,7 @@ For the sphere
 E = r Lo
 N = r ln [ tan (pi/4 + L/2) ]
 
-where 
+where
 
 r = radius of the sphere (meters)
 ln() is the natural logarithm
@@ -1641,7 +1644,7 @@ N = a * ln ( tan (pi/4 + L/2) * ( (1 - e * sin (L)) / (1 + e * sin (L))) ** (e/2
                                                -
                    pi     L     1 - e sin(L)   2
     =  a ln( tan( ---- + ---) (--------------)   )
-                   4      2     1 + e sin(L) 
+                   4      2     1 + e sin(L)
 
 
 where

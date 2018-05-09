@@ -68,10 +68,12 @@ refresh_action(GtkWidget *w, struct gui_priv *gui, void *dummy)
 	navit_draw(gui->nav);
 }
 
-// Forward declarations, these should not be visible outside the GUI, so 
+// Forward declarations, these should not be visible outside the GUI, so
 // they are not in the header files, but here
-void gui_gtk_datawindow_set_button(struct datawindow_priv *this_, GtkWidget *btn);
-void gui_gtk_datawindow_destroy(struct datawindow_priv *win);
+void
+gui_gtk_datawindow_set_button(struct datawindow_priv *this_, GtkWidget *btn);
+void
+gui_gtk_datawindow_destroy(struct datawindow_priv *win);
 
 static void
 roadbook_action(GtkWidget *w, struct gui_priv *gui, void *dummy)
@@ -98,7 +100,7 @@ autozoom_action(GtkWidget *w, struct gui_priv *gui, void *dummy)
 	} else {
 		autozoom_attr.u.num = 1;
 	}
-	
+
 	navit_set_attr(gui->nav, &autozoom_attr);
 }
 
@@ -221,8 +223,7 @@ quit_action (GtkWidget *w, struct gui_priv *gui, void *dummy)
 	exit(0);
 }
 
-static GtkActionEntry entries[] =
-{
+static GtkActionEntry entries[] = {
 	/* TRANSLATORS: These texts are for menu items in GTK GUI. The _ indicates the mnemonic key (=underlined character) for this menu item. Please place the _ before a suitable character in the translation (or omit it if no mnemonic key is desired). */
 	{ "DisplayMenuAction", NULL, _n("_Display") },
 	{ "RouteMenuAction", NULL, _n("_Route") },
@@ -249,11 +250,10 @@ static GtkActionEntry entries[] =
 
 static guint n_entries = G_N_ELEMENTS (entries);
 
-static GtkToggleActionEntry toggleentries[] =
-{
+static GtkToggleActionEntry toggleentries[] = {
 	{ "CursorAction", "cursor_icon",_n("Show position _cursor"), NULL, NULL, G_CALLBACK(cursor_action),TRUE },
-	{ "TrackingAction", NULL ,_n("_Lock on Road"), NULL, NULL, G_CALLBACK(tracking_action),TRUE },
-	{ "FollowVehicleAction", NULL ,_n("_Follow Vehicle"), NULL, NULL, G_CALLBACK(follow_vehicle_action),TRUE },
+	{ "TrackingAction", NULL,_n("_Lock on Road"), NULL, NULL, G_CALLBACK(tracking_action),TRUE },
+	{ "FollowVehicleAction", NULL,_n("_Follow Vehicle"), NULL, NULL, G_CALLBACK(follow_vehicle_action),TRUE },
 	{ "OrientationAction", "orientation_icon", _n("_Keep orientation to the North"), NULL, _n("Switches map orientation to the north or the vehicle"), G_CALLBACK(orient_north_action),FALSE },
 	{ "RoadbookAction", GTK_STOCK_JUSTIFY_FILL, _n("_Roadbook"), "<control>B", _n("Show/hide route description"), G_CALLBACK(roadbook_action), FALSE },
 	{ "AutozoomAction", GTK_STOCK_ZOOM_FIT, _n("_Autozoom"), "<control>A", _n("Enable/disable automatic zoom level changing"), G_CALLBACK(autozoom_action), FALSE },
@@ -266,8 +266,7 @@ static GtkToggleActionEntry toggleentries[] =
 
 static guint n_toggleentries = G_N_ELEMENTS (toggleentries);
 
-static GtkActionEntry debug_entries[] =
-{
+static GtkActionEntry debug_entries[] = {
 	{ "DataMenuAction", NULL, _n("Data") },
 };
 
@@ -275,87 +274,90 @@ static guint n_debug_entries = G_N_ELEMENTS (debug_entries);
 
 
 static const char * cursor_xpm[] = {
-"22 22 2 1",
-" 	c None",
-".	c #0000FF",
-"                      ",
-"                      ",
-"                      ",
-"          ..          ",
-"        ..  ..        ",
-"      ..      ..      ",
-"     .          .     ",
-"     .          .     ",
-"    .        ... .    ",
-"    .     ... .  .    ",
-"   .   ...   .    .   ",
-"   . ..     .     .   ",
-"    .      .     .    ",
-"    .     .      .    ",
-"     .   .      .     ",
-"     .  .       .     ",
-"      ..      ..      ",
-"        ..  ..        ",
-"          ..          ",
-"                      ",
-"                      ",
-"                      "};
+	"22 22 2 1",
+	" 	c None",
+	".	c #0000FF",
+	"                      ",
+	"                      ",
+	"                      ",
+	"          ..          ",
+	"        ..  ..        ",
+	"      ..      ..      ",
+	"     .          .     ",
+	"     .          .     ",
+	"    .        ... .    ",
+	"    .     ... .  .    ",
+	"   .   ...   .    .   ",
+	"   . ..     .     .   ",
+	"    .      .     .    ",
+	"    .     .      .    ",
+	"     .   .      .     ",
+	"     .  .       .     ",
+	"      ..      ..      ",
+	"        ..  ..        ",
+	"          ..          ",
+	"                      ",
+	"                      ",
+	"                      "
+};
 
 
 static const char * north_xpm[] = {
-"22 22 2 1",
-" 	c None",
-".	c #000000",
-"                      ",
-"                      ",
-"           .          ",
-"          ...         ",
-"         . . .        ",
-"        .  .  .       ",
-"           .          ",
-"     ....  .  ....    ",
-"     ....  .  ....    ",
-"      .... .   ..     ",
-"      .. ..    ..     ",
-"      ..  ..   ..     ",
-"      ..   ..  ..     ",
-"      ..    .. ..     ",
-"      ..   . ....     ",
-"     ....  .  ....    ",
-"     ....  .  ....    ",
-"           .          ",
-"           .          ",
-"           .          ",
-"                      ",
-"                      "};
+	"22 22 2 1",
+	" 	c None",
+	".	c #000000",
+	"                      ",
+	"                      ",
+	"           .          ",
+	"          ...         ",
+	"         . . .        ",
+	"        .  .  .       ",
+	"           .          ",
+	"     ....  .  ....    ",
+	"     ....  .  ....    ",
+	"      .... .   ..     ",
+	"      .. ..    ..     ",
+	"      ..  ..   ..     ",
+	"      ..   ..  ..     ",
+	"      ..    .. ..     ",
+	"      ..   . ....     ",
+	"     ....  .  ....    ",
+	"     ....  .  ....    ",
+	"           .          ",
+	"           .          ",
+	"           .          ",
+	"                      ",
+	"                      "
+};
 
 
 static const char * flag_xpm[] = {
-"22 22 2 1",
-" 	c None",
-"+	c #000000",
-"+++++++               ",
-"+   +++++++++         ",
-"+   +++   +++++++++   ",
-"+   +++   +++   +++   ",
-"++++      +++   +++   ",
-"++++   +++      +++   ",
-"++++   +++   +++  +   ",
-"+   ++++++   +++  +   ",
-"+   +++   ++++++  +   ",
-"+   +++   +++   +++   ",
-"++++      +++   +++   ",
-"++++   +++      +++   ",
-"++++++++++   +++  +   ",
-"+      +++++++++  +   ",
-"+            ++++++   ",
-"+                     ",
-"+                     ",
-"+                     ",
-"+                     ",
-"+                     ",
-"+                     ",
-"+                     "};
+	"22 22 2 1",
+	" 	c None",
+	"+	c #000000",
+	"+++++++               ",
+	"+   +++++++++         ",
+	"+   +++   +++++++++   ",
+	"+   +++   +++   +++   ",
+	"++++      +++   +++   ",
+	"++++   +++      +++   ",
+	"++++   +++   +++  +   ",
+	"+   ++++++   +++  +   ",
+	"+   +++   ++++++  +   ",
+	"+   +++   +++   +++   ",
+	"++++      +++   +++   ",
+	"++++   +++      +++   ",
+	"++++++++++   +++  +   ",
+	"+      +++++++++  +   ",
+	"+            ++++++   ",
+	"+                     ",
+	"+                     ",
+	"+                     ",
+	"+                     ",
+	"+                     ",
+	"+                     ",
+	"+                     "
+};
 
 
 
@@ -382,8 +384,7 @@ register_my_stock_icons (void)
 
 	icon_factory = gtk_icon_factory_new ();
 
-	for (i = 0; i < n_stock_icons; i++)
-	{
+	for (i = 0; i < n_stock_icons; i++) {
 		pixbuf = gdk_pixbuf_new_from_xpm_data(stock_icons[i].icon_xpm);
 		icon_set = gtk_icon_set_new_from_pixbuf (pixbuf);
 		g_object_unref(pixbuf);
@@ -398,7 +399,7 @@ register_my_stock_icons (void)
 
 
 static char layout[] =
-	"<ui>\
+        "<ui>\
 		<menubar name=\"MenuBar\">\
 			<menu name=\"Display\" action=\"DisplayMenuAction\">\
 				<menuitem name=\"Zoom in\" action=\"ZoomInAction\" />\
@@ -495,7 +496,8 @@ add_menu(struct menu_priv *menu, struct menu_methods *meth, char *name, enum men
 			ret->handler_id=g_signal_connect(ret->action, "activate", G_CALLBACK(activate), ret);
 		gtk_action_group_add_action(menu->gui->dyn_group, ret->action);
 		ret->merge_id=gtk_ui_manager_new_merge_id(menu->gui->ui_manager);
-		gtk_ui_manager_add_ui( menu->gui->ui_manager, ret->merge_id, menu->path, dynname, dynname, type == menu_type_submenu ? GTK_UI_MANAGER_MENU : GTK_UI_MANAGER_MENUITEM, FALSE);
+		gtk_ui_manager_add_ui( menu->gui->ui_manager, ret->merge_id, menu->path, dynname, dynname,
+		                       type == menu_type_submenu ? GTK_UI_MANAGER_MENU : GTK_UI_MANAGER_MENUITEM, FALSE);
 	}
 	ret->gui=menu->gui;
 	ret->path=g_strdup_printf("%s/%s", menu->path, dynname);

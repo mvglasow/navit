@@ -54,8 +54,8 @@ struct map_priv {
 };
 
 struct map_rect_priv {
-        struct map_selection *sel;
-        struct map_priv *m;
+	struct map_selection *sel;
+	struct map_priv *m;
 	struct map_rect *parent;
 	struct item item,*parent_item;
 };
@@ -65,11 +65,11 @@ struct map_search_priv {
 };
 
 static enum item_type
-filter_type(struct map_priv *m, struct item *item)
-{
+filter_type(struct map_priv *m, struct item *item) {
 	GList *filters=m->filters;
 	struct filter_entry *entry;
-	while (filters) {
+	while (filters)
+	{
 		struct filter *filter=filters->data;
 		int pos=0,count=0;
 		GList *old,*new;
@@ -115,7 +115,7 @@ filter_type(struct map_priv *m, struct item *item)
 			new=filter->new;
 			while (new) {
 				struct filter_entry *entry=new->data;
-				if (pos <= entry->last-entry->first) 
+				if (pos <= entry->last-entry->first)
 					return entry->first+pos;
 				pos-=entry->last-entry->first+1;
 				new=g_list_next(new);
@@ -194,7 +194,7 @@ parse_filter(char *filter)
 				entry->cond_str=g_strdup(eq);
 			}
 		}
-		ret=g_list_append(ret, entry);	
+		ret=g_list_append(ret, entry);
 		if (!next)
 			break;
 		filter=next;
@@ -208,10 +208,10 @@ parse_filters(struct map_priv *m, char *filter)
 	char *filter_copy=g_strdup(filter);
 	char *str=filter_copy;
 
-	free_filters(m);	
+	free_filters(m);
 	for (;;) {
 		char *pos,*bracket,*eq,*next=strchr(str,';');
-		struct filter *filter=g_new0(struct filter, 1); 
+		struct filter *filter=g_new0(struct filter, 1);
 		if (next)
 			*next++='\0';
 		pos=str;
@@ -274,10 +274,10 @@ map_filter_attr_get(void *priv_data, enum attr_type attr_type, struct attr *attr
 }
 
 static struct item_methods methods_filter = {
-        map_filter_coord_rewind,
-        map_filter_coord_get,
-        map_filter_attr_rewind,
-        map_filter_attr_get,
+	map_filter_coord_rewind,
+	map_filter_coord_get,
+	map_filter_attr_rewind,
+	map_filter_attr_get,
 };
 
 static struct map_rect_priv *
@@ -301,7 +301,7 @@ static void
 map_filter_rect_destroy(struct map_rect_priv *mr)
 {
 	map_rect_destroy(mr->parent);
-        g_free(mr);
+	g_free(mr);
 }
 
 static struct item *
@@ -362,7 +362,7 @@ map_filter_set_attr(struct map_priv *m, struct attr *attr)
 	switch (attr->type) {
 	case attr_filter:
 		parse_filters(m,attr->u.str);
-		return 1;	
+		return 1;
 	default:
 		return 0;
 	}
@@ -391,7 +391,8 @@ static struct map_priv *
 map_filter_new(struct map_methods *meth, struct attr **attrs, struct callback_list *cbl)
 {
 	struct map_priv *m=NULL;
-	struct attr **parent_attrs,type,*subtype=attr_search(attrs, NULL, attr_subtype),*filter=attr_search(attrs, NULL, attr_filter);
+	struct attr **parent_attrs,type,*subtype=attr_search(attrs, NULL, attr_subtype),*filter=attr_search(attrs, NULL,
+	                attr_filter);
 	struct map *map;
 	int i,j;
 	if (! subtype || !filter)
@@ -408,7 +409,7 @@ map_filter_new(struct map_methods *meth, struct attr **attrs, struct callback_li
 				type=*attrs[i];
 				type.type = attr_type;
 				parent_attrs[j]=&type;
-			} else 
+			} else
 				parent_attrs[j]=attrs[i];
 			j++;
 		}

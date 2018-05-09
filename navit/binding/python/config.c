@@ -29,7 +29,7 @@ static PyObject *
 config_navit(PyObject *self, PyObject *args)
 {
 	struct attr navit;
-	if (config_get_attr(config, attr_navit, &navit, NULL)) 
+	if (config_get_attr(config, attr_navit, &navit, NULL))
 		return navit_py_ref(navit.u.navit);
 	return NULL;
 }
@@ -66,7 +66,7 @@ config_py(PyObject *self, PyObject *args)
 {
 	configObject *ret;
 
-	dbg(lvl_debug,"enter");	
+	dbg(lvl_debug,"enter");
 	ret=PyObject_NEW(configObject, &config_Type);
 	return (PyObject *)ret;
 }

@@ -60,12 +60,13 @@ struct vehicle_priv {
 	jclass NavitVehicleClass;  /**< The {@code NavitVehicle} class **/
 	jobject NavitVehicle;      /**< An instance of {@code NavitVehicle} **/
 	jclass LocationClass;      /**< Android's {@code Location} class **/
-	jmethodID Location_getLatitude, Location_getLongitude, Location_getSpeed, Location_getBearing, Location_getAltitude, Location_getTime, Location_getAccuracy;
+	jmethodID Location_getLatitude, Location_getLongitude, Location_getSpeed, Location_getBearing, Location_getAltitude,
+	          Location_getTime, Location_getAccuracy;
 };
 
 /**
  * @brief Free the android_vehicle
- * 
+ *
  * @param priv vehicle_priv structure for the vehicle
  * @returns nothing
  */
@@ -86,7 +87,7 @@ vehicle_android_destroy(struct vehicle_priv *priv)
  */
 static int
 vehicle_android_position_attr_get(struct vehicle_priv *priv,
-			       enum attr_type type, struct attr *attr)
+                                  enum attr_type type, struct attr *attr)
 {
 	dbg(lvl_debug,"enter %s",attr_to_name(type));
 	switch (type) {
@@ -144,7 +145,8 @@ struct vehicle_methods vehicle_android_methods = {
  * @param location A {@code Location} object describing the new position
  */
 static void
-vehicle_android_position_callback(struct vehicle_priv *v, jobject location) {
+vehicle_android_position_callback(struct vehicle_priv *v, jobject location)
+{
 	time_t tnow;
 	struct tm *tm;
 	dbg(lvl_debug,"enter");
@@ -181,7 +183,8 @@ vehicle_android_position_callback(struct vehicle_priv *v, jobject location) {
  * @param sats_used The number of satellites currently used to determine the position
  */
 static void
-vehicle_android_status_callback(struct vehicle_priv *v, int sats_in_view, int sats_used) {
+vehicle_android_status_callback(struct vehicle_priv *v, int sats_in_view, int sats_used)
+{
 	if (v->sats != sats_in_view) {
 		v->sats = sats_in_view;
 		callback_list_call_attr_0(v->cbl, attr_position_qual);
@@ -201,7 +204,8 @@ vehicle_android_status_callback(struct vehicle_priv *v, int sats_in_view, int sa
  * @param fix_type The fix type (1 = valid, 0 = invalid)
  */
 static void
-vehicle_android_fix_callback(struct vehicle_priv *v, int fix_type) {
+vehicle_android_fix_callback(struct vehicle_priv *v, int fix_type)
+{
 	if (v->fix_type != fix_type) {
 		v->fix_type = fix_type;
 		callback_list_call_attr_0(v->cbl, attr_position_fix_type);
@@ -223,36 +227,36 @@ vehicle_android_init(struct vehicle_priv *ret)
 	jmethodID cid;
 
 	if (!android_find_class_global("android/location/Location", &ret->LocationClass))
-                return 0;
+		return 0;
 	if (!android_find_method(ret->LocationClass, "getLatitude", "()D", &ret->Location_getLatitude))
-                return 0;
+		return 0;
 	if (!android_find_method(ret->LocationClass, "getLongitude", "()D", &ret->Location_getLongitude))
-                return 0;
+		return 0;
 	if (!android_find_method(ret->LocationClass, "getSpeed", "()F", &ret->Location_getSpeed))
-                return 0;
+		return 0;
 	if (!android_find_method(ret->LocationClass, "getBearing", "()F", &ret->Location_getBearing))
-                return 0;
+		return 0;
 	if (!android_find_method(ret->LocationClass, "getAltitude", "()D", &ret->Location_getAltitude))
-                return 0;
+		return 0;
 	if (!android_find_method(ret->LocationClass, "getTime", "()J", &ret->Location_getTime))
-                return 0;
+		return 0;
 	if (!android_find_method(ret->LocationClass, "getAccuracy", "()F", &ret->Location_getAccuracy))
-                return 0;
+		return 0;
 	if (!android_find_class_global("org/navitproject/navit/NavitVehicle", &ret->NavitVehicleClass))
-                return 0;
-        dbg(lvl_debug,"at 3");
-        cid = (*jnienv)->GetMethodID(jnienv, ret->NavitVehicleClass, "<init>", "(Landroid/content/Context;III)V");
-        if (cid == NULL) {
-                dbg(lvl_error,"no method found");
-                return 0; /* exception thrown */
-        }
-        dbg(lvl_debug, "at 4 android_activity=%p", android_activity);
-        ret->NavitVehicle=(*jnienv)->NewObject(jnienv, ret->NavitVehicleClass, cid, android_activity,
-                                                  (int) ret->pcb, (int) ret->scb, (int) ret->fcb);
-        dbg(lvl_debug,"result=%p",ret->NavitVehicle);
+		return 0;
+	dbg(lvl_debug,"at 3");
+	cid = (*jnienv)->GetMethodID(jnienv, ret->NavitVehicleClass, "<init>", "(Landroid/content/Context;III)V");
+	if (cid == NULL) {
+		dbg(lvl_error,"no method found");
+		return 0; /* exception thrown */
+	}
+	dbg(lvl_debug, "at 4 android_activity=%p", android_activity);
+	ret->NavitVehicle=(*jnienv)->NewObject(jnienv, ret->NavitVehicleClass, cid, android_activity,
+	                                       (int) ret->pcb, (int) ret->scb, (int) ret->fcb);
+	dbg(lvl_debug,"result=%p",ret->NavitVehicle);
 	if (!ret->NavitVehicle)
 		return 0;
-        if (ret->NavitVehicle)
+	if (ret->NavitVehicle)
 		ret->NavitVehicle = (*jnienv)->NewGlobalRef(jnienv, ret->NavitVehicle);
 
 	return 1;
@@ -260,7 +264,7 @@ vehicle_android_init(struct vehicle_priv *ret)
 
 /**
  * @brief Create android_vehicle
- * 
+ *
  * @param meth
  * @param cbl
  * @param attrs
@@ -268,8 +272,8 @@ vehicle_android_init(struct vehicle_priv *ret)
  */
 static struct vehicle_priv *
 vehicle_android_new_android(struct vehicle_methods *meth,
-	       		struct callback_list *cbl,
-		       	struct attr **attrs)
+                            struct callback_list *cbl,
+                            struct attr **attrs)
 {
 	struct vehicle_priv *ret;
 
@@ -290,7 +294,7 @@ vehicle_android_new_android(struct vehicle_methods *meth,
 
 /**
  * @brief register vehicle_android
- * 
+ *
  * @returns nothing
  */
 void

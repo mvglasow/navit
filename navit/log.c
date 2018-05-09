@@ -16,10 +16,10 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA  02110-1301, USA.
  */
- 
+
 /** @file log.c
  * @brief The log object.
- * 
+ *
  * This file implements everything needed for logging: the log object and its functions.
  *
  * @author Navit Team
@@ -76,7 +76,7 @@ struct log {
 	struct log_data trailer;
 };
 
-/** 
+/**
  * @brief Stores formatted time to a string.
  *
  * This function obtains local system time, formats it as specified in {@code fmt} and stores it in buffer.
@@ -98,14 +98,14 @@ strftime_localtime(char *buffer, int size, char *fmt)
 	strftime(buffer, size - 1, fmt, tm);
 }
 
-/** 
+/**
  * @brief Expands placeholders in a filename
  *
  * This function examines the {@code log->filename} and replaces any placeholders
  * found in it with date, time or an incremental number. If an incremental number is specified, the function
  * will ensure the filename is unique. The expanded filename will be stored {@code log->filename_ex2}.
  * The function uses {@code log->filename_ex1} to store the partly-expanded filename.
- * 
+ *
  * @param this_ The log object.
  */
 static void
@@ -128,11 +128,11 @@ expand_filenames(struct log *this_)
 #ifdef HAVE_API_ANDROID
 		pos[1]='i';
 #endif
-	} else 
+	} else
 		this_->filename_ex2=g_strdup(this_->filename_ex1);
 }
 
-/** 
+/**
  * @brief Sets the time at which the log buffer was last flushed.
  *
  * This function sets {@code log->last_flush} to current time.
@@ -147,7 +147,7 @@ log_set_last_flush(struct log *this_)
 #endif
 }
 
-/** 
+/**
  * @brief Opens a log file.
  *
  * This function opens the log file for {@code log}.
@@ -180,13 +180,13 @@ log_open(struct log *this_)
 		this_->f=fopen(this_->filename_ex2, "w");
 	if (! this_->f)
 		return;
-	if (!this_->overwrite) 
+	if (!this_->overwrite)
 		fseek(this_->f, 0, SEEK_END);
 	this_->empty = !ftell(this_->f);
 	log_set_last_flush(this_);
 }
 
-/** 
+/**
  * @brief Closes a log file.
  *
  * This function writes the trailer to a log file, flushes it and closes the log file for {@code log}.
@@ -198,14 +198,14 @@ log_close(struct log *this_)
 {
 	if (! this_->f)
 		return;
-	if (this_->trailer.len) 
+	if (this_->trailer.len)
 		fwrite(this_->trailer.data, 1, this_->trailer.len, this_->f);
 	fflush(this_->f);
 	fclose(this_->f);
 	this_->f=NULL;
 }
 
-/** 
+/**
  * @brief Flushes the buffer of a log.
  *
  * This function writes buffered log data to the log file associated with {@code log}
@@ -242,7 +242,7 @@ log_flush(struct log *this_, enum log_flags flags)
 	if (! this_->f)
 		return;
 	if (this_->empty) {
-		if (this_->header.len) 
+		if (this_->header.len)
 			fwrite(this_->header.data, 1, this_->header.len, this_->f);
 		if (this_->header.len || this_->data.len)
 			this_->empty=0;
@@ -258,7 +258,7 @@ log_flush(struct log *this_, enum log_flags flags)
 		pos=ftell(this_->f);
 		if (pos > 0) {
 			fwrite(this_->trailer.data, 1, this_->trailer.len, this_->f);
-			fseek(this_->f, pos, SEEK_SET);	
+			fseek(this_->f, pos, SEEK_SET);
 		}
 	}
 	if (flags & log_flag_keep_pointer)
@@ -272,7 +272,7 @@ log_flush(struct log *this_, enum log_flags flags)
 	log_set_last_flush(this_);
 }
 
-/** 
+/**
  * @brief Determines if the maximum buffer size of a log has been exceeded.
  *
  * This function examines the size of the data buffer to determine if it exceeds
@@ -287,7 +287,7 @@ log_flush_required(struct log *this_)
 	return this_->data.len > this_->flush_size;
 }
 
-/** 
+/**
  * @brief Rotates a log file.
  *
  * This function rotates a log by stopping and immediately restarting it.
@@ -315,7 +315,7 @@ log_change(struct log *this_)
 		log_open(this_);
 }
 
-/** 
+/**
  * @brief Determines if the log must be rotated.
  *
  * This function expands the date and time placeholders in {@code log->filename}
@@ -333,7 +333,7 @@ log_change_required(struct log *this_)
 	return (strcmp(this_->filename_ex1, buffer) != 0);
 }
 
-/** 
+/**
  * @brief Determines if the flush interval of a log has elapsed and flushes the buffer if needed.
  *
  * This function calculates the difference between current time and {@code log->last_flush}.
@@ -355,7 +355,7 @@ log_timer(struct log *this_)
 #endif
 }
 
-/** 
+/**
  * @brief Gets an attribute
  *
  * @param this_ The log object.
@@ -367,11 +367,11 @@ log_timer(struct log *this_)
 int
 log_get_attr(struct log *this_, enum attr_type type, struct attr *attr, struct attr_iter *iter)
 {
-        return attr_generic_get_attr(this_->attrs, NULL, type, attr, iter);
+	return attr_generic_get_attr(this_->attrs, NULL, type, attr, iter);
 }
 
 
-/** 
+/**
  * @brief Creates and initializes a new log object.
  *
  * @param parent The parent object.
@@ -431,7 +431,7 @@ log_new(struct attr * parent,struct attr **attrs)
 	return ret;
 }
 
-/** 
+/**
  * @brief Sets the header for a log file.
  *
  * This function sets the header, which is to be inserted into any log file before
@@ -449,7 +449,7 @@ log_set_header(struct log *this_, char *data, int len)
 	memcpy(this_->header.data, data, len);
 }
 
-/** 
+/**
  * @brief Sets the trailer for a log file.
  *
  * This function sets the trailer, which is to be added to any log file after
@@ -467,10 +467,10 @@ log_set_trailer(struct log *this_, char *data, int len)
 	memcpy(this_->trailer.data, data, len);
 }
 
-/** 
+/**
  * @brief Writes to a log.
  *
- * This function appends data to a log. It rotates the log, if needed, before 
+ * This function appends data to a log. It rotates the log, if needed, before
  * adding the new data. After adding, the log is flushed if the buffer exceeds
  * its maximum size or if the {@code log_flag_force_flush} flag is set.
  *
@@ -510,7 +510,7 @@ log_write(struct log *this_, char *data, int len, enum log_flags flags)
 		log_flush(this_, flags);
 }
 
-/** 
+/**
  * @brief Returns the data buffer of a log object and its length.
  *
  * @param this_ The log object.
@@ -527,7 +527,7 @@ log_get_buffer(struct log *this_, int *len)
 }
 
 
-/** 
+/**
  * @brief Writes a formatted string to a log.
  *
  * This function formats a string in a fashion similar to {@code printf()} and related functions
@@ -553,7 +553,7 @@ log_printf(struct log *this_, char *fmt, ...)
 	va_end(ap);
 }
 
-/** 
+/**
  * @brief Destroys a log object and frees up its memory.
  *
  * @param this_ The log object.

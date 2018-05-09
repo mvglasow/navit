@@ -61,7 +61,7 @@ struct layout * layout_new(struct attr *parent, struct attr **attrs)
 }
 
 struct attr_iter {
-        GList *last;
+	GList *last;
 };
 
 
@@ -198,8 +198,7 @@ cursor_new(struct attr *parent, struct attr **attrs)
 		r->min=sequence_range->u.range.min;
 		r->max=sequence_range->u.range.max;
 		this->sequence_range=r;
-	}
-	else {
+	} else {
 		this->sequence_range=NULL;
 	}
 	dbg(lvl_info,"ret=%p", this);
@@ -251,7 +250,7 @@ layer_set_attr_do(struct layer *l, struct attr *attr, int init)
 		navit_object_unref((struct navit_object *)l->ref);
 		l->ref=NULL;
 		obj=(struct navit_object *)l->navit;
-		if (obj==NULL){
+		if (obj==NULL) {
 			dbg(lvl_error, "Invalid layer reference '%s': Only layers inside a layout can use references.", attr->u.str);
 			return 0;
 		}
@@ -262,7 +261,7 @@ layer_set_attr_do(struct layer *l, struct attr *attr, int init)
 				break;
 			}
 		}
-		if (l->ref==NULL){
+		if (l->ref==NULL) {
 			dbg(lvl_error, "Ignoring reference to unknown layer '%s' in layer '%s'.", attr->u.str, l->name);
 		}
 		obj->func->iter_destroy(iter);
@@ -278,15 +277,15 @@ struct layer * layer_new(struct attr *parent, struct attr **attrs)
 	struct layer *l;
 
 	l = g_new0(struct layer, 1);
-	if (parent->type == attr_layout) 
+	if (parent->type == attr_layout)
 		l->navit=parent->u.layout->navit;
 	l->func=&layer_func;
 	navit_object_ref((struct navit_object *)l);
 	l->active=1;
-	for (;*attrs; attrs++) {
+	for (; *attrs; attrs++) {
 		layer_set_attr_do(l, *attrs, 1);
 	}
-	if (l->name==NULL){
+	if (l->name==NULL) {
 		dbg(lvl_error, "Ignoring layer without name.");
 		g_free(l);
 		return NULL;
@@ -349,7 +348,7 @@ struct itemgra * itemgra_new(struct attr *parent, struct attr **attrs)
 	struct attr *order, *item_types, *speed_range, *angle_range, *sequence_range;
 	enum item_type *type;
 	struct range defrange;
-	
+
 	itm = g_new0(struct itemgra, 1);
 	order=attr_search(attrs, NULL, attr_order);
 	item_types=attr_search(attrs, NULL, attr_item_types);
@@ -358,21 +357,21 @@ struct itemgra * itemgra_new(struct attr *parent, struct attr **attrs)
 	sequence_range=attr_search(attrs, NULL, attr_sequence_range);
 	defrange.min=0;
 	defrange.max=32767;
-	if (order) 
+	if (order)
 		itm->order=order->u.range;
-	else 
+	else
 		itm->order=defrange;
-	if (speed_range) 
+	if (speed_range)
 		itm->speed_range=speed_range->u.range;
-	else 
+	else
 		itm->speed_range=defrange;
-	if (angle_range) 
+	if (angle_range)
 		itm->angle_range=angle_range->u.range;
-	else 
+	else
 		itm->angle_range=defrange;
-	if (sequence_range) 
+	if (sequence_range)
 		itm->sequence_range=sequence_range->u.range;
-	else 
+	else
 		itm->sequence_range=defrange;
 	if (item_types) {
 		type=item_types->u.item_types;
@@ -508,7 +507,7 @@ struct polyline *
 polyline_new(struct attr *parent, struct attr **attrs)
 {
 	struct element *e;
-	
+
 	e = g_new0(struct element, 1);
 	e->type=element_polyline;
 	element_set_color(e, attrs);
@@ -545,7 +544,7 @@ text_new(struct attr *parent, struct attr **attrs)
 	struct element *e;
 	struct color color_black = {COLOR_BLACK_};
 	struct color color_white = {COLOR_WHITE_};
-	
+
 	e = g_new0(struct element, 1);
 	e->type=element_text;
 	element_set_text_size(e, attrs);
@@ -589,7 +588,7 @@ icon_new(struct attr *parent, struct attr **attrs)
 		e->u.icon.rotation=rotation->u.num;
 	strcpy(e->u.icon.src,src->u.str);
 
-	return (struct icon *)e;	
+	return (struct icon *)e;
 }
 
 struct image *
@@ -600,7 +599,7 @@ image_new(struct attr *parent, struct attr **attrs)
 	e = g_malloc0(sizeof(*e));
 	e->type=element_image;
 
-	return (struct image *)e;	
+	return (struct image *)e;
 }
 
 struct arrows *
@@ -610,7 +609,7 @@ arrows_new(struct attr *parent, struct attr **attrs)
 	e = g_malloc0(sizeof(*e));
 	e->type=element_arrows;
 	element_set_color(e, attrs);
-	return (struct arrows *)e;	
+	return (struct arrows *)e;
 }
 
 int

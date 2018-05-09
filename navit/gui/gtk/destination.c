@@ -72,18 +72,18 @@ static char *description(struct search_param *search, GtkTreeIter *iter)
 {
 	char *desc,*car,*postal,*town,*street;
 	char empty='\0';
-		
+
 	gtk_tree_model_get (GTK_TREE_MODEL (search->liststore2), iter, 0, &car, -1);
 	gtk_tree_model_get (GTK_TREE_MODEL (search->liststore2), iter, 1, &postal, -1);
 	gtk_tree_model_get (GTK_TREE_MODEL (search->liststore2), iter, 2, &town, -1);
 	gtk_tree_model_get (GTK_TREE_MODEL (search->liststore2), iter, 4, &street, -1);
-	
+
 	/* protect against nulls */
-    if (car==0) car=&empty;
-    if (postal==0) postal=&empty;    
-    if (town==0) town=&empty;
-    if (street==0) street=&empty;
-	
+	if (car==0) car=&empty;
+	if (postal==0) postal=&empty;
+	if (town==0) town=&empty;
+	if (street==0) street=&empty;
+
 	if (search->attr.type == attr_town_name)
 		desc=g_strdup_printf("%s-%s %s", car, postal, town);
 	else
@@ -148,7 +148,8 @@ static void set_columns(struct search_param *param, int mode)
 	g_list_free(columns_list);
 	while (*column_text) {
 		GtkCellRenderer *cell=gtk_cell_renderer_text_new();
-		gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (param->treeview),-1, navit_nls_gettext(*column_text), cell, "text", i, NULL);
+		gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (param->treeview),-1, navit_nls_gettext(*column_text), cell,
+		                "text", i, NULL);
 		i++;
 		column_text++;
 	}
@@ -199,7 +200,7 @@ static void tree_view_button_release(GtkWidget *widget, GdkEventButton *event, s
 	GtkTreeViewColumn *column;
 	gtk_tree_view_get_cursor(GTK_TREE_VIEW(search->treeview), &path, &column);
 	gtk_tree_view_row_activated(GTK_TREE_VIEW(search->treeview), path, column);
-	
+
 }
 static void
 next_focus(struct search_param *search, GtkWidget *widget)
@@ -210,7 +211,7 @@ next_focus(struct search_param *search, GtkWidget *widget)
 		gtk_widget_grab_focus(search->entry_street);
 	if (widget == search->entry_street)
 		gtk_widget_grab_focus(search->entry_number);
-		
+
 }
 
 static void changed(GtkWidget *widget, struct search_param *search)
@@ -245,7 +246,7 @@ static void changed(GtkWidget *widget, struct search_param *search)
 	if (widget == search->entry_street) {
 		dbg(lvl_debug,"street");
 		search->attr.type=attr_street_name;
-		// Searching for a street by just its first letter generates too many hits to be useful, 
+		// Searching for a street by just its first letter generates too many hits to be useful,
 		// plus it causes the GUI to become unresponsive because the search is single-threaded.
 		// So we only start searching once we have two letters.
 		if (strlen(search->attr.u.str) < 2)
@@ -286,40 +287,33 @@ static void changed(GtkWidget *widget, struct search_param *search)
 
 		}
 	}
-	
-	if(! search->partial)
-	{
-	    if( widget == search->entry_country )
-	    {
-		gtk_widget_set_sensitive(GTK_WIDGET(search->entry_city), TRUE);
-	    }
-	    if( widget == search->entry_city )
-	    {
-		gtk_widget_set_sensitive(GTK_WIDGET(search->entry_city), TRUE);
-		gtk_widget_set_sensitive(GTK_WIDGET(search->entry_street), TRUE);
-	    }
-	    if( widget == search->entry_street )
-	    {
-		gtk_widget_set_sensitive(GTK_WIDGET(search->entry_city), TRUE);
-		gtk_widget_set_sensitive(GTK_WIDGET(search->entry_street), TRUE);
-		gtk_widget_set_sensitive(GTK_WIDGET(search->entry_number), TRUE);
-	    }
+
+	if(! search->partial) {
+		if( widget == search->entry_country ) {
+			gtk_widget_set_sensitive(GTK_WIDGET(search->entry_city), TRUE);
+		}
+		if( widget == search->entry_city ) {
+			gtk_widget_set_sensitive(GTK_WIDGET(search->entry_city), TRUE);
+			gtk_widget_set_sensitive(GTK_WIDGET(search->entry_street), TRUE);
+		}
+		if( widget == search->entry_street ) {
+			gtk_widget_set_sensitive(GTK_WIDGET(search->entry_city), TRUE);
+			gtk_widget_set_sensitive(GTK_WIDGET(search->entry_street), TRUE);
+			gtk_widget_set_sensitive(GTK_WIDGET(search->entry_number), TRUE);
+		}
 	} else {
-	    if( widget == search->entry_country )
-	    {
-		gtk_widget_set_sensitive(GTK_WIDGET(search->entry_city), FALSE);
-		gtk_widget_set_sensitive(GTK_WIDGET(search->entry_street), FALSE);
-		gtk_widget_set_sensitive(GTK_WIDGET(search->entry_number), FALSE);
-	    }
-	    if( widget == search->entry_city )
-	    {
-		gtk_widget_set_sensitive(GTK_WIDGET(search->entry_street), FALSE);
-		gtk_widget_set_sensitive(GTK_WIDGET(search->entry_number), FALSE);
-	    }
-	    if( widget == search->entry_street )
-	    {
-		gtk_widget_set_sensitive(GTK_WIDGET(search->entry_number), FALSE);
-	    }
+		if( widget == search->entry_country ) {
+			gtk_widget_set_sensitive(GTK_WIDGET(search->entry_city), FALSE);
+			gtk_widget_set_sensitive(GTK_WIDGET(search->entry_street), FALSE);
+			gtk_widget_set_sensitive(GTK_WIDGET(search->entry_number), FALSE);
+		}
+		if( widget == search->entry_city ) {
+			gtk_widget_set_sensitive(GTK_WIDGET(search->entry_street), FALSE);
+			gtk_widget_set_sensitive(GTK_WIDGET(search->entry_number), FALSE);
+		}
+		if( widget == search->entry_street ) {
+			gtk_widget_set_sensitive(GTK_WIDGET(search->entry_number), FALSE);
+		}
 	}
 	if (! search->partial)
 		next_focus(search, widget);
@@ -339,17 +333,12 @@ parse_xkbd_args (const char *cmd, char **argv)
 	int nargs = 0;
 	int escape = 0, squote = 0, dquote = 0;
 
-	while (*p)
-	{
-		if (escape)
-		{
+	while (*p) {
+		if (escape) {
 			*bufp++ = *p;
-			 escape = 0;
-		}
-		else
-		{
-			switch (*p)
-			{
+			escape = 0;
+		} else {
+			switch (*p) {
 			case '\\':
 				escape = 1;
 				break;
@@ -366,11 +355,10 @@ parse_xkbd_args (const char *cmd, char **argv)
 					squote = !squote;
 				break;
 			case ' ':
-				if (!squote && !dquote)
-				{
+				if (!squote && !dquote) {
 					*bufp = 0;
 					if (nargs < MAX_ARGS)
-					argv[nargs++] = strdup (buf);
+						argv[nargs++] = strdup (buf);
 					bufp = buf;
 					break;
 				}
@@ -382,8 +370,7 @@ parse_xkbd_args (const char *cmd, char **argv)
 		p++;
 	}
 
-	if (bufp != buf)
-	{
+	if (bufp != buf) {
 		*bufp = 0;
 		if (nargs < MAX_ARGS)
 			argv[nargs++] = strdup (buf);
@@ -397,9 +384,9 @@ static int
 spawn_xkbd (char *xkbd_path, char *xkbd_str)
 {
 #ifdef _WIN32 // AF FIXME for WIN32
-    #ifndef F_SETFD
-        #define F_SETFD 2
-    #endif
+#ifndef F_SETFD
+#define F_SETFD 2
+#endif
 #else
 	char *xkbd_args[MAX_ARGS + 1];
 	int fd[2];
@@ -410,8 +397,7 @@ spawn_xkbd (char *xkbd_path, char *xkbd_str)
 
 	pipe (fd);
 	kbd_pid = fork ();
-	if (kbd_pid == 0)
-	{
+	if (kbd_pid == 0) {
 		close (fd[0]);
 		if (dup2 (fd[1], 1) < 0)
 			perror ("dup2");
@@ -431,14 +417,12 @@ spawn_xkbd (char *xkbd_path, char *xkbd_str)
 	close (fd[1]);
 	do {
 		n = read (fd[0], &c, 1);
-		if (n)
-		{
+		if (n) {
 			buf[a++] = c;
 		}
 	} while (n && (c != 10) && (a < (sizeof (buf) - 1)));
 
-	if (a)
-	{
+	if (a) {
 		buf[a] = 0;
 		return atoi (buf);
 	}
@@ -490,22 +474,22 @@ int destination_address(struct navit *nav)
 	search->entry_number = gtk_entry_new();
 	gtk_widget_set_sensitive(GTK_WIDGET(search->entry_number), FALSE);
 	label_number = gtk_label_new(_("Number"));
- 	search->treeview=gtk_tree_view_new();
+	search->treeview=gtk_tree_view_new();
 	search->listbox = gtk_scrolled_window_new (NULL, NULL);
-        gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (search->listbox),
-                        GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (search->listbox),
+	                                GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
 
 	gtk_tree_view_set_model (GTK_TREE_VIEW (search->treeview), NULL);
 	gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(search->listbox),search->treeview);
 	{
 		GType types[COL_COUNT+1];
-		for(i=0;i<COL_COUNT;i++)
+		for(i=0; i<COL_COUNT; i++)
 			types[i]=G_TYPE_STRING;
 		types[i]=G_TYPE_POINTER;
-                search->liststore=gtk_list_store_newv(COL_COUNT+1,types);
-                search->liststore2=gtk_tree_model_sort_new_with_model(GTK_TREE_MODEL(search->liststore));
+		search->liststore=gtk_list_store_newv(COL_COUNT+1,types);
+		search->liststore2=gtk_tree_model_sort_new_with_model(GTK_TREE_MODEL(search->liststore));
 		gtk_tree_sortable_set_sort_column_id (GTK_TREE_SORTABLE (search->liststore2), 3, GTK_SORT_ASCENDING);
-                gtk_tree_view_set_model (GTK_TREE_VIEW (search->treeview), GTK_TREE_MODEL(search->liststore2));
+		gtk_tree_view_set_model (GTK_TREE_VIEW (search->treeview), GTK_TREE_MODEL(search->liststore2));
 	}
 
 
@@ -531,7 +515,8 @@ int destination_address(struct navit *nav)
 	gtk_table_attach(GTK_TABLE(table), search->entry_street,   1, 2,  3, 4,  0, GTK_FILL, 0, 0);
 	gtk_table_attach(GTK_TABLE(table), search->entry_number,   2, 3,  3, 4,  0, GTK_FILL, 0, 0);
 
-	gtk_table_attach(GTK_TABLE(table), search->listbox,        0, 3,  4, 5,  GTK_FILL|GTK_EXPAND, GTK_FILL|GTK_EXPAND, 0, 0);
+	gtk_table_attach(GTK_TABLE(table), search->listbox,        0, 3,  4, 5,  GTK_FILL|GTK_EXPAND, GTK_FILL|GTK_EXPAND, 0,
+	                 0);
 
 	gtk_table_attach(GTK_TABLE(table), button1, 0, 1, 5, 6, GTK_FILL, GTK_FILL, 0, 0);
 	gtk_table_attach(GTK_TABLE(table), button2, 1, 2, 5, 6, GTK_FILL, GTK_FILL, 0, 0);

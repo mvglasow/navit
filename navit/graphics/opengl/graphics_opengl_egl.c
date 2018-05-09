@@ -69,7 +69,7 @@ graphics_opengl_egl_new(void *display, void *window, struct graphics_opengl_plat
 		goto error;
 	}
 	dbg(lvl_debug,"eglInitialize ok with version %d.%d",major,minor);
-    	eglBindAPI(EGL_OPENGL_ES_API);
+	eglBindAPI(EGL_OPENGL_ES_API);
 	if (!eglChooseConfig(ret->egldisplay, attributeList, ret->config, sizeof(ret->config)/sizeof(EGLConfig), &nconfig)) {
 		dbg(lvl_error, "eglChooseConfig failed");
 		goto error;

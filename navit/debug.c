@@ -109,10 +109,11 @@ debug_update_level(gpointer key, gpointer value, gpointer user_data)
 }
 
 void
-debug_set_global_level(dbg_level level, int override_old_value ) {
+debug_set_global_level(dbg_level level, int override_old_value )
+{
 	if (global_debug_level == GLOBAL_DEBUG_LEVEL_UNSET || override_old_value) {
 		global_debug_level=level;
-		if (max_debug_level < global_debug_level){
+		if (max_debug_level < global_debug_level) {
 			max_debug_level = global_debug_level;
 		}
 	}
@@ -143,22 +144,22 @@ static dbg_level
 parse_dbg_level(struct attr *dbg_level_attr, struct attr *level_attr)
 {
 	if (dbg_level_attr) {
-		if(!strcmp(dbg_level_attr->u.str,"error")){
+		if(!strcmp(dbg_level_attr->u.str,"error")) {
 			return lvl_error;
 		}
-		if(!strcmp(dbg_level_attr->u.str,"warning")){
+		if(!strcmp(dbg_level_attr->u.str,"warning")) {
 			return lvl_warning;
 		}
-		if(!strcmp(dbg_level_attr->u.str,"info")){
+		if(!strcmp(dbg_level_attr->u.str,"info")) {
 			return lvl_info;
 		}
-		if(!strcmp(dbg_level_attr->u.str,"debug")){
+		if(!strcmp(dbg_level_attr->u.str,"debug")) {
 			return lvl_debug;
 		}
 		dbg(lvl_error, "Invalid debug level in config: '%s'", dbg_level_attr->u.str);
 	} else if (level_attr) {
 		if (level_attr->u.num>= lvl_error &&
-		    level_attr->u.num<= lvl_debug)
+		                level_attr->u.num<= lvl_debug)
 			return level_attr->u.num;
 		dbg(lvl_error, "Invalid debug level in config: %ld", level_attr->u.num);
 	}
@@ -181,7 +182,7 @@ debug_new(struct attr *parent, struct attr **attrs)
 		if (!socket_attr)
 			return NULL;
 		s=g_strdup(socket_attr->u.str);
-        	p=strchr(s,':');
+		p=strchr(s,':');
 		if (!p) {
 			g_free(s);
 			return NULL;
@@ -192,11 +193,11 @@ debug_new(struct attr *parent, struct attr **attrs)
 			g_free(s);
 			return NULL;
 		}
-        	debug_sin.sin_port=ntohs(atoi(p));
-        	if (debug_socket == -1) 
-                	debug_socket=socket(PF_INET, SOCK_DGRAM, 0);
+		debug_sin.sin_port=ntohs(atoi(p));
+		if (debug_socket == -1)
+			debug_socket=socket(PF_INET, SOCK_DGRAM, 0);
 		g_free(s);
-		return (struct debug *)&dummy;	
+		return (struct debug *)&dummy;
 	}
 #endif
 	if (!name || level==lvl_unset)
@@ -236,27 +237,27 @@ static void debug_timestamp(char *buffer)
 		return;
 	/* Timestamps are UTC */
 	sprintf(buffer,
-		"%02d:%02d:%02d.%03d|",
-		(int)(tv.tv_sec/3600)%24,
-		(int)(tv.tv_sec/60)%60,
-		(int)tv.tv_sec % 60,
-		(int)tv.tv_usec/1000);
+	        "%02d:%02d:%02d.%03d|",
+	        (int)(tv.tv_sec/3600)%24,
+	        (int)(tv.tv_sec/60)%60,
+	        (int)tv.tv_sec % 60,
+	        (int)tv.tv_usec/1000);
 #endif
 }
 
 static char* dbg_level_to_string(dbg_level level)
 {
 	switch(level) {
-		case lvl_unset:
-			return "-unset-";
-		case lvl_error:
-			return "error";
-		case lvl_warning:
-			return "warning";
-		case lvl_info:
-			return "info";
-		case lvl_debug:
-			return "debug";
+	case lvl_unset:
+		return "-unset-";
+	case lvl_error:
+		return "error";
+	case lvl_warning:
+		return "warning";
+	case lvl_info:
+		return "info";
+	case lvl_debug:
+		return "debug";
 	}
 	return "-invalid level-";
 }
@@ -266,23 +267,24 @@ static android_LogPriority
 dbg_level_to_android(dbg_level level)
 {
 	switch(level) {
-		case lvl_unset:
-			return ANDROID_LOG_UNKNOWN;
-		case lvl_error:
-			return ANDROID_LOG_ERROR;
-		case lvl_warning:
-			return ANDROID_LOG_WARN;
-		case lvl_info:
-			return ANDROID_LOG_INFO;
-		case lvl_debug:
-			return ANDROID_LOG_DEBUG;
+	case lvl_unset:
+		return ANDROID_LOG_UNKNOWN;
+	case lvl_error:
+		return ANDROID_LOG_ERROR;
+	case lvl_warning:
+		return ANDROID_LOG_WARN;
+	case lvl_info:
+		return ANDROID_LOG_INFO;
+	case lvl_debug:
+		return ANDROID_LOG_DEBUG;
 	}
 	return ANDROID_LOG_UNKNOWN;
 }
 #endif
 
 void
-debug_vprintf(dbg_level level, const char *module, const int mlen, const char *function, const int flen, int prefix, const char *fmt, va_list ap)
+debug_vprintf(dbg_level level, const char *module, const int mlen, const char *function, const int flen, int prefix,
+              const char *fmt, va_list ap)
 {
 #if defined HAVE_API_WIN32_CE || defined _MSC_VER
 	char message_origin[4096];
@@ -315,7 +317,8 @@ debug_vprintf(dbg_level level, const char *module, const int mlen, const char *f
 #endif
 		if (strlen(debug_message)<sizeof(debug_message))
 			debug_message[strlen(debug_message)] = '\n';	/* Add \n at the end of the buffer (if any room) */
-		debug_message[sizeof(debug_message)-1] = '\0';	/* Force NUL-termination of the string (if buffer size contraints did not allow for full string to fit */
+		debug_message[sizeof(debug_message)-1] =
+		        '\0';	/* Force NUL-termination of the string (if buffer size contraints did not allow for full string to fit */
 #ifdef DEBUG_WIN32_CE_MESSAGEBOX
 		mbstowcs(muni, debug_message, strlen(debug_message)+1);
 		MessageBoxW(NULL, muni, TEXT("Navit - Error"), MB_APPLMODAL|MB_OK|MB_ICONERROR);
@@ -340,7 +343,8 @@ debug_vprintf(dbg_level level, const char *module, const int mlen, const char *f
 }
 
 void
-debug_printf(dbg_level level, const char *module, const int mlen,const char *function, const int flen, int prefix, const char *fmt, ...)
+debug_printf(dbg_level level, const char *module, const int mlen,const char *function, const int flen, int prefix,
+             const char *fmt, ...)
 {
 	va_list ap;
 	va_start(ap, fmt);
@@ -349,7 +353,8 @@ debug_printf(dbg_level level, const char *module, const int mlen,const char *fun
 }
 
 void
-debug_assert_fail(const char *module, const int mlen,const char *function, const int flen, const char *file, int line, const char *expr)
+debug_assert_fail(const char *module, const int mlen,const char *function, const int flen, const char *file, int line,
+                  const char *expr)
 {
 	debug_printf(lvl_error,module,mlen,function,flen,1,"%s:%d assertion failed:%s\n", file, line, expr);
 	abort();
@@ -426,7 +431,7 @@ debug_malloc(const char *where, int line, const char *func, int size)
 	head->prev=NULL;
 	head->next=malloc_heads;
 	malloc_heads=head;
-	if (head->next) 
+	if (head->next)
 		head->next->prev=head;
 	head->where=g_strdup_printf("%s:%d %s",where,line,func);
 #if !defined (__GNUC__)
@@ -468,7 +473,7 @@ debug_realloc(const char *where, int line, const char *func, void *ptr, int size
 
 char *
 debug_strdup(const char *where, int line, const char *func, const char *ptr)
-{ 
+{
 	int size;
 	char *ret;
 
@@ -492,7 +497,7 @@ void
 debug_free(const char *where, int line, const char *func, void *ptr)
 {
 	struct malloc_head *head;
-        struct malloc_tail *tail;
+	struct malloc_tail *tail;
 	if (!ptr)
 		return;
 	mallocs--;
@@ -504,7 +509,7 @@ debug_free(const char *where, int line, const char *func, void *ptr)
 	}
 	head->magic=0;
 	tail->magic=0;
-	if (head->prev) 
+	if (head->prev)
 		head->prev->next=head->next;
 	else
 		malloc_heads=head->next;
@@ -520,7 +525,8 @@ debug_free_func(void *ptr)
 	debug_free("unknown",0,"unknown",ptr);
 }
 
-void debug_finished(void) {
+void debug_finished(void)
+{
 	debug_dump_mallocs();
 	g_free(gdb_program);
 	g_hash_table_destroy(debug_hash);

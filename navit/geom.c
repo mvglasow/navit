@@ -29,8 +29,8 @@ geom_coord_copy(struct coord *from, struct coord *to, int count, int reverse)
 		return;
 	}
 	from+=count;
-	for (i = 0 ; i < count ; i++) 
-		*to++=*--from;	
+	for (i = 0 ; i < count ; i++)
+		*to++=*--from;
 }
 
 /**
@@ -50,7 +50,7 @@ geom_line_middle(struct coord *p, int count, struct coord *c)
 		*c=*p;
 		return 0;
 	}
-	
+
 	for (i=0; i<count-1; i++) {
 		length+=sqrt(sq(p[i].x-p[i+1].x)+sq(p[i].y-p[i+1].y));
 	}
@@ -98,7 +98,7 @@ geom_poly_area(struct coord *c, int count)
 			j=0;
 		area+=(long long)(c[i].x+c[j].x)*(c[i].y-c[j].y);
 	}
-  	return area/2;
+	return area/2;
 }
 
 /**
@@ -115,7 +115,7 @@ geom_poly_centroid(struct coord *p, int count, struct coord *c)
 	long long sx=0,sy=0,tmp;
 	int i,j;
 	long long x0=p[0].x, y0=p[0].y, xi, yi, xj, yj;
-	
+
 	/*fprintf(stderr,"area="LONGLONG_FMT"\n", area );*/
 	for (i=0,j=0; i<count; i++) {
 		if (++j == count)
@@ -141,7 +141,7 @@ geom_poly_centroid(struct coord *p, int count, struct coord *c)
   * Get coordinates of polyline point c most close to given point p.
   * @param in *pl array of polyline vertex coordinates
   * @param in count count of polyline vertexes
-  * @param in *p point coordinates 
+  * @param in *p point coordinates
   * @param out *c coordinates of polyline point most close to given point.
   * @returns first vertex number of polyline segment to which c belongs
   */
@@ -155,7 +155,7 @@ geom_poly_closest_point(struct coord *pl, int count, struct coord *p, struct coo
 		c->y=pl->y;
 		return 0;
 	}
-	for(i=0;i<count-1;i++) {
+	for(i=0; i<count-1; i++) {
 		xi=pl[i].x;
 		yi=pl[i].y;
 		xj=pl[i+1].x;
@@ -164,9 +164,9 @@ geom_poly_closest_point(struct coord *pl, int count, struct coord *p, struct coo
 		if(u!=0) {
 			u=((p->x-xi)*(xj-xi)+(p->y-yi)*(yj-yi))*1000/u;
 		}
-		if(u<0) 
+		if(u<0)
 			u=0;
-		else if (u>1000) 
+		else if (u>1000)
 			u=1000;
 		x=xi+u*(xj-xi)/1000;
 		y=yi+u*(yj-yi)/1000;
@@ -185,7 +185,7 @@ geom_poly_closest_point(struct coord *pl, int count, struct coord *p, struct coo
   * Check if point is inside polgone.
   * @param in *cp array of polygon vertex coordinates
   * @param in count count of polygon vertexes
-  * @param in *c point coordinates 
+  * @param in *c point coordinates
   * @returns 1 - inside, 0 - outside
   */
 int
@@ -195,7 +195,7 @@ geom_poly_point_inside(struct coord *cp, int count, struct coord *c)
 	struct coord *last=cp+count-1;
 	while (cp < last) {
 		if ((cp[0].y > c->y) != (cp[1].y > c->y) &&
-			c->x < ((long long)cp[1].x-cp[0].x)*(c->y-cp[0].y)/(cp[1].y-cp[0].y)+cp[0].x) {
+		                c->x < ((long long)cp[1].x-cp[0].x)*(c->y-cp[0].y)/(cp[1].y-cp[0].y)+cp[0].x) {
 			ret=!ret;
 		}
 		cp++;
@@ -206,7 +206,8 @@ geom_poly_point_inside(struct coord *cp, int count, struct coord *c)
 
 
 GList *
-geom_poly_segments_insert(GList *list, struct geom_poly_segment *first, struct geom_poly_segment *second, struct geom_poly_segment *third)
+geom_poly_segments_insert(GList *list, struct geom_poly_segment *first, struct geom_poly_segment *second,
+                          struct geom_poly_segment *third)
 {
 	int count;
 	struct geom_poly_segment *ret;
@@ -217,7 +218,7 @@ geom_poly_segments_insert(GList *list, struct geom_poly_segment *first, struct g
 	ret=g_new(struct geom_poly_segment, 1);
 	ret->type=second->type;
 	count=(second->last-second->first)+1;
-	if (first) 
+	if (first)
 		count+=(first->last-first->first);
 	if (third)
 		count+=(third->last-third->first);
@@ -237,7 +238,7 @@ geom_poly_segments_insert(GList *list, struct geom_poly_segment *first, struct g
 		geom_coord_copy(third->first, pos, count, coord_is_equal(*third->last, *second->last));
 		pos+=count;
 	}
-	ret->last=pos-1;	
+	ret->last=pos-1;
 	list=g_list_prepend(list, ret);
 	return list;
 }
@@ -280,10 +281,10 @@ geom_poly_segment_compatible(struct geom_poly_segment *s1, struct geom_poly_segm
 		opposite=1;
 	}
 	if (dir < 0) {
-		if ((opposite && coord_is_equal(*s1->first, *s2->first)) || (same && coord_is_equal(*s1->first, *s2->last))) 
+		if ((opposite && coord_is_equal(*s1->first, *s2->first)) || (same && coord_is_equal(*s1->first, *s2->last)))
 			return 1;
 	} else {
-		if ((opposite && coord_is_equal(*s1->last, *s2->last)) || (same && coord_is_equal(*s1->last, *s2->first))) 
+		if ((opposite && coord_is_equal(*s1->last, *s2->last)) || (same && coord_is_equal(*s1->last, *s2->first)))
 			return 1;
 	}
 	return 0;
@@ -299,7 +300,7 @@ geom_poly_segments_sort(GList *in, enum geom_poly_segment_type type)
 		GList *tmp=ret;
 		struct geom_poly_segment *merge_first=NULL,*merge_last=NULL;
 		while (tmp) {
-			struct geom_poly_segment *cseg=tmp->data;	
+			struct geom_poly_segment *cseg=tmp->data;
 			if (geom_poly_segment_compatible(seg, cseg, -1))
 				merge_first=cseg;
 			if (geom_poly_segment_compatible(seg, cseg, 1))
@@ -334,7 +335,7 @@ geom_poly_segments_point_inside(GList *in, struct coord *c)
 	while (in) {
 		struct geom_poly_segment *seg=in->data;
 		if (geom_poly_point_inside(seg->first, seg->last-seg->first+1, c)) {
-			if (coord_is_equal(*seg->first,*seg->last)) 
+			if (coord_is_equal(*seg->first,*seg->last))
 				closed_matches++;
 			else
 				open_matches++;

@@ -24,9 +24,11 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 
-public class NavitWatch implements Runnable {
+public class NavitWatch implements Runnable
+{
 	private Thread thread;
-	private static Handler handler =new Handler() {
+	private static Handler handler =new Handler()
+	{
 		public void handleMessage(Message m) {
 			Log.e("NavitWatch","Handler received message");
 		}
@@ -38,10 +40,12 @@ public class NavitWatch implements Runnable {
 	private int watch_callbackid;
 	private boolean callback_pending;
 	private Runnable callback_runnable;
-	public native void poll(int func, int fd, int cond);
-	public native void WatchCallback(int id);
+	public native void
+	poll(int func, int fd, int cond);
+	public native void
+	WatchCallback(int id);
 
-	NavitWatch(int func, int fd, int cond, int callbackid) 
+	NavitWatch(int func, int fd, int cond, int callbackid)
 	{
 		// Log.e("NavitWatch","Creating new thread for "+fd+" "+cond+" from current thread " + java.lang.Thread.currentThread().getName());
 		watch_func=func;
@@ -50,8 +54,7 @@ public class NavitWatch implements Runnable {
 		watch_callbackid=callbackid;
 		final NavitWatch navitwatch=this;
 		callback_runnable = new Runnable() {
-			public void run()
-			{
+			public void run() {
 				navitwatch.callback();
 			}
 		};
@@ -67,11 +70,11 @@ public class NavitWatch implements Runnable {
 			if (removed)
 				break;
 			callback_pending=true;
-			handler.post(callback_runnable);	
+			handler.post(callback_runnable);
 			try {
 				// Log.e("NavitWatch","wait");
 				synchronized(this) {
-					if (callback_pending) 
+					if (callback_pending)
 						this.wait();
 				}
 				// Log.e("NavitWatch","wait returned");

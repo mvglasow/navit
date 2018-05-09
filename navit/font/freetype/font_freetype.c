@@ -88,9 +88,9 @@ static int library_deinit = 0;
 
 static void
 font_freetype_get_text_bbox(struct graphics_priv *gr,
-			    struct font_freetype_font *font, char *text,
-			    int dx, int dy, struct point *ret,
-			    int estimate)
+                            struct font_freetype_font *font, char *text,
+                            int dx, int dy, struct point *ret,
+                            int estimate)
 {
 	char *p = text;
 	FT_BBox bbox;
@@ -194,7 +194,7 @@ font_freetype_get_text_bbox(struct graphics_priv *gr,
 
 static struct font_freetype_text *
 font_freetype_text_new(char *text, struct font_freetype_font *font, int dx,
-		       int dy)
+                       int dy)
 {
 	FT_Matrix matrix;
 	FT_Vector pen;
@@ -223,33 +223,33 @@ font_freetype_text_new(char *text, struct font_freetype_font *font, int dx,
 #endif
 
 #ifdef USE_FRIBIDI
-    // Need to use fribidi to handle the string properly
-    char visual_text[len*4+1];
-    {
-        FriBidiChar unicode_text[len+2];
-        FriBidiChar visual_unicode_text[len+2];
-        FriBidiStrIndex textlen =  strlen(text);
+	// Need to use fribidi to handle the string properly
+	char visual_text[len*4+1];
+	{
+		FriBidiChar unicode_text[len+2];
+		FriBidiChar visual_unicode_text[len+2];
+		FriBidiStrIndex textlen =  strlen(text);
 #ifdef FRIBIDIOLD
-        FriBidiCharType base = FRIBIDI_TYPE_LTR;
+		FriBidiCharType base = FRIBIDI_TYPE_LTR;
 #else
-        FriBidiParType base = FRIBIDI_PAR_LTR;
+		FriBidiParType base = FRIBIDI_PAR_LTR;
 #endif
 
-        FriBidiStrIndex unicode_len =
+		FriBidiStrIndex unicode_len =
 #ifdef FRIBIDIOLD
-			fribidi_utf8_to_unicode(text, textlen, unicode_text);
+		        fribidi_utf8_to_unicode(text, textlen, unicode_text);
 #else
-			fribidi_charset_to_unicode(FRIBIDI_CHAR_SET_UTF8, text, textlen, unicode_text);
+		        fribidi_charset_to_unicode(FRIBIDI_CHAR_SET_UTF8, text, textlen, unicode_text);
 #endif
-        fribidi_log2vis(unicode_text, unicode_len, &base, visual_unicode_text, NULL, NULL, NULL);
-        // TODO: check return value
+		fribidi_log2vis(unicode_text, unicode_len, &base, visual_unicode_text, NULL, NULL, NULL);
+		// TODO: check return value
 #ifdef FRIBIDIOLD
-        fribidi_unicode_to_utf8(visual_unicode_text, unicode_len, visual_text);
+		fribidi_unicode_to_utf8(visual_unicode_text, unicode_len, visual_text);
 #else
-        fribidi_unicode_to_charset(FRIBIDI_CHAR_SET_UTF8, visual_unicode_text, unicode_len, visual_text);
+		fribidi_unicode_to_charset(FRIBIDI_CHAR_SET_UTF8, visual_unicode_text, unicode_len, visual_text);
 #endif
-        p = visual_text;
-    }
+		p = visual_text;
+	}
 #endif /* USE_FRIBIDI */
 
 	for (n = 0; n < len; n++) {
@@ -364,11 +364,11 @@ static FT_Error face_requester( FTC_FaceID face_id, FT_Library library, FT_Point
 	dbg(lvl_debug,"new face %s %d", fontfile, atoi(fontindex));
 	ret = FT_New_Face( library, fontfile, atoi(fontindex), aface );
 	if(ret) {
-	       dbg(lvl_error,"Error while creating freetype face: %d", ret);
-	       return ret;
+		dbg(lvl_error,"Error while creating freetype face: %d", ret);
+		return ret;
 	}
 	if((ret = FT_Select_Charmap(*aface, FT_ENCODING_UNICODE))) {
-	       dbg(lvl_error,"Error while creating freetype face: %d", ret);
+		dbg(lvl_error,"Error while creating freetype face: %d", ret);
 	}
 	return 0;
 }
@@ -377,11 +377,11 @@ static FT_Error face_requester( FTC_FaceID face_id, FT_Library library, FT_Point
 /** Implementation of font_freetype_methods.font_new */
 static struct font_freetype_font *
 font_freetype_font_new(struct graphics_priv *gr,
-		       struct graphics_font_methods *meth,
-		       char *fontfamily, int size, int flags)
+                       struct graphics_font_methods *meth,
+                       char *fontfamily, int size, int flags)
 {
 	struct font_freetype_font *font =
-	    g_new(struct font_freetype_font, 1);
+	        g_new(struct font_freetype_font, 1);
 	int exact, found=0;
 	char **family, **family_sav;
 #if USE_CACHING
@@ -422,18 +422,18 @@ font_freetype_font_new(struct graphics_priv *gr,
 			dbg(lvl_info, "Looking for font family %s. exact=%d",
 			    *family, exact);
 			FcPattern *required =
-			    FcPatternBuild(NULL, FC_FAMILY, FcTypeString,
-					   *family, NULL);
+			        FcPatternBuild(NULL, FC_FAMILY, FcTypeString,
+			                       *family, NULL);
 			if (flags)
 				FcPatternAddInteger(required, FC_WEIGHT,
-						    FC_WEIGHT_BOLD);
+				                    FC_WEIGHT_BOLD);
 			FcConfigSubstitute(FcConfigGetCurrent(), required,
-					   FcMatchFont);
+			                   FcMatchFont);
 			FcDefaultSubstitute(required);
 			FcResult result;
 			FcPattern *matched =
-			    FcFontMatch(FcConfigGetCurrent(), required,
-					&result);
+			        FcFontMatch(FcConfigGetCurrent(), required,
+			                    &result);
 			if (matched) {
 				FcValue v1, v2;
 				FcChar8 *fontfile;
@@ -441,14 +441,14 @@ font_freetype_font_new(struct graphics_priv *gr,
 				FcPatternGet(required, FC_FAMILY, 0, &v1);
 				FcPatternGet(matched, FC_FAMILY, 0, &v2);
 				FcResult r1 =
-				    FcPatternGetString(matched, FC_FILE, 0,
-						       &fontfile);
+				        FcPatternGetString(matched, FC_FILE, 0,
+				                           &fontfile);
 				FcResult r2 =
-				    FcPatternGetInteger(matched, FC_INDEX,
-							0, &fontindex);
+				        FcPatternGetInteger(matched, FC_INDEX,
+				                            0, &fontindex);
 				if ((r1 == FcResultMatch)
-				    && (r2 == FcResultMatch)
-				    && (FcValueEqual(v1, v2) || !exact)) {
+				                && (r2 == FcResultMatch)
+				                && (FcValueEqual(v1, v2) || !exact)) {
 					dbg(lvl_info,
 					    "About to load font from file %s index %d",
 					    fontfile, fontindex);
@@ -471,9 +471,9 @@ font_freetype_font_new(struct graphics_priv *gr,
 					font->charmap_index=face->charmap ? FT_Get_Charmap_Index(face->charmap) : 0;
 #else /* USE_CACHING */
 					FT_New_Face(library,
-						    (char *) fontfile,
-						    fontindex,
-						    &font->face);
+					            (char *) fontfile,
+					            fontindex,
+					            &font->face);
 #endif /* USE_CACHING */
 					found = 1;
 				}
@@ -487,7 +487,7 @@ font_freetype_font_new(struct graphics_priv *gr,
 #else /* HAVE_FONTCONFIG */
 #ifdef FREETYPE_FONTS
 	{
-		char *fonts[]={FREETYPE_FONTS};
+		char *fonts[]= {FREETYPE_FONTS};
 		name=g_strdup(fonts[flags ? 1:0]);
 	}
 #else
@@ -535,7 +535,7 @@ font_freetype_font_new(struct graphics_priv *gr,
 /** Implementation of font_freetype_methods.get_shadow. */
 static int
 font_freetype_glyph_get_shadow(struct font_freetype_glyph *g,
-			       unsigned char *data, int stride, struct color *foreground, struct color *background)
+                               unsigned char *data, int stride, struct color *foreground, struct color *background)
 {
 	int x, y, w = g->w, h = g->h;
 	unsigned int bg, fg;
@@ -590,7 +590,7 @@ font_freetype_glyph_get_shadow(struct font_freetype_glyph *g,
 /** Implementation of font_freetype_methods.get_glyph. */
 static int
 font_freetype_glyph_get_glyph(struct font_freetype_glyph *g,
-			       unsigned char *data, int stride, struct color *fg, struct color *bg, struct color *transparent)
+                              unsigned char *data, int stride, struct color *fg, struct color *bg, struct color *transparent)
 {
 	int x, y, w = g->w, h = g->h;
 	unsigned int tr;
@@ -612,10 +612,10 @@ font_freetype_glyph_get_glyph(struct font_freetype_glyph *g,
 			if (v) {
 				vi=255-v;
 				((unsigned int *)ps)[0]=
-					((((fg->a*v+bg->a*vi)/255)>>COL_SHIFT)<<24)|
-					((((fg->r*v+bg->r*vi)/255)>>COL_SHIFT)<<16)|
-					((((fg->g*v+bg->g*vi)/255)>>COL_SHIFT)<<8)|
-					((((fg->b*v+bg->b*vi)/255)>>COL_SHIFT)<<0);
+				        ((((fg->a*v+bg->a*vi)/255)>>COL_SHIFT)<<24)|
+				        ((((fg->r*v+bg->r*vi)/255)>>COL_SHIFT)<<16)|
+				        ((((fg->g*v+bg->g*vi)/255)>>COL_SHIFT)<<8)|
+				        ((((fg->b*v+bg->b*vi)/255)>>COL_SHIFT)<<0);
 			} else
 				((unsigned int *)ps)[0]=tr;
 			ps+=4;
@@ -626,7 +626,8 @@ font_freetype_glyph_get_glyph(struct font_freetype_glyph *g,
 }
 
 static void
-font_freetype_destroy(void) {
+font_freetype_destroy(void)
+{
 	// Do not call FcFini here: GdkPixbuf also (indirectly) uses fontconfig (for SVGs with
 	// text), but does not properly deallocate all objects, so FcFini assert()s.
 	if (!library_deinit) {
@@ -645,7 +646,7 @@ static struct font_freetype_methods methods = {
 	font_freetype_text_new,
 	font_freetype_text_destroy,
 	font_freetype_glyph_get_shadow,
-	font_freetype_glyph_get_glyph,	
+	font_freetype_glyph_get_glyph,
 };
 
 static struct font_priv *

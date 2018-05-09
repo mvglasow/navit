@@ -63,5 +63,5 @@ tempfile_rename(char *suffix, char *from, char *to)
 	sprintf(buffer_from,"%s_%s.tmp",from,suffix);
 	sprintf(buffer_to,"%s_%s.tmp",to,suffix);
 	dbg_assert(rename(buffer_from, buffer_to) == 0);
-	
+
 }

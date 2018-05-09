@@ -66,7 +66,7 @@
 #define GDK_Calendar XF86XK_Calendar
 #endif
 #define KEY_ZOOM_IN GDK_Book
-#define KEY_ZOOM_OUT GDK_Calendar 
+#define KEY_ZOOM_OUT GDK_Calendar
 #define KEY_UP GDK_Up
 #define KEY_DOWN GDK_Down
 #define KEY_LEFT GDK_Left
@@ -78,10 +78,10 @@ keypress(GtkWidget *widget, GdkEventKey *event, struct gui_priv *this)
 {
 	int w,h;
 	struct transformation *t;
-	#ifdef USE_HILDON
+#ifdef USE_HILDON
 	GtkToggleAction *action;
 	gboolean *fullscreen;
-	#endif /*HILDON*/
+#endif /*HILDON*/
 	struct point p;
 	if (event->type != GDK_KEY_PRESS)
 		return FALSE;
@@ -157,8 +157,7 @@ keypress(GtkWidget *widget, GdkEventKey *event, struct gui_priv *this)
 		transform_set_hog(t, (transform_get_hog(t)-1));
 		navit_draw(this->nav);
 		break;
-	case 't':
-		{
+	case 't': {
 		struct coord *p;
 		struct pcoord pc;
 		t=navit_get_trans(this->nav);
@@ -169,10 +168,9 @@ keypress(GtkWidget *widget, GdkEventKey *event, struct gui_priv *this)
 		pc.x=p->x;
 		pc.y=p->y;
 		navit_set_center(this->nav, &pc, 1);
-		}
-		break;
-	case 'g':
-		{
+	}
+	break;
+	case 'g': {
 		struct coord *p;
 		struct pcoord pc;
 		t=navit_get_trans(this->nav);
@@ -183,21 +181,20 @@ keypress(GtkWidget *widget, GdkEventKey *event, struct gui_priv *this)
 		pc.x=p->x;
 		pc.y=p->y;
 		navit_set_center(this->nav, &pc, 1);
-		}
-		break;
-	#ifdef USE_HILDON
+	}
+	break;
+#ifdef USE_HILDON
 	case HILDON_HARDKEY_FULLSCREEN:
 		action = GTK_TOGGLE_ACTION (gtk_action_group_get_action (this->base_group, "FullscreenAction"));
-			
-		if ( gtk_toggle_action_get_active(GTK_TOGGLE_ACTION(action)))
-		{
+
+		if ( gtk_toggle_action_get_active(GTK_TOGGLE_ACTION(action))) {
 			fullscreen = 0;
 		} else  {
 			fullscreen = 1;
 		}
 		gtk_toggle_action_set_active (action, fullscreen);
 		break;
-	#endif /*HILDON*/
+#endif /*HILDON*/
 	default:
 		return FALSE;
 	}
@@ -222,8 +219,9 @@ gui_gtk_set_graphics(struct gui_priv *this, struct graphics *gra)
 	return 0;
 }
 
-static void 
-gui_gtk_route_callback(struct gui_priv *gui) {
+static void
+gui_gtk_route_callback(struct gui_priv *gui)
+{
 	struct attr route_attr;
 	GtkAction *roadbookAction=gtk_ui_manager_get_action (gui->ui_manager,"/ui/ToolBar/ToolItems/Roadbook");
 	if (roadbookAction) {
@@ -254,7 +252,7 @@ gui_gtk_add_bookmark(struct gui_priv *gui, struct pcoord *c, char *description)
 {
 	GtkWidget *button_ok,*button_cancel,*label,*vbox,*hbox;
 
-	gui->dialog_coord=*c;	
+	gui->dialog_coord=*c;
 	gui->dialog_win=gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	vbox=gtk_vbox_new(FALSE, 0);
 	gtk_container_add (GTK_CONTAINER (gui->dialog_win), vbox);
@@ -276,7 +274,8 @@ gui_gtk_add_bookmark(struct gui_priv *gui, struct pcoord *c, char *description)
 	gtk_widget_show_all(gui->dialog_win);
 	GTK_WIDGET_SET_FLAGS (button_ok, GTK_CAN_DEFAULT);
 	gtk_widget_grab_default(button_ok);
-	g_signal_connect_swapped (G_OBJECT (button_cancel), "clicked", G_CALLBACK (gtk_widget_destroy), G_OBJECT (gui->dialog_win));
+	g_signal_connect_swapped (G_OBJECT (button_cancel), "clicked", G_CALLBACK (gtk_widget_destroy),
+	                          G_OBJECT (gui->dialog_win));
 	g_signal_connect_swapped (G_OBJECT (gui->dialog_entry), "activate", G_CALLBACK (gui_gtk_add_bookmark_do), gui);
 
 	g_signal_connect_swapped(G_OBJECT (button_ok), "clicked", G_CALLBACK (gui_gtk_add_bookmark_do), gui);
@@ -371,7 +370,8 @@ gui_gtk_add_menu(struct gui_priv *this, char *name, char *label, char *path, int
 	gtk_action_group_add_action(this->dyn_group, action);
 	merge_id =gtk_ui_manager_new_merge_id(this->ui_manager);
 	meninfo.merge_id = merge_id;
-	gtk_ui_manager_add_ui(this->ui_manager, merge_id, path, name, name, submenu ? GTK_UI_MANAGER_MENU : GTK_UI_MANAGER_MENUITEM, FALSE);
+	gtk_ui_manager_add_ui(this->ui_manager, merge_id, path, name, name,
+	                      submenu ? GTK_UI_MANAGER_MENU : GTK_UI_MANAGER_MENUITEM, FALSE);
 
 	return meninfo;
 }
@@ -387,7 +387,8 @@ gui_gtk_action_toggled(GtkToggleAction *action, struct action_cb_data *data)
 }
 
 static void
-gui_gtk_add_toggle_menu(struct gui_priv *this, char *name, char *label, char *path, struct action_cb_data *data, gboolean active)
+gui_gtk_add_toggle_menu(struct gui_priv *this, char *name, char *label, char *path, struct action_cb_data *data,
+                        gboolean active)
 {
 	GtkToggleAction *toggle_action;
 	guint merge_id;
@@ -409,7 +410,8 @@ gui_gtk_action_changed(GtkRadioAction *action, GtkRadioAction *current, struct a
 }
 
 static struct gui_menu_info
-gui_gtk_add_radio_menu(struct gui_priv *this, char *name, char *label, char *path, struct action_cb_data *data, GSList **g)
+gui_gtk_add_radio_menu(struct gui_priv *this, char *name, char *label, char *path, struct action_cb_data *data,
+                       GSList **g)
 {
 	struct gui_menu_info meninfo;
 	GtkRadioAction *radio_action;
@@ -444,7 +446,8 @@ gui_gtk_layouts_init(struct gui_priv *this)
 		data->gui=this;
 		data->attr.type=attr_layout;
 		data->attr.u.layout=attr.u.layout;
-		gui_gtk_add_radio_menu(this, name, attr.u.layout->name, "/ui/MenuBar/Map/Layout/LayoutMenuAdditions", data, &this->layout_group);
+		gui_gtk_add_radio_menu(this, name, attr.u.layout->name, "/ui/MenuBar/Map/Layout/LayoutMenuAdditions", data,
+		                       &this->layout_group);
 		g_free(name);
 	}
 	navit_attr_iter_destroy(iter);
@@ -459,13 +462,15 @@ gui_gtk_projections_init(struct gui_priv *this)
 	data->gui=this;
 	data->attr.type=attr_projection;
 	data->attr.u.projection=projection_mg;
-	gui_gtk_add_radio_menu(this, "Projection mg", "Map & Guide", "/ui/MenuBar/Map/Projection/ProjectionMenuAdditions", data, &this->projection_group);
+	gui_gtk_add_radio_menu(this, "Projection mg", "Map & Guide", "/ui/MenuBar/Map/Projection/ProjectionMenuAdditions", data,
+	                       &this->projection_group);
 
 	data=g_new(struct action_cb_data, 1);
 	data->gui=this;
 	data->attr.type=attr_projection;
 	data->attr.u.projection=projection_garmin;
-	gui_gtk_add_radio_menu(this, "Projection garmin", "Garmin", "/ui/MenuBar/Map/Projection/ProjectionMenuAdditions", data, &this->projection_group);
+	gui_gtk_add_radio_menu(this, "Projection garmin", "Garmin", "/ui/MenuBar/Map/Projection/ProjectionMenuAdditions", data,
+	                       &this->projection_group);
 }
 
 static void
@@ -500,7 +505,8 @@ gui_gtk_vehicles_update(struct gui_priv *this)
 		data->attr.type=attr_vehicle;
 		data->attr.u.vehicle=attr.u.vehicle;
 		meninfo = g_new(struct gui_menu_info, 1);
-		*meninfo = gui_gtk_add_radio_menu(this, name, vattr.u.str, "/ui/MenuBar/Map/Vehicle/VehicleMenuAdditions", data, &this->vehicle_group);
+		*meninfo = gui_gtk_add_radio_menu(this, name, vattr.u.str, "/ui/MenuBar/Map/Vehicle/VehicleMenuAdditions", data,
+		                                  &this->vehicle_group);
 		this->vehicle_menuitems = g_list_prepend(this->vehicle_menuitems, meninfo);
 		g_free(name);
 	}
@@ -569,7 +575,8 @@ gui_gtk_destinations_update(struct gui_priv *this)
 	g_list_free(this->dest_menuitems);
 	this->dest_menuitems = NULL;
 
-	if(navit_get_attr(this->nav, attr_former_destination_map, &attr, NULL) && attr.u.map && (mr=map_rect_new(attr.u.map, NULL))) {
+	if(navit_get_attr(this->nav, attr_former_destination_map, &attr, NULL) && attr.u.map
+	                && (mr=map_rect_new(attr.u.map, NULL))) {
 		while ((item=map_rect_get_item(mr))) {
 			if (item->type != type_former_destination) continue;
 			name=g_strdup_printf("Destination %d", count++);
@@ -583,9 +590,10 @@ gui_gtk_destinations_update(struct gui_priv *this)
 			data->attr.u.pcoord->pro=projection_mg;
 			data->attr.u.pcoord->x=c.x;
 			data->attr.u.pcoord->y=c.y;
-			
+
 			meninfo = g_new(struct gui_menu_info, 1);
-			*meninfo = gui_gtk_add_menu(this, name, label, "/ui/MenuBar/Route/FormerDestinations/FormerDestinationMenuAdditions",0,data); 
+			*meninfo = gui_gtk_add_menu(this, name, label, "/ui/MenuBar/Route/FormerDestinations/FormerDestinationMenuAdditions",0,
+			                            data);
 			this->dest_menuitems = g_list_prepend(this->dest_menuitems, meninfo);
 			g_free(name);
 		}
@@ -677,7 +685,8 @@ gui_gtk_bookmarks_init(struct gui_priv *this)
 {
 	struct attr attr;
 	navit_get_attr(this->nav, attr_bookmarks, &attr, NULL);
-	bookmarks_add_callback(attr.u.bookmarks, callback_new_attr_1(callback_cast(gui_gtk_bookmarks_update), attr_bookmark_map, this));
+	bookmarks_add_callback(attr.u.bookmarks, callback_new_attr_1(callback_cast(gui_gtk_bookmarks_update), attr_bookmark_map,
+	                       this));
 	gui_gtk_bookmarks_update(this);
 }
 
@@ -699,13 +708,13 @@ gui_gtk_init(struct gui_priv *this, struct navit *nav)
 		struct attr callback;
 		callback.type=attr_callback;
 		callback.u.callback=callback_new_attr_1(callback_cast(gui_gtk_route_callback), attr_route_status, this);
-		route_add_attr(route_attr.u.route, &callback);	
+		route_add_attr(route_attr.u.route, &callback);
 	}
 	gui_gtk_route_callback(this); //Set initial state
 }
 
 static struct gui_priv *
-gui_gtk_new(struct navit *nav, struct gui_methods *meth, struct attr **attrs, struct gui *gui) 
+gui_gtk_new(struct navit *nav, struct gui_methods *meth, struct attr **attrs, struct gui *gui)
 {
 	struct gui_priv *this;
 	int w=792, h=547;
@@ -715,8 +724,8 @@ gui_gtk_new(struct navit *nav, struct gui_methods *meth, struct attr **attrs, st
 	GtkWidget *widget;
 	int fullscreen = 0;
 
-        if (! event_request_system("glib","gui_gtk_new"))
-                return NULL;
+	if (! event_request_system("glib","gui_gtk_new"))
+		return NULL;
 
 	if (cp) {
 		xid = strtol(cp, NULL, 0);
@@ -746,12 +755,12 @@ gui_gtk_new(struct navit *nav, struct gui_methods *meth, struct attr **attrs, st
 
 	*meth=gui_gtk_methods;
 
-	if (!xid) 
+	if (!xid)
 		this->win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	else
 		this->win = gtk_plug_new(xid);
 
-	
+
 	g_signal_connect(G_OBJECT(this->win), "delete-event", G_CALLBACK(gui_gtk_delete), nav);
 	this->vbox = gtk_vbox_new(FALSE, 0);
 	gtk_window_set_default_size(GTK_WINDOW(this->win), w, h);
@@ -776,13 +785,13 @@ gui_gtk_new(struct navit *nav, struct gui_methods *meth, struct attr **attrs, st
 		this->statusbar=gui_gtk_statusbar_new(this);
 	}
 	gtk_window_add_accel_group (GTK_WINDOW (this->win),
-	    gtk_ui_manager_get_accel_group(this->ui_manager));
+	                            gtk_ui_manager_get_accel_group(this->ui_manager));
 	gtk_container_add(GTK_CONTAINER(this->win), this->vbox);
 	gtk_widget_show_all(this->win);
 
 
 	navit_add_callback(nav, callback_new_attr_1(callback_cast(gui_gtk_init), attr_navit, this));
-	
+
 	if ((attr=attr_search(attrs, NULL, attr_fullscreen)))
 		fullscreen=attr->u.num;
 
@@ -796,7 +805,7 @@ gui_gtk_new(struct navit *nav, struct gui_methods *meth, struct attr **attrs, st
 }
 
 static int gtk_argc;
-static char **gtk_argv={NULL};
+static char **gtk_argv= {NULL};
 
 void
 plugin_init(void)

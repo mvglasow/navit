@@ -133,20 +133,21 @@ event_request_system(const char *system, const char *requestor)
 	void (*event_type_new)(struct event_methods *meth);
 	if (e_system) {
 		if (strcmp(e_system, system)) {
-			dbg(lvl_error,"system '%s' already requested by '%s', can't set to '%s' as requested from '%s'", e_system, e_requestor, system, requestor);
+			dbg(lvl_error,"system '%s' already requested by '%s', can't set to '%s' as requested from '%s'", e_system, e_requestor,
+			    system, requestor);
 			return 0;
 		}
 		return 1;
 	}
 	event_type_new=plugin_get_category_event(system);
-        if (! event_type_new) {
+	if (! event_type_new) {
 		dbg(lvl_error,"unsupported event system '%s' requested from '%s'", system, requestor);
-                return 0;
+		return 0;
 	}
 	event_type_new(&event_methods);
 	e_system=system;
 	e_requestor=requestor;
-	
+
 	return 1;
 }
 

@@ -69,28 +69,28 @@ gui_internal_search_idle_end(struct gui_priv *this)
 static int
 gui_internal_search_cmp(gconstpointer _a, gconstpointer _b)
 {
-  struct widget *a=(struct widget *)_a, *b=(struct widget *)_b;
-  char *sa,*sb;
-  int r;
-  if(!b)
-  if((!a || a->type!=widget_table_row || !a->text) && (!b || b->type!=widget_table_row || !b->text))
-  	return 0;
-  if(!a || a->type!=widget_table_row || !a->text)
-  	return -1;
-  if(!b || b->type!=widget_table_row || !b->text)
-  	return 1;
-  r=a->datai-b->datai;
-  if(r<0)
-  	return -1;
-  if(r>0)
-  	return 1;
-  sa=removecase(a->text);
-  sb=removecase(b->text);
-  r=strcmp(sa,sb);
-  dbg(lvl_debug,"%s %s %d",sa,sb,r);
-  g_free(sa);
-  g_free(sb);
-  return r;
+	struct widget *a=(struct widget *)_a, *b=(struct widget *)_b;
+	char *sa,*sb;
+	int r;
+	if(!b)
+		if((!a || a->type!=widget_table_row || !a->text) && (!b || b->type!=widget_table_row || !b->text))
+			return 0;
+	if(!a || a->type!=widget_table_row || !a->text)
+		return -1;
+	if(!b || b->type!=widget_table_row || !b->text)
+		return 1;
+	r=a->datai-b->datai;
+	if(r<0)
+		return -1;
+	if(r>0)
+		return 1;
+	sa=removecase(a->text);
+	sb=removecase(b->text);
+	r=strcmp(sa,sb);
+	dbg(lvl_debug,"%s %s %d",sa,sb,r);
+	g_free(sa);
+	g_free(sb);
+	return r;
 }
 
 static char *
@@ -141,7 +141,7 @@ district_str(struct search_list_result *res, int level, enum attr_type district,
 		return ret;
 
 	ret=get_string_from_attr_list(res->house_number->common.attrs, district, ret);
-	
+
 	return ret;
 }
 
@@ -156,7 +156,7 @@ town_display_label(struct search_list_result *res, int level, int flags)
 	char *district_end=")";
 	char *county_sep = ", ";
 	char *county = res->town->common.county_name;
-	
+
 	if (!postal)
 		postal_sep=postal="";
 	if (!district || (flags & 1))
@@ -167,8 +167,8 @@ town_display_label(struct search_list_result *res, int level, int flags)
 	if(level==1 ) {
 		if(flags & 2) {
 			int n=0;
-			char *s[10]={NULL};
-		
+			char *s[10]= {NULL};
+
 			s[n]=district_str(res, level, attr_state_name, NULL);
 			if(s[n])
 				n++;
@@ -184,7 +184,8 @@ town_display_label(struct search_list_result *res, int level, int flags)
 		county=county_sep="";
 	}
 
-	return g_strdup_printf("%s%s%s%s%s%s%s%s", postal, postal_sep, town, district_begin, district, district_end, county_sep, county);
+	return g_strdup_printf("%s%s%s%s%s%s%s%s", postal, postal_sep, town, district_begin, district, district_end, county_sep,
+	                       county);
 }
 
 static void
@@ -192,20 +193,20 @@ gui_internal_find_next_possible_key(char *search_text, char *wm_name, char *poss
 {
 	gchar* trunk_name;
 	if (item_name) {
-	
+
 		trunk_name = linguistics_expand_special(item_name,1);
-		if(!trunk_name){
+		if(!trunk_name) {
 			trunk_name = g_strrstr(item_name, search_text);
 		}
-		
+
 		if (trunk_name) {
 			int next_char_pos = strlen(search_text);
 			char next_char = trunk_name[next_char_pos];
 			int i;
 			int len = strlen(possible_keys);
-			
-			for(i = 0; (i<len) && (possible_keys[i] != next_char) ;i++) ;
-			
+
+			for(i = 0; (i<len) && (possible_keys[i] != next_char) ; i++) ;
+
 			if ((i==len || !len) && !strncmp(trunk_name, search_text, next_char_pos)) {
 				possible_keys[len]=trunk_name[next_char_pos];
 				possible_keys[len+1]='\0';
@@ -239,11 +240,11 @@ gui_internal_highlight_possible_keys(struct gui_priv *this, char *possible_keys)
 				// to have it set to NULL.
 				if (child_->data && strcmp("\b", child_->data) && child_->data_free) {
 					if ( (strlen(possible_keys) == 0) ||
-					     (g_strrstr(possible_keys, child_->data)!=NULL ) ) {
-						if(this->hide_keys){
+					                (g_strrstr(possible_keys, child_->data)!=NULL ) ) {
+						if(this->hide_keys) {
 							child_->state|= STATE_SENSITIVE|STATE_CLEAR ;
 							child_->state&= ~(STATE_INVISIBLE);
-						}else{
+						} else {
 							child_->state|= STATE_SENSITIVE|STATE_CLEAR|STATE_HIGHLIGHTED ;
 						}
 						// Select and highlight the first possible button.
@@ -252,10 +253,10 @@ gui_internal_highlight_possible_keys(struct gui_priv *this, char *possible_keys)
 							first_available_key_found=1;
 						}
 					} else {
-						if(this->hide_keys){
+						if(this->hide_keys) {
 							child_->state&= ~(STATE_SELECTED|STATE_SENSITIVE) ;
 							child_->state|= STATE_INVISIBLE;
-						}else{
+						} else {
 							child_->state&= ~(STATE_HIGHLIGHTED);
 						}
 					}
@@ -274,8 +275,9 @@ static int
 gui_internal_get_match_quality(char *item_name, char* search_text, int is_house_number_without_street)
 {
 	enum match_quality {
-		full_string_match, word_match, substring_match, housenum_but_no_street_match }
-		match_quality;
+		full_string_match, word_match, substring_match, housenum_but_no_street_match
+	}
+	match_quality;
 	if (is_house_number_without_street) {
 		match_quality=housenum_but_no_street_match;
 	} else if(item_name) {
@@ -284,7 +286,7 @@ gui_internal_get_match_quality(char *item_name, char* search_text, int is_house_
 		char *folded_query=linguistics_casefold(search_text);
 		match_quality=substring_match;
 
-		for(i=0; i<3 ;i++) {
+		for(i=0; i<3 ; i++) {
 			char *exp=linguistics_expand_special(folded_name,i);
 			char *p;
 			if(!exp)
@@ -311,14 +313,15 @@ gui_internal_get_match_quality(char *item_name, char* search_text, int is_house_
 }
 
 static struct widget*
-gui_internal_create_resultlist_entry(struct gui_priv *this, struct search_list_result *res, char *result_main_label, char *result_sublabel, void *param, char *widget_name, struct item *item)
+gui_internal_create_resultlist_entry(struct gui_priv *this, struct search_list_result *res, char *result_main_label,
+                                     char *result_sublabel, void *param, char *widget_name, struct item *item)
 {
 	struct widget *resultlist_entry;
 	if(result_sublabel) {
 		struct widget *entry_sublabel;
 		resultlist_entry=gui_internal_box_new(this, gravity_left_center|orientation_horizontal|flags_fill);
 		gui_internal_widget_append(resultlist_entry,
-				gui_internal_image_new(this, image_new_xs(this, res->country->flag)));
+		                           gui_internal_image_new(this, image_new_xs(this, res->country->flag)));
 		entry_sublabel=gui_internal_box_new(this, gravity_left_center|orientation_vertical|flags_fill);
 		gui_internal_widget_append(resultlist_entry, entry_sublabel);
 		gui_internal_widget_append(entry_sublabel, gui_internal_label_new(this, result_main_label));
@@ -329,9 +332,9 @@ gui_internal_create_resultlist_entry(struct gui_priv *this, struct search_list_r
 		resultlist_entry->speech=g_strdup(result_main_label);
 	} else {
 		resultlist_entry=gui_internal_button_new_with_callback(this, result_main_label,
-				image_new_xs(this, res->country->flag),
-				gravity_left_center|orientation_horizontal|flags_fill,
-				gui_internal_cmd_position, param);
+		                 image_new_xs(this, res->country->flag),
+		                 gravity_left_center|orientation_horizontal|flags_fill,
+		                 gui_internal_cmd_position, param);
 	}
 	resultlist_entry->name=widget_name;
 	if (res->c)
@@ -409,7 +412,7 @@ gui_internal_search_idle(struct gui_priv *this, char *wm_name, struct widget *se
 	gui_internal_widget_insert_sorted(search_list, resultlist_row, gui_internal_search_cmp);
 
 	resultlist_entry=gui_internal_create_resultlist_entry(
-			this, res, result_main_label, result_sublabel, param, widget_name, item);
+	                         this, res, result_main_label, result_sublabel, param, widget_name, item);
 	gui_internal_widget_append(resultlist_row, resultlist_entry);
 	gui_internal_widget_pack(this, search_list);
 	graphics_draw_mode(this->gra, draw_mode_begin);
@@ -503,11 +506,11 @@ gui_internal_search_list_set_default_country(struct gui_priv *this)
 	} else {
 		dbg(lvl_error,"warning: no default country found");
 		if (this->country_iso2) {
-		    dbg(lvl_debug,"attempting to use country '%s'",this->country_iso2);
-		    search_attr.type=attr_country_iso2;
-		    search_attr.u.str=this->country_iso2;
-            search_list_search(this->sl, &search_attr, 0);
-            while((res=search_list_get_result(this->sl)));
+			dbg(lvl_debug,"attempting to use country '%s'",this->country_iso2);
+			search_attr.type=attr_country_iso2;
+			search_attr.u.str=this->country_iso2;
+			search_list_search(this->sl, &search_attr, 0);
+			while((res=search_list_get_result(this->sl)));
 		}
 	}
 }
@@ -586,7 +589,8 @@ gui_internal_search(struct gui_priv *this, const char *what, const char *type, i
 		gui_internal_widget_append(we, wnext);
 		wnext->state |= STATE_SENSITIVE;
 	}
-	wl=gui_internal_widget_table_new(this,gravity_left_top | flags_fill | flags_expand |orientation_vertical,1);//gui_internal_box_new(this, gravity_left_top|orientation_vertical|flags_expand|flags_fill);
+	wl=gui_internal_widget_table_new(this,gravity_left_top | flags_fill | flags_expand |orientation_vertical,
+	                                 1);//gui_internal_box_new(this, gravity_left_top|orientation_vertical|flags_expand|flags_fill);
 	gui_internal_widget_append(wr, wl);
 	gui_internal_menu_data(this)->search_list=wl;
 	wk->state |= STATE_EDIT|STATE_EDITABLE;

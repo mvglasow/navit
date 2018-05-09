@@ -18,7 +18,7 @@
  */
 
 /** @file
- * 
+ *
  * @brief Contains code used for loading more than one map
  *
  * The code in this file introduces "mapsets", which are collections of several maps.
@@ -53,7 +53,7 @@ struct attr_iter {
 /**
  * @brief Creates a new, empty mapset
  *
- * @return The new mapset 
+ * @return The new mapset
  */
 struct mapset *mapset_new(struct attr *parent, struct attr **attrs)
 {
@@ -144,7 +144,7 @@ mapset_get_attr(struct mapset *ms, enum attr_type type, struct attr *attr, struc
 }
 
 /**
- * @brief Destroys a mapset. 
+ * @brief Destroys a mapset.
  *
  * This destroys a mapset. Please note that it does not touch the contained maps
  * in any way.
@@ -181,8 +181,7 @@ struct mapset_handle *
 mapset_open(struct mapset *ms)
 {
 	struct mapset_handle *ret=NULL;
-	if(ms)
-	{
+	if(ms) {
 		ret=g_new(struct mapset_handle, 1);
 		ret->l=ms->maps;
 	}
@@ -211,7 +210,7 @@ struct map * mapset_next(struct mapset_handle *msh, int active)
 		ret=msh->l->data;
 		msh->l=g_list_next(msh->l);
 		if (!active)
-			return ret;			
+			return ret;
 		if (active == 2 && map_get_attr(ret, attr_route_active, &active_attr, NULL)) {
 			if (active_attr.u.num)
 				return ret;
@@ -238,7 +237,7 @@ struct map * mapset_next(struct mapset_handle *msh, int active)
  * @param map_name the map name used by the search
  * @return The next map
  */
-struct map * 
+struct map *
 mapset_get_map_by_name(struct mapset *ms, const char*map_name)
 {
 	struct mapset_handle*msh;
@@ -265,7 +264,7 @@ mapset_get_map_by_name(struct mapset *ms, const char*map_name)
  *
  * @param msh Mapset handle to be closed
  */
-void 
+void
 mapset_close(struct mapset_handle *msh)
 {
 	g_free(msh);
@@ -274,7 +273,7 @@ mapset_close(struct mapset_handle *msh)
 /**
  * @brief Holds information about a search in a mapset
  *
- * This struct holds information about a search (e.g. for a street) in a mapset. 
+ * This struct holds information about a search (e.g. for a street) in a mapset.
  *
  * @sa For a more detailed description see the documentation of mapset_search_new().
  */
@@ -297,7 +296,7 @@ struct mapset_search {
  * strings - a search for a street named "street" would match to "streetfoo", but not to
  * "somestreet". Search is case insensitive.
  *
- * The item passed to this function specifies a "superior item" to "search within" - e.g. a town 
+ * The item passed to this function specifies a "superior item" to "search within" - e.g. a town
  * in which we want to search for a street, or a country in which to search for a town.
  *
  * @param ms The mapset that should be searched
@@ -312,16 +311,13 @@ mapset_search_new(struct mapset *ms, struct item *item, struct attr *search_attr
 	struct mapset_search *this;
 	dbg(lvl_debug,"enter(%p,%p,%p,%d)", ms, item, search_attr, partial);
 	this=g_new0(struct mapset_search,1);
-	if(this != NULL && ms!=NULL )
-        {
+	if(this != NULL && ms!=NULL ) {
 		this->mapset=ms;
 		this->item=item;
 		this->search_attr=search_attr;
 		this->partial=partial;
 		return this;
-	}
-	else
-	{
+	} else {
 		return NULL;
 	}
 }
@@ -343,18 +339,19 @@ mapset_search_get_item(struct mapset_search *this_)
 	struct attr active_attr;
 	int country_search=this_->search_attr->type >= attr_country_all && this_->search_attr->type <= attr_country_name;
 
-	while ((this_) && (this_->mapset) && (!this_->ms || !(ret=map_search_get_item(this_->ms)))) { /* The current map has no more items to be returned */
+	while ((this_) && (this_->mapset) && (!this_->ms
+	                                      || !(ret=map_search_get_item(this_->ms)))) { /* The current map has no more items to be returned */
 
 		/* Use only the first map from the mapset to search for country codes. */
 		if (this_->map && country_search)
 			break;
-			
+
 		for (;;) {
 			if (!this_->map)
 				this_->map=this_->mapset->maps;
 			else
 				this_->map=g_list_next(this_->map);
-			
+
 			if (!this_->map) {
 				/* No more maps left, mark this mapset_search as finished */
 				this_->mapset=NULL;
@@ -364,7 +361,7 @@ mapset_search_get_item(struct mapset_search *this_)
 			/* Any map can be used for country search, regardless of it's attr_active value */
 			if(country_search)
 				break;
-			
+
 			if (map_get_attr(this_->map->data, attr_search_active, &active_attr, NULL)) {
 				if (!active_attr.u.num)
 					continue;

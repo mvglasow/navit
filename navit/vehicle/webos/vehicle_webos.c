@@ -98,15 +98,15 @@ vehicle_webos_gps_update(struct vehicle_priv *priv, PDL_Location *location)
 		priv->geo.lat = location->latitude;
 		/* workaround for webOS GPS bug following */
 		priv->geo.lng = (priv->pdk_version >= 200 && location->longitude >= -1 && location->longitude <= 1) ?
-			-location->longitude : location->longitude;
+		                -location->longitude : location->longitude;
 
 		dbg(lvl_info,"Location: %f %f %f %.12g %.12g +-%fm",
-				location->altitude,
-				location->velocity,
-				location->heading,
-				priv->geo.lat,
-				priv->geo.lng,
-				location->horizontalAccuracy);
+		    location->altitude,
+		    location->velocity,
+		    location->heading,
+		    priv->geo.lat,
+		    priv->geo.lng,
+		    location->horizontalAccuracy);
 
 		if (location->altitude != -1)
 			priv->altitude = location->altitude;
@@ -170,17 +170,16 @@ vehicle_webos_open(struct vehicle_priv *priv)
 	if (priv->pdk_version <= 100) {
 		// Use Location Service via callback interface
 		err = PDL_ServiceCallWithCallback("palm://com.palm.location/startTracking",
-				"{subscribe:true}",
-				(PDL_ServiceCallbackFunc)vehicle_webos_callback,
-				priv,
-				PDL_FALSE);
+		                                  "{subscribe:true}",
+		                                  (PDL_ServiceCallbackFunc)vehicle_webos_callback,
+		                                  priv,
+		                                  PDL_FALSE);
 		if (err != PDL_NOERROR) {
 			dbg(lvl_error,"PDL_ServiceCallWithCallback failed with (%d): (%s)", err, PDL_GetError());
 			vehicle_webos_close(priv);
 			return 0;
 		}
-	}
-	else {
+	} else {
 		PDL_Err err;
 		err = PDL_EnableLocationTracking(PDL_TRUE);
 		if (err != PDL_NOERROR) {
@@ -188,7 +187,7 @@ vehicle_webos_open(struct vehicle_priv *priv)
 //			vehicle_webos_close(priv);
 //			return 0;
 		}
-		
+
 		priv->gps_type = GPS_TYPE_INT;
 
 		if(!vehicle_webos_bt_open(priv))
@@ -210,111 +209,109 @@ vehicle_webos_destroy(struct vehicle_priv *priv)
 
 static int
 vehicle_webos_position_attr_get(struct vehicle_priv *priv,
-		enum attr_type type, struct attr *attr)
+                                enum attr_type type, struct attr *attr)
 {
 	switch (type) {
-		case attr_position_height:
-			dbg(lvl_info,"Altitude: %f", priv->altitude);
-			attr->u.numd = &priv->altitude;
-			break;
-		case attr_position_speed:
-			dbg(lvl_info,"Speed: %f", priv->speed);
-			attr->u.numd = &priv->speed;
-			break;
-		case attr_position_direction:
-			dbg(lvl_info,"Direction: %f", priv->track);
-			attr->u.numd = &priv->track;
-			break;
-		case attr_position_magnetic_direction:
-			switch (priv->gps_type) {
-				case GPS_TYPE_BT:
-					attr->u.num = priv->magnetic_direction;
-					break;
-				default:
-					return 0;
-					break;
-			}
-			break;
-		case attr_position_hdop:
-			switch (priv->gps_type) {
-				case GPS_TYPE_BT:
-					attr->u.numd = &priv->hdop;
-					break;
-				default:
-					return 0;
-					break;
-			}
-			break;
-		case attr_position_coord_geo:
-			dbg(lvl_info,"Coord: %.12g %.12g", priv->geo.lat, priv->geo.lng);
-			attr->u.coord_geo = &priv->geo;
-			break;
-		case attr_position_radius:
-			dbg(lvl_info,"Radius: %f", priv->radius);
-			attr->u.numd = &priv->radius;
-			break;
-		case attr_position_time_iso8601:
-			if (priv->fix_time) {
-				struct tm tm;
-				if (gmtime_r(&priv->fix_time, &tm)) {
-					strftime(priv->fixiso8601, sizeof(priv->fixiso8601),
-							"%Y-%m-%dT%TZ", &tm);
-					attr->u.str=priv->fixiso8601;
-				}
-				else {
-					priv->fix_time = 0;
-					return 0;
-				}
-				dbg(lvl_info,"Fix Time: %d %s", priv->fix_time, priv->fixiso8601);
-			}
-			else {
-				dbg(lvl_info,"Fix Time: %d", priv->fix_time);
-				return 0;
-			}
-
-			break;
-		case attr_position_fix_type:
-			switch (priv->gps_type) {
-				case GPS_TYPE_INT:
-					if (priv->delta <= 0 || priv->radius == 0.0)
-						attr->u.num = 0;	// strength = 1
-					else if (priv->radius > 20.0)
-						attr->u.num = 1;	// strength >= 2
-					else
-						attr->u.num = 2;	// strength >= 2
-					break;
-				case GPS_TYPE_BT:
-					attr->u.num = priv->status;
-					break;
-				default:
-					return 0;
-					break;
-			}
-			break;
-		case attr_position_sats_used:
-			switch (priv->gps_type) {
-				case GPS_TYPE_INT:
-					if (priv->delta <= 0)
-						attr->u.num = 0;
-					else if (priv->radius <= 6.0 )
-						attr->u.num = 6;	// strength = 5
-					else if (priv->radius <= 10.0 )
-						attr->u.num = 5;	// strength = 4
-					else if (priv->radius <= 15.0 )
-						attr->u.num = 4;	// strength = 3
-					else
-						return 0;
-					break;
-				case GPS_TYPE_BT:
-					attr->u.num = priv->sats_used;
-					break;
-				default:
-					return 0;
-					break;
-			}
+	case attr_position_height:
+		dbg(lvl_info,"Altitude: %f", priv->altitude);
+		attr->u.numd = &priv->altitude;
+		break;
+	case attr_position_speed:
+		dbg(lvl_info,"Speed: %f", priv->speed);
+		attr->u.numd = &priv->speed;
+		break;
+	case attr_position_direction:
+		dbg(lvl_info,"Direction: %f", priv->track);
+		attr->u.numd = &priv->track;
+		break;
+	case attr_position_magnetic_direction:
+		switch (priv->gps_type) {
+		case GPS_TYPE_BT:
+			attr->u.num = priv->magnetic_direction;
 			break;
 		default:
 			return 0;
+			break;
+		}
+		break;
+	case attr_position_hdop:
+		switch (priv->gps_type) {
+		case GPS_TYPE_BT:
+			attr->u.numd = &priv->hdop;
+			break;
+		default:
+			return 0;
+			break;
+		}
+		break;
+	case attr_position_coord_geo:
+		dbg(lvl_info,"Coord: %.12g %.12g", priv->geo.lat, priv->geo.lng);
+		attr->u.coord_geo = &priv->geo;
+		break;
+	case attr_position_radius:
+		dbg(lvl_info,"Radius: %f", priv->radius);
+		attr->u.numd = &priv->radius;
+		break;
+	case attr_position_time_iso8601:
+		if (priv->fix_time) {
+			struct tm tm;
+			if (gmtime_r(&priv->fix_time, &tm)) {
+				strftime(priv->fixiso8601, sizeof(priv->fixiso8601),
+				         "%Y-%m-%dT%TZ", &tm);
+				attr->u.str=priv->fixiso8601;
+			} else {
+				priv->fix_time = 0;
+				return 0;
+			}
+			dbg(lvl_info,"Fix Time: %d %s", priv->fix_time, priv->fixiso8601);
+		} else {
+			dbg(lvl_info,"Fix Time: %d", priv->fix_time);
+			return 0;
+		}
+
+		break;
+	case attr_position_fix_type:
+		switch (priv->gps_type) {
+		case GPS_TYPE_INT:
+			if (priv->delta <= 0 || priv->radius == 0.0)
+				attr->u.num = 0;	// strength = 1
+			else if (priv->radius > 20.0)
+				attr->u.num = 1;	// strength >= 2
+			else
+				attr->u.num = 2;	// strength >= 2
+			break;
+		case GPS_TYPE_BT:
+			attr->u.num = priv->status;
+			break;
+		default:
+			return 0;
+			break;
+		}
+		break;
+	case attr_position_sats_used:
+		switch (priv->gps_type) {
+		case GPS_TYPE_INT:
+			if (priv->delta <= 0)
+				attr->u.num = 0;
+			else if (priv->radius <= 6.0 )
+				attr->u.num = 6;	// strength = 5
+			else if (priv->radius <= 10.0 )
+				attr->u.num = 5;	// strength = 4
+			else if (priv->radius <= 15.0 )
+				attr->u.num = 4;	// strength = 3
+			else
+				return 0;
+			break;
+		case GPS_TYPE_BT:
+			attr->u.num = priv->sats_used;
+			break;
+		default:
+			return 0;
+			break;
+		}
+		break;
+	default:
+		return 0;
 	}
 	attr->type = type;
 	return 1;
@@ -324,28 +321,28 @@ static int
 vehicle_webos_set_attr_do(struct vehicle_priv *priv, struct attr *attr, int init)
 {
 	switch (attr->type) {
-		case attr_source:
-			if (strncmp(vehicle_webos_prefix,attr->u.str,strlen(vehicle_webos_prefix))) {
-				dbg(lvl_warning,"source must start with '%s'", vehicle_webos_prefix);
-				return 0;
-			}
-			g_free(priv->source);
-			priv->source=g_strdup(attr->u.str);
-			priv->address=priv->source+strlen(vehicle_webos_prefix);
-			if (!priv->address[0])
-				priv->address=NULL;
-			if (!init) {
-				vehicle_webos_close(priv);
-				vehicle_webos_open(priv);
-			}
-			return 1;
-		case attr_profilename:
-			return 1;
-		case attr_pdl_gps_update:
-			vehicle_webos_gps_update(priv, (PDL_Location *)attr->u.data);
-			return 1;
-		default:
+	case attr_source:
+		if (strncmp(vehicle_webos_prefix,attr->u.str,strlen(vehicle_webos_prefix))) {
+			dbg(lvl_warning,"source must start with '%s'", vehicle_webos_prefix);
 			return 0;
+		}
+		g_free(priv->source);
+		priv->source=g_strdup(attr->u.str);
+		priv->address=priv->source+strlen(vehicle_webos_prefix);
+		if (!priv->address[0])
+			priv->address=NULL;
+		if (!init) {
+			vehicle_webos_close(priv);
+			vehicle_webos_open(priv);
+		}
+		return 1;
+	case attr_profilename:
+		return 1;
+	case attr_pdl_gps_update:
+		vehicle_webos_gps_update(priv, (PDL_Location *)attr->u.data);
+		return 1;
+	default:
+		return 0;
 	}
 }
 
@@ -363,8 +360,8 @@ struct vehicle_methods vehicle_webos_methods = {
 
 static struct vehicle_priv *
 vehicle_webos_new(struct vehicle_methods
-		*meth, struct callback_list
-		*cbl, struct attr **attrs)
+                  *meth, struct callback_list
+                  *cbl, struct attr **attrs)
 {
 	struct vehicle_priv *priv;
 

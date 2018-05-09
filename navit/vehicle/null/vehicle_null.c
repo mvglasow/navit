@@ -60,7 +60,7 @@ struct vehicle_priv {
 
 /**
  * @brief Free the null_vehicle
- * 
+ *
  * @param priv
  * @returns nothing
  */
@@ -73,7 +73,7 @@ vehicle_null_destroy(struct vehicle_priv *priv)
 
 /**
  * @brief Provide the outside with information
- * 
+ *
  * @param priv
  * @param type TODO: What can this be?
  * @param attr
@@ -81,7 +81,7 @@ vehicle_null_destroy(struct vehicle_priv *priv)
  */
 static int
 vehicle_null_position_attr_get(struct vehicle_priv *priv,
-			       enum attr_type type, struct attr *attr)
+                               enum attr_type type, struct attr *attr)
 {
 	dbg(lvl_debug,"enter %s",attr_to_name(type));
 	switch (type) {
@@ -143,7 +143,7 @@ struct vehicle_methods vehicle_null_methods = {
 
 /**
  * @brief Create null_vehicle
- * 
+ *
  * @param meth
  * @param cbl
  * @param attrs
@@ -151,8 +151,8 @@ struct vehicle_methods vehicle_null_methods = {
  */
 static struct vehicle_priv *
 vehicle_null_new_null(struct vehicle_methods *meth,
-	       		struct callback_list *cbl,
-		       	struct attr **attrs)
+                      struct callback_list *cbl,
+                      struct attr **attrs)
 {
 	struct vehicle_priv *ret;
 
@@ -166,7 +166,7 @@ vehicle_null_new_null(struct vehicle_methods *meth,
 
 /**
  * @brief register vehicle_null
- * 
+ *
  * @returns nothing
  */
 void

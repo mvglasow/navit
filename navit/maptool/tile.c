@@ -103,7 +103,7 @@ tile(struct rect *r, char *suffix, char *ret, int max, int overlap, struct rect 
 		rr.l.y=y4;
 	if(rr.h.y>y4)
 		rr.h.y=y4;
-	
+
 	for (i = 0 ; i < max ; i++) {
 		x2=(x0+x4)/2;
 		y2=(y0+y4)/2;
@@ -125,7 +125,7 @@ tile(struct rect *r, char *suffix, char *ret, int max, int overlap, struct rect 
 			strcat(ret,"a");
 			x0=x2-xo;
 			y0=y2-yo;
-		} else 
+		} else
 			break;
 	}
 	if (tr) {
@@ -188,7 +188,9 @@ tile_extend(char *tile, struct item_bin *ib, GList **tiles_list)
 {
 	struct tile_head *th=NULL;
 	if (debug_tile(tile))
-		fprintf(stderr,"Tile:Writing %d bytes to '%s' (%p,%p) 0x%x "LONGLONG_FMT"\n", (ib->len+1)*4, tile, g_hash_table_lookup(tile_hash, tile), tile_hash2 ? g_hash_table_lookup(tile_hash2, tile) : NULL, ib->type, item_bin_get_id(ib));
+		fprintf(stderr,"Tile:Writing %d bytes to '%s' (%p,%p) 0x%x "LONGLONG_FMT"\n", (ib->len+1)*4, tile,
+		        g_hash_table_lookup(tile_hash, tile), tile_hash2 ? g_hash_table_lookup(tile_hash2, tile) : NULL, ib->type,
+		        item_bin_get_id(ib));
 	if (tile_hash2)
 		th=g_hash_table_lookup(tile_hash2, tile);
 	if (!th)
@@ -237,7 +239,8 @@ merge_tile(char *base, char *sub)
 	if (! ths)
 		return 0;
 	if (debug_tile(base) || debug_tile(sub))
-		fprintf(stderr,"merging '%s'(%p) (%d) with '%s'(%p) (%d)\n", base, thb, thb ? thb->total_size : 0, sub, ths, ths->total_size);
+		fprintf(stderr,"merging '%s'(%p) (%d) with '%s'(%p) (%d)\n", base, thb, thb ? thb->total_size : 0, sub, ths,
+		        ths->total_size);
 	if (! thb) {
 		thb=ths;
 		g_hash_table_remove(tile_hash, sub);
@@ -320,12 +323,13 @@ write_item(char *tile, struct item_bin *ib, FILE *reference)
 			abort();
 		}
 		if (! th->process) {
-			if (reference) 
+			if (reference)
 				fseek(reference, 8, SEEK_CUR);
 			return;
 		}
 		if (debug_tile(tile))
-			fprintf(stderr,"Data:Writing %d bytes to '%s' (%p,%p) 0x%x\n", (ib->len+1)*4, tile, g_hash_table_lookup(tile_hash, tile), tile_hash2 ? g_hash_table_lookup(tile_hash2, tile) : NULL, ib->type);
+			fprintf(stderr,"Data:Writing %d bytes to '%s' (%p,%p) 0x%x\n", (ib->len+1)*4, tile, g_hash_table_lookup(tile_hash,
+			                tile), tile_hash2 ? g_hash_table_lookup(tile_hash2, tile) : NULL, ib->type);
 		size=(ib->len+1)*4;
 		if (th->total_size_used+size > th->total_size) {
 			fprintf(stderr,"Overflow in tile %s (used %d max %d item %d)\n", tile, th->total_size_used, th->total_size, size);
@@ -396,14 +400,14 @@ write_aux_tiles(struct zip_info *zip_info)
 	char *buffer;
 	FILE *f;
 	int count=0;
-	
+
 	while (l) {
 		at=l->data;
 		buffer=g_malloc(at->size);
 		f=fopen(at->filename,"rb");
 		assert(f != NULL);
 
-		if (fread(buffer, at->size, 1, f) == 0){
+		if (fread(buffer, at->size, 1, f) == 0) {
 			dbg(lvl_warning, "fread failed");
 			fclose(f);
 		} else {
@@ -550,7 +554,7 @@ write_tilesdir(struct tile_info *info, struct zip_info *zip_info, FILE *out)
 					th->zipnum=zip_get_zipnum(zip_info);
 					fprintf(out,"%s:%d",strlen((char *)next->data)?(char *)next->data:"index",th->total_size);
 
-					for ( idx = 0; idx< th->num_subtiles; idx++ ){
+					for ( idx = 0; idx< th->num_subtiles; idx++ ) {
 						data= th_get_subtile( th, idx );
 						fprintf(out,":%s", *data);
 					}

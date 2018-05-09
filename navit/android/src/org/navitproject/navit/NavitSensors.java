@@ -23,17 +23,21 @@ import android.hardware.SensorManager;
 
 
 
-public class NavitSensors implements SensorEventListener {
+public class NavitSensors implements SensorEventListener
+{
 	private SensorManager mSensorManager;
 	private int callbackid;
-	public native void SensorCallback(int id, int sensor, float x, float y, float z);
+	public native void
+	SensorCallback(int id, int sensor, float x, float y, float z);
 
 
-	NavitSensors(Context context, int cbid) 
+	NavitSensors(Context context, int cbid)
 	{
 		mSensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
-		mSensorManager.registerListener((SensorEventListener)this, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_NORMAL);
-		mSensorManager.registerListener((SensorEventListener)this, mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD), SensorManager.SENSOR_DELAY_NORMAL);
+		mSensorManager.registerListener((SensorEventListener)this, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
+		                                SensorManager.SENSOR_DELAY_NORMAL);
+		mSensorManager.registerListener((SensorEventListener)this, mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD),
+		                                SensorManager.SENSOR_DELAY_NORMAL);
 		callbackid=cbid;
 	}
 

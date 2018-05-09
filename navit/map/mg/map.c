@@ -33,76 +33,76 @@ static struct country_isonum {
 	int isonum;
 	int postal_len;
 	char *postal_prefix;
-} country_isonums[]={
-  {  1,203},
-  {  2,703},
-  {  7,674},
-  { 11,233},
-  { 12,268},
-  { 13,428},
-  { 14,440},
-  { 15,498},
-  { 16,643},
-  { 17,804},
-  { 18,112},
-  { 20,818},
-  { 30,300},
-  { 31,528},
-  { 32, 56},
-  { 33,250},
-  { 34,724},
-  { 36,348},
-  { 39,380},
-  { 40,642},
-  { 41,756},
-  { 43, 40},
-  { 44,826},
-  { 45,208},
-  { 46,752},
-  { 47,578},
-  { 48,616},
-  { 49,276,5,"D@@"},
-  { 50,292},
-  { 51,620},
-  { 52,442},
-  { 53,372},
-  { 54,352},
-  { 55,  8},
-  { 56,470},
-  { 57,196},
-  { 58,246},
-  { 59,100},
-  { 61,422},
-  { 62, 20},
-  { 63,760},
-  { 66,682},
-  { 71,434},
-  { 72,376},
-  { 73,275},
-  { 75,438},
-  { 76,504},
-  { 77, 12},
-  { 78,788},
-  { 81,688},
-  { 83,400},
-  { 85,191},
-  { 86,705},
-  { 87, 70},
-  { 89,807},
-  { 90,792},
-  { 93,492},
-  { 94, 31},
-  { 95, 51},
-  { 98,234},
-  { 99,732},
-  {336,774},
+} country_isonums[]= {
+	{  1,203},
+	{  2,703},
+	{  7,674},
+	{ 11,233},
+	{ 12,268},
+	{ 13,428},
+	{ 14,440},
+	{ 15,498},
+	{ 16,643},
+	{ 17,804},
+	{ 18,112},
+	{ 20,818},
+	{ 30,300},
+	{ 31,528},
+	{ 32, 56},
+	{ 33,250},
+	{ 34,724},
+	{ 36,348},
+	{ 39,380},
+	{ 40,642},
+	{ 41,756},
+	{ 43, 40},
+	{ 44,826},
+	{ 45,208},
+	{ 46,752},
+	{ 47,578},
+	{ 48,616},
+	{ 49,276,5,"D@@"},
+	{ 50,292},
+	{ 51,620},
+	{ 52,442},
+	{ 53,372},
+	{ 54,352},
+	{ 55,  8},
+	{ 56,470},
+	{ 57,196},
+	{ 58,246},
+	{ 59,100},
+	{ 61,422},
+	{ 62, 20},
+	{ 63,760},
+	{ 66,682},
+	{ 71,434},
+	{ 72,376},
+	{ 73,275},
+	{ 75,438},
+	{ 76,504},
+	{ 77, 12},
+	{ 78,788},
+	{ 81,688},
+	{ 83,400},
+	{ 85,191},
+	{ 86,705},
+	{ 87, 70},
+	{ 89,807},
+	{ 90,792},
+	{ 93,492},
+	{ 94, 31},
+	{ 95, 51},
+	{ 98,234},
+	{ 99,732},
+	{336,774},
 };
 
 struct map_priv * map_new_mg(struct map_methods *meth, struct attr **attrs, struct callback_list *cbl);
 
 static int map_id;
 
-static char *file[]={
+static char *file[]= {
 	[file_border_ply]="border.ply",
 	[file_bridge_ply]="bridge.ply",
 	[file_build_ply]="build.ply",
@@ -158,15 +158,15 @@ static char *mg_country_postal_prefix(int isonum)
 	return NULL;
 }
 
-struct item_range town_ranges[]={
+struct item_range town_ranges[]= {
 	{type_town_label,type_port_label},
 };
 
-struct item_range street_ranges[]={
+struct item_range street_ranges[]= {
 	{type_street_nopass,type_street_unkn},
 };
 
-struct item_range poly_ranges[]={
+struct item_range poly_ranges[]= {
 	{type_border_country,type_water_line},
 	{type_street_unkn,type_street_unkn},
 	{type_area,type_last},
@@ -189,15 +189,18 @@ file_next(struct map_rect_priv *mr)
 		case file_strname_stn:
 			continue;
 		case file_town_twn:
-			if (mr->cur_sel && !map_selection_contains_item_range(mr->cur_sel, 0, town_ranges, sizeof(town_ranges)/sizeof(struct item_range)))
+			if (mr->cur_sel
+			                && !map_selection_contains_item_range(mr->cur_sel, 0, town_ranges, sizeof(town_ranges)/sizeof(struct item_range)))
 				continue;
 			break;
 		case file_street_str:
-			if (mr->cur_sel && !map_selection_contains_item_range(mr->cur_sel, 0, street_ranges, sizeof(street_ranges)/sizeof(struct item_range)))
+			if (mr->cur_sel
+			                && !map_selection_contains_item_range(mr->cur_sel, 0, street_ranges, sizeof(street_ranges)/sizeof(struct item_range)))
 				continue;
 			break;
 		default:
-			if (mr->cur_sel && !map_selection_contains_item_range(mr->cur_sel, 0, poly_ranges, sizeof(poly_ranges)/sizeof(struct item_range)))
+			if (mr->cur_sel
+			                && !map_selection_contains_item_range(mr->cur_sel, 0, poly_ranges, sizeof(poly_ranges)/sizeof(struct item_range)))
 				continue;
 			break;
 		}
@@ -239,7 +242,7 @@ map_rect_new_mg(struct map_priv *map, struct map_selection *sel)
 	mr->xsel=sel;
 	mr->current_file=-1;
 	if (sel && sel->next)
-		for (i=0 ; i < file_end ; i++) 
+		for (i=0 ; i < file_end ; i++)
 			mr->block_hash[i]=g_hash_table_new(g_int_hash,g_int_equal);
 	file_next(mr);
 	return mr;
@@ -257,11 +260,11 @@ map_rect_get_item_mg(struct map_rect_priv *mr)
 			break;
 		case file_border_ply:
 		case file_bridge_ply:
-		case file_build_ply: 
-		case file_golf_ply: 
+		case file_build_ply:
+		case file_golf_ply:
 		/* case file_height_ply: */
-		case file_natpark_ply: 
-		case file_nature_ply: 
+		case file_natpark_ply:
+		case file_nature_ply:
 		case file_other_ply:
 		case file_rail_ply:
 		case file_sea_ply:
@@ -289,7 +292,8 @@ map_rect_get_item_mg(struct map_rect_priv *mr)
 		}
 		if (file_next(mr))
 			continue;
-		dbg(lvl_debug,"lin_count %d idx_count %d active_count %d %d kB (%d kB)", block_lin_count, block_idx_count, block_active_count, (block_mem+block_active_mem)/1024, block_active_mem/1024);
+		dbg(lvl_debug,"lin_count %d idx_count %d active_count %d %d kB (%d kB)", block_lin_count, block_idx_count,
+		    block_active_count, (block_mem+block_active_mem)/1024, block_active_mem/1024);
 		return NULL;
 	}
 }
@@ -311,7 +315,7 @@ map_rect_get_item_byid_mg(struct map_rect_priv *mr, int id_hi, int id_lo)
 		if (street_name_get_byid(mr, &mr->street, id_hi, id_lo, &mr->item))
 			return &mr->item;
 		break;
-	default:	
+	default:
 		if (poly_get_byid(mr, &mr->poly, id_hi, id_lo, &mr->item))
 			return &mr->item;
 		break;
@@ -324,9 +328,9 @@ void
 map_rect_destroy_mg(struct map_rect_priv *mr)
 {
 	int i;
-	for (i=0 ; i < file_end ; i++) 
+	for (i=0 ; i < file_end ; i++)
 		if (mr->block_hash[i])
-			g_hash_table_destroy(mr->block_hash[i]);	
+			g_hash_table_destroy(mr->block_hash[i]);
 	g_free(mr);
 }
 
@@ -417,7 +421,7 @@ map_search_setup(struct map_rect_priv *mr)
 			struct item *item=NULL;
 			struct attr attr;
 			struct map_rect_priv *mr2;
-			while (tmp) {	
+			while (tmp) {
 				mr2=map_rect_new_mg(tmp->data, NULL);
 				item=map_rect_get_item_byid_mg(mr2, mr->search_item.id_hi, mr->search_item.id_lo);
 				if (item)
@@ -434,7 +438,8 @@ map_search_setup(struct map_rect_priv *mr)
 					return 0;
 				}
 			} else {
-				dbg(lvl_error,"wrong parent type %s %p 0x%x 0x%x", item_to_name(mr->search_item.type), item, mr->search_item.id_hi, mr->search_item.id_lo);
+				dbg(lvl_error,"wrong parent type %s %p 0x%x 0x%x", item_to_name(mr->search_item.type), item, mr->search_item.id_hi,
+				    mr->search_item.id_lo);
 				return 0;
 			}
 		}
@@ -459,9 +464,11 @@ map_search_setup(struct map_rect_priv *mr)
 	block_init(mr);
 	return 1;
 }
-static void map_search_cleanup(struct map_rect_priv *mr);
+static void
+map_search_cleanup(struct map_rect_priv *mr);
 
-static struct item * map_search_get_item_mg(struct map_search_priv *ms);
+static struct item *
+map_search_get_item_mg(struct map_search_priv *ms);
 
 static struct map_search_priv *
 map_search_new_mg(struct map_priv *map, struct item *item, struct attr *search, int partial)
@@ -477,7 +484,7 @@ map_search_new_mg(struct map_priv *map, struct item *item, struct attr *search, 
 	mr->search_partial=partial;
 	if (search->type == attr_town_or_district_name) {
 		mr->search_type=attr_town_name;
-		mr->search_type_next=attr_district_name;	
+		mr->search_type_next=attr_district_name;
 	}
 	if (!map_search_setup(mr)) {
 		dbg(lvl_warning,"map_search_new_mg failed");
@@ -577,9 +584,9 @@ map_new_mg(struct map_methods *meth, struct attr **attrs, struct callback_list *
 
 	if (! data)
 		return NULL;
-	
-   	 wexp=file_wordexp_new(data->u.str);
-   	 wexp_data=file_wordexp_get_array(wexp);
+
+	wexp=file_wordexp_new(data->u.str);
+	wexp_data=file_wordexp_get_array(wexp);
 
 	*meth=map_methods_mg;
 	data=attr_search(attrs, NULL, attr_data);

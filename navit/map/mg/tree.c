@@ -28,29 +28,65 @@ struct tree_hdr {
 	unsigned int low;*/
 	unsigned char p[12];
 };
-static inline unsigned int tree_hdr_get_addr(struct tree_hdr * tree) { unsigned char *p = tree->p; return get_u32(&p); }
-static inline unsigned int tree_hdr_get_size(struct tree_hdr * tree) { unsigned char *p = tree->p+4; return get_u32(&p); }
-static inline unsigned int tree_hdr_get_low(struct tree_hdr * tree) { unsigned char *p = tree->p+8; return get_u32(&p); }
+static inline unsigned int tree_hdr_get_addr(struct tree_hdr * tree)
+{
+	unsigned char *p = tree->p;
+	return get_u32(&p);
+}
+static inline unsigned int tree_hdr_get_size(struct tree_hdr * tree)
+{
+	unsigned char *p = tree->p+4;
+	return get_u32(&p);
+}
+static inline unsigned int tree_hdr_get_low(struct tree_hdr * tree)
+{
+	unsigned char *p = tree->p+8;
+	return get_u32(&p);
+}
 
 struct tree_hdr_h {
-/*	unsigned int addr;
-	unsigned int size;*/
+	/*	unsigned int addr;
+		unsigned int size;*/
 	unsigned char p[8];
 };
-static inline unsigned int tree_hdr_h_get_addr(struct tree_hdr_h * tree) { unsigned char *p = tree->p; return get_u32(&p); }
-static inline unsigned int tree_hdr_h_get_size(struct tree_hdr_h * tree) { unsigned char *p = tree->p+4; return get_u32(&p); }
+static inline unsigned int tree_hdr_h_get_addr(struct tree_hdr_h * tree)
+{
+	unsigned char *p = tree->p;
+	return get_u32(&p);
+}
+static inline unsigned int tree_hdr_h_get_size(struct tree_hdr_h * tree)
+{
+	unsigned char *p = tree->p+4;
+	return get_u32(&p);
+}
 
 struct tree_leaf_h {
-/*	unsigned int lower;
-	unsigned int higher;
-	unsigned int match;
-	unsigned int value;*/
+	/*	unsigned int lower;
+		unsigned int higher;
+		unsigned int match;
+		unsigned int value;*/
 	unsigned char p[16];
 };
-static inline unsigned int tree_leaf_h_get_lower(struct tree_leaf_h * tree) { unsigned char *p = tree->p; return get_u32(&p); }
-static inline unsigned int tree_leaf_h_get_higher(struct tree_leaf_h * tree) { unsigned char *p = tree->p+4; return get_u32(&p); }
-static inline unsigned int tree_leaf_h_get_match(struct tree_leaf_h * tree) { unsigned char *p = tree->p+8; return get_u32(&p); }
-static inline unsigned int tree_leaf_h_get_value(struct tree_leaf_h * tree) { unsigned char *p = tree->p+12; return get_u32(&p); }
+static inline unsigned int tree_leaf_h_get_lower(struct tree_leaf_h * tree)
+{
+	unsigned char *p = tree->p;
+	return get_u32(&p);
+}
+static inline unsigned int tree_leaf_h_get_higher(struct tree_leaf_h * tree)
+{
+	unsigned char *p = tree->p+4;
+	return get_u32(&p);
+}
+static inline unsigned int tree_leaf_h_get_match(struct tree_leaf_h * tree)
+{
+	unsigned char *p = tree->p+8;
+	return get_u32(&p);
+}
+static inline unsigned int tree_leaf_h_get_value(struct tree_leaf_h * tree)
+{
+	unsigned char *p = tree->p+12;
+	return get_u32(&p);
+}
 
 
 struct tree_hdr_v {
@@ -59,16 +95,32 @@ struct tree_hdr_v {
 	unsigned int unknown;*/
 	unsigned char p[12];
 };
-static inline unsigned int tree_hdr_v_get_count(struct tree_hdr_v * tree) { unsigned char *p = tree->p; return get_u32_unal(&p); }
-static inline unsigned int tree_hdr_v_get_next(struct tree_hdr_v * tree) { unsigned char *p = tree->p+4; return get_u32_unal(&p); }
-static inline unsigned int tree_hdr_v_get_unknown(struct tree_hdr_v * tree) { unsigned char *p = tree->p+8; return get_u32_unal(&p); }
+static inline unsigned int tree_hdr_v_get_count(struct tree_hdr_v * tree)
+{
+	unsigned char *p = tree->p;
+	return get_u32_unal(&p);
+}
+static inline unsigned int tree_hdr_v_get_next(struct tree_hdr_v * tree)
+{
+	unsigned char *p = tree->p+4;
+	return get_u32_unal(&p);
+}
+static inline unsigned int tree_hdr_v_get_unknown(struct tree_hdr_v * tree)
+{
+	unsigned char *p = tree->p+8;
+	return get_u32_unal(&p);
+}
 
 struct tree_leaf_v {
 	unsigned char key;
 	/*int value;*/
 	unsigned char p[4];
 } __attribute__((packed));
-static inline int tree_leaf_v_get_value(struct tree_leaf_v * tree) { unsigned char *p = tree->p; return get_u32_unal(&p); }
+static inline int tree_leaf_v_get_value(struct tree_leaf_v * tree)
+{
+	unsigned char *p = tree->p;
+	return get_u32_unal(&p);
+}
 
 static int
 tree_search_h(struct file *file, unsigned int search)
@@ -88,7 +140,8 @@ tree_search_h(struct file *file, unsigned int search)
 		while (p < end) {
 			tleaf=(struct tree_leaf_h *)p;
 			p+=sizeof(*tleaf);
-			dbg(lvl_debug,"low:0x%x high:0x%x match:0x%x val:0x%x search:0x%x", tree_leaf_h_get_lower(tleaf), tree_leaf_h_get_higher(tleaf), tree_leaf_h_get_match(tleaf), tree_leaf_h_get_value(tleaf), search);
+			dbg(lvl_debug,"low:0x%x high:0x%x match:0x%x val:0x%x search:0x%x", tree_leaf_h_get_lower(tleaf),
+			    tree_leaf_h_get_higher(tleaf), tree_leaf_h_get_match(tleaf), tree_leaf_h_get_value(tleaf), search);
 			value=tree_leaf_h_get_value(tleaf);
 			if (value == search)
 				return tree_leaf_h_get_match(tleaf);
@@ -183,7 +236,8 @@ tree_search_enter(struct tree_search *ts, int offset)
 	tsn->end=p+tree_hdr_get_size(tsn->hdr);
 	tsn->low=tree_hdr_get_low(tsn->hdr);
 	tsn->high=tree_hdr_get_low(tsn->hdr);
-	dbg(lvl_debug,"pos %td addr 0x%ux size 0x%ux low 0x%ux end %tu", p-ts->f->begin, tree_hdr_get_addr(tsn->hdr), tree_hdr_get_size(tsn->hdr), tree_hdr_get_low(tsn->hdr), tsn->end-ts->f->begin);
+	dbg(lvl_debug,"pos %td addr 0x%ux size 0x%ux low 0x%ux end %tu", p-ts->f->begin, tree_hdr_get_addr(tsn->hdr),
+	    tree_hdr_get_size(tsn->hdr), tree_hdr_get_low(tsn->hdr), tsn->end-ts->f->begin);
 	return tsn;
 }
 
@@ -191,7 +245,7 @@ int tree_search_next(struct tree_search *ts, unsigned char **p, int dir)
 {
 	struct tree_search_node *tsn=&ts->nodes[ts->curr_node];
 
-	if (! *p) 
+	if (! *p)
 		*p=tsn->p;
 	dbg(lvl_debug,"next *p=%p dir=%d", *p, dir);
 	dbg(lvl_debug,"low1=0x%x high1=0x%x", tsn->low, tsn->high);
@@ -232,7 +286,7 @@ int tree_search_next_lin(struct tree_search *ts, unsigned char **p)
 {
 	struct tree_search_node *tsn=&ts->nodes[ts->curr_node];
 	int high;
-	
+
 	dbg(lvl_debug,"pos=%d %td", ts->curr_node, *p-ts->f->begin);
 	if (*p)
 		ts->nodes[ts->last_node].last=*p;

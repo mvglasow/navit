@@ -22,17 +22,18 @@
 #include "RenderArea.moc"
 
 #ifdef QT_QPAINTER_USE_EMBEDDING
-EmbeddedWidget::EmbeddedWidget(struct graphics_priv *priv, QWidget* child, QWidget *parent) 
-: QX11EmbedWidget(parent) {
-    this->gra=priv;
-		this->setWindowTitle(priv->window_title);
-        QStackedLayout* _outerLayout = new QStackedLayout(this);
-        this->setLayout(_outerLayout);
-        _outerLayout->addWidget(child);
-        _outerLayout->setCurrentWidget(child);
+EmbeddedWidget::EmbeddedWidget(struct graphics_priv *priv, QWidget* child, QWidget *parent)
+	: QX11EmbedWidget(parent)
+{
+	this->gra=priv;
+	this->setWindowTitle(priv->window_title);
+	QStackedLayout* _outerLayout = new QStackedLayout(this);
+	this->setLayout(_outerLayout);
+	_outerLayout->addWidget(child);
+	_outerLayout->setCurrentWidget(child);
 }
 
-void EmbeddedWidget::closeEvent(QCloseEvent* event) 
+void EmbeddedWidget::closeEvent(QCloseEvent* event)
 {
 	gra->widget->processClose();
 }
@@ -49,7 +50,7 @@ RenderArea::RenderArea(struct graphics_priv *priv, QT_QPAINTER_RENDERAREA_PARENT
 	pixmap = new QPixmap(w, h);
 #ifndef QT_QPAINTER_NO_WIDGET
 	if (!overlay) {
-#if QT_VERSION >= 0x040700                                                 
+#if QT_VERSION >= 0x040700
 		grabGesture(Qt::PinchGesture);
 		grabGesture(Qt::SwipeGesture);
 		grabGesture(Qt::PanGesture);
@@ -73,18 +74,18 @@ RenderArea::RenderArea(struct graphics_priv *priv, QT_QPAINTER_RENDERAREA_PARENT
 //# Description: QWidget:closeEvent
 //# Comment: Deletes navit object and stops event loop on graphics shutdown
 //##############################################################################################################
-void RenderArea::processClose() 
+void RenderArea::processClose()
 {
 	callback_list_call_attr_0(this->cbl, attr_window_closed);
 }
-void RenderArea::closeEvent(QCloseEvent* event) 
+void RenderArea::closeEvent(QCloseEvent* event)
 {
 	this->processClose();
 }
 
 bool RenderArea::event(QEvent *event)
 {
-#if QT_VERSION >= 0x040700                                                 
+#if QT_VERSION >= 0x040700
 	if (event->type() == QEvent::Gesture) {
 		dbg(lvl_debug,"gesture");
 		return true;
@@ -114,14 +115,14 @@ void RenderArea::paintEvent(QPaintEvent * event)
 
 void RenderArea::do_resize(QSize size)
 {
-    if (pixmap->paintingActive()) {
-        pixmap->paintEngine()->painter()->end();
-    }
+	if (pixmap->paintingActive()) {
+		pixmap->paintEngine()->painter()->end();
+	}
 	delete pixmap;
 	pixmap=new QPixmap(size);
 	pixmap->fill();
-    QPainter painter(pixmap);
-    QBrush brush;
+	QPainter painter(pixmap);
+	QBrush brush;
 	painter.fillRect(0, 0, size.width(), size.height(), brush);
 	dbg(lvl_debug,"size %dx%d", size.width(), size.height());
 	dbg(lvl_debug,"pixmap %p %dx%d", pixmap, pixmap->width(), pixmap->height());
@@ -198,22 +199,22 @@ void RenderArea::wheelEvent(QWheelEvent *event)
 {
 	struct point p;
 	int button;
-	
+
 	p.x=event->x();	// xy-coordinates of the mouse pointer
 	p.y=event->y();
-	
+
 	if (event->delta() > 0)	// wheel movement away from the person
 		button=4;
 	else if (event->delta() < 0) // wheel movement towards the person
 		button=5;
 	else
 		button=-1;
-	
+
 	if (button != -1) {
 		callback_list_call_attr_3(this->cbl, attr_button, GINT_TO_POINTER(1), GINT_TO_POINTER(button), GINT_TO_POINTER(&p));
 		callback_list_call_attr_3(this->cbl, attr_button, GINT_TO_POINTER(0), GINT_TO_POINTER(button), GINT_TO_POINTER(&p));
 	}
-	
+
 	event->accept();
 }
 
@@ -227,15 +228,14 @@ void RenderArea::keyPressEvent(QKeyEvent *event)
 	if (!text || !text[0] || text[0] == 0x7f) {
 		dbg(lvl_debug,"special key");
 		switch (event->key()) {
-		case 4099:
-			{
-				char text_backspace[] = {NAVIT_KEY_BACKSPACE,'\0'};
-				text=text_backspace;
-			}
-			break;
+		case 4099: {
+			char text_backspace[] = {NAVIT_KEY_BACKSPACE,'\0'};
+			text=text_backspace;
+		}
+		break;
 		case 4101:
 #ifdef QT_QPAINTER_CUSTOM_RETURN
-		QT_QPAINTER_CUSTOM_RETURN
+			QT_QPAINTER_CUSTOM_RETURN
 #endif
 			{
 				char text_return[] = {NAVIT_KEY_RETURN,'\0'};
@@ -244,7 +244,7 @@ void RenderArea::keyPressEvent(QKeyEvent *event)
 			break;
 		case 4114:
 #ifdef QT_QPAINTER_CUSTOM_LEFT
-		QT_QPAINTER_CUSTOM_LEFT
+			QT_QPAINTER_CUSTOM_LEFT
 #endif
 			{
 				char text_left[] = {NAVIT_KEY_LEFT,'\0'};
@@ -253,7 +253,7 @@ void RenderArea::keyPressEvent(QKeyEvent *event)
 			break;
 		case 4115:
 #ifdef QT_QPAINTER_CUSTOM_UP
-		QT_QPAINTER_CUSTOM_UP
+			QT_QPAINTER_CUSTOM_UP
 #endif
 			{
 				char text_up[] = {NAVIT_KEY_UP,'\0'};
@@ -262,7 +262,7 @@ void RenderArea::keyPressEvent(QKeyEvent *event)
 			break;
 		case 4116:
 #ifdef QT_QPAINTER_CUSTOM_RIGHT
-		QT_QPAINTER_CUSTOM_RIGHT
+			QT_QPAINTER_CUSTOM_RIGHT
 #endif
 			{
 				char text_right[] = {NAVIT_KEY_RIGHT,'\0'};
@@ -271,7 +271,7 @@ void RenderArea::keyPressEvent(QKeyEvent *event)
 			break;
 		case 4117:
 #ifdef QT_QPAINTER_CUSTOM_DOWN
-		QT_QPAINTER_CUSTOM_DOWN
+			QT_QPAINTER_CUSTOM_DOWN
 #endif
 			{
 				char text_down[] = {NAVIT_KEY_DOWN,'\0'};
@@ -298,7 +298,7 @@ void RenderArea::timerEvent(QTimerEvent *event)
 {
 	int id=event->timerId();
 	struct callback *cb=(struct callback *)g_hash_table_lookup(timer_callback, (void *)id);
-	if (cb) 
+	if (cb)
 		callback_call_0(cb);
 	if (!g_hash_table_lookup(timer_type, (void *)id))
 		event_qt_remove_timeout((struct event_timeout *)id);

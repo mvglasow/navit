@@ -236,8 +236,7 @@ object_get_from_message(DBusMessage *message, char *type)
 }
 
 static enum attr_type
-attr_type_get_from_message(DBusMessageIter *iter)
-{
+attr_type_get_from_message(DBusMessageIter *iter) {
 	char *attr_type;
 
 	if (dbus_message_iter_get_arg_type(iter) != DBUS_TYPE_STRING)
@@ -285,7 +284,8 @@ encode_attr(DBusMessageIter *iter1, struct attr *attr)
 	if (attr->type >= attr_type_string_begin && attr->type <= attr_type_string_end) {
 		encode_variant_string(iter1, attr->u.str);
 	}
-	if ((attr->type >= attr_type_item_type_begin && attr->type <= attr_type_item_type_end) || attr->type == attr_item_type) {
+	if ((attr->type >= attr_type_item_type_begin && attr->type <= attr_type_item_type_end)
+	                || attr->type == attr_item_type) {
 		encode_variant_string(iter1, item_to_name(attr->u.item_type));
 	}
 	if (attr->type >= attr_type_pcoord_begin && attr->type <= attr_type_pcoord_end) {
@@ -365,7 +365,8 @@ dbus_error_invalid_object_path_parameter(DBusConnection *connection, DBusMessage
 static DBusHandlerResult
 dbus_error_navigation_not_configured(DBusConnection *connection, DBusMessage *message)
 {
-	return dbus_error(connection, message, DBUS_ERROR_FAILED, "navigation is not configured (no <navigation> element in config file?)");
+	return dbus_error(connection, message, DBUS_ERROR_FAILED,
+	                  "navigation is not configured (no <navigation> element in config file?)");
 }
 
 static DBusHandlerResult
@@ -388,38 +389,38 @@ dbus_dump_iter(char *prefix, DBusMessageIter *iter)
 	while ((arg=dbus_message_iter_get_arg_type(iter)) != DBUS_TYPE_INVALID) {
 		switch (arg) {
 		case DBUS_TYPE_INT32:
-            		dbus_message_iter_get_basic(iter, &vali);
+			dbus_message_iter_get_basic(iter, &vali);
 			dbg(lvl_debug,"%sDBUS_TYPE_INT32: %d",prefix,vali);
 			break;
 		case DBUS_TYPE_STRING:
-            		dbus_message_iter_get_basic(iter, &vals);
+			dbus_message_iter_get_basic(iter, &vals);
 			dbg(lvl_debug,"%sDBUS_TYPE_STRING: %s",prefix,vals);
 			break;
 		case DBUS_TYPE_STRUCT:
 			dbg(lvl_debug,"%sDBUS_TYPE_STRUCT:",prefix);
 			prefixr=g_strdup_printf("%s  ",prefix);
-        		dbus_message_iter_recurse(iter, &iterr);
+			dbus_message_iter_recurse(iter, &iterr);
 			dbus_dump_iter(prefixr, &iterr);
 			g_free(prefixr);
 			break;
 		case DBUS_TYPE_VARIANT:
 			dbg(lvl_debug,"%sDBUS_TYPE_VARIANT:",prefix);
 			prefixr=g_strdup_printf("%s  ",prefix);
-        		dbus_message_iter_recurse(iter, &iterr);
+			dbus_message_iter_recurse(iter, &iterr);
 			dbus_dump_iter(prefixr, &iterr);
 			g_free(prefixr);
 			break;
 		case DBUS_TYPE_DICT_ENTRY:
 			dbg(lvl_debug,"%sDBUS_TYPE_DICT_ENTRY:",prefix);
 			prefixr=g_strdup_printf("%s  ",prefix);
-        		dbus_message_iter_recurse(iter, &iterr);
+			dbus_message_iter_recurse(iter, &iterr);
 			dbus_dump_iter(prefixr, &iterr);
 			g_free(prefixr);
 			break;
 		case DBUS_TYPE_ARRAY:
 			dbg(lvl_debug,"%sDBUS_TYPE_ARRAY:",prefix);
 			prefixr=g_strdup_printf("%s  ",prefix);
-        		dbus_message_iter_recurse(iter, &iterr);
+			dbus_message_iter_recurse(iter, &iterr);
 			dbus_dump_iter(prefixr, &iterr);
 			g_free(prefixr);
 			break;
@@ -453,45 +454,45 @@ static int
 pcoord_get_from_message(DBusMessage *message, DBusMessageIter *iter, struct pcoord *pc)
 {
 
-    if(!strcmp(dbus_message_iter_get_signature(iter), "s")) {
-        char *coordstring;
+	if(!strcmp(dbus_message_iter_get_signature(iter), "s")) {
+		char *coordstring;
 
-        dbus_message_iter_get_basic(iter, &coordstring);
-        if(!pcoord_parse(coordstring, projection_mg, pc))
-            return 0;
+		dbus_message_iter_get_basic(iter, &coordstring);
+		if(!pcoord_parse(coordstring, projection_mg, pc))
+			return 0;
 
-        return 1;
-    } else {
+		return 1;
+	} else {
 
-        DBusMessageIter iter2;
-        dbus_message_iter_recurse(iter, &iter2);
-        if(!strcmp(dbus_message_iter_get_signature(iter), "(is)")) {
-            char *coordstring;
-            int projection;
+		DBusMessageIter iter2;
+		dbus_message_iter_recurse(iter, &iter2);
+		if(!strcmp(dbus_message_iter_get_signature(iter), "(is)")) {
+			char *coordstring;
+			int projection;
 
-            dbus_message_iter_get_basic(&iter2, &projection);
+			dbus_message_iter_get_basic(&iter2, &projection);
 
-            dbus_message_iter_next(&iter2);
-            dbus_message_iter_get_basic(&iter2, &coordstring);
+			dbus_message_iter_next(&iter2);
+			dbus_message_iter_get_basic(&iter2, &coordstring);
 
-            if(!pcoord_parse(coordstring, projection, pc))
-                return 0;
+			if(!pcoord_parse(coordstring, projection, pc))
+				return 0;
 
-            return 1;
-        } else if(!strcmp(dbus_message_iter_get_signature(iter), "(iii)")) {
+			return 1;
+		} else if(!strcmp(dbus_message_iter_get_signature(iter), "(iii)")) {
 
-            dbus_message_iter_get_basic(&iter2, &pc->pro);
+			dbus_message_iter_get_basic(&iter2, &pc->pro);
 
-            dbus_message_iter_next(&iter2);
-            dbus_message_iter_get_basic(&iter2, &pc->x);
+			dbus_message_iter_next(&iter2);
+			dbus_message_iter_get_basic(&iter2, &pc->x);
 
-            dbus_message_iter_next(&iter2);
-            dbus_message_iter_get_basic(&iter2, &pc->y);
+			dbus_message_iter_next(&iter2);
+			dbus_message_iter_get_basic(&iter2, &pc->y);
 
-            return 1;
-        }
-    }
-    return 0;
+			return 1;
+		}
+	}
+	return 0;
 
 }
 
@@ -514,8 +515,7 @@ pcoord_encode(DBusMessageIter *iter, struct pcoord *pc)
 }
 
 static enum attr_type
-decode_attr_type_from_iter(DBusMessageIter *iter)
-{
+decode_attr_type_from_iter(DBusMessageIter *iter) {
 	char *attr_type;
 	enum attr_type ret;
 
@@ -563,14 +563,14 @@ decode_attr_from_iter(DBusMessageIter *iter, struct attr *attr)
 			return 1;
 		}
 		return 0;
-        }
+	}
 	if(attr->type >= attr_type_string_begin && attr->type <= attr_type_string_end) {
 		if (dbus_message_iter_get_arg_type(&iterattr) == DBUS_TYPE_STRING) {
 			dbus_message_iter_get_basic(&iterattr, &attr->u.str);
 			return 1;
 		}
 		return 0;
-        }
+	}
 	if(attr->type >= attr_type_double_begin && attr->type <= attr_type_double_end) {
 		if (dbus_message_iter_get_arg_type(&iterattr) == DBUS_TYPE_DOUBLE) {
 			attr->u.numd=g_new(typeof(*attr->u.numd),1);
@@ -694,7 +694,8 @@ request_attr_iter(DBusConnection *connection, DBusMessage *message, char *type, 
 }
 
 static DBusHandlerResult
-request_attr_iter_destroy(DBusConnection *connection, DBusMessage *message, char *type, void (*func)(struct attr_iter *))
+request_attr_iter_destroy(DBusConnection *connection, DBusMessage *message, char *type,
+                          void (*func)(struct attr_iter *))
 {
 	struct attr_iter *attr_iter;
 	DBusMessageIter iter;
@@ -748,7 +749,8 @@ request_dup(DBusConnection *connection, DBusMessage *message, char *type, void *
 
 
 static DBusHandlerResult
-request_get_attr(DBusConnection *connection, DBusMessage *message, char *type, void *data, int (*func)(void *data, enum attr_type type, struct attr *attr, struct attr_iter *iter))
+request_get_attr(DBusConnection *connection, DBusMessage *message, char *type, void *data, int (*func)(void *data,
+                 enum attr_type type, struct attr *attr, struct attr_iter *iter))
 {
 	DBusMessage *reply;
 	DBusMessageIter iter;
@@ -783,7 +785,8 @@ request_get_attr(DBusConnection *connection, DBusMessage *message, char *type, v
 }
 
 static DBusHandlerResult
-request_command(DBusConnection *connection, DBusMessage *message, char *type, void *data, int (*func)(void *data, enum attr_type type, struct attr *attr, struct attr_iter *iter))
+request_command(DBusConnection *connection, DBusMessage *message, char *type, void *data, int (*func)(void *data,
+                enum attr_type type, struct attr *attr, struct attr_iter *iter))
 {
 	DBusMessageIter iter;
 	struct attr attr;
@@ -801,16 +804,17 @@ request_command(DBusConnection *connection, DBusMessage *message, char *type, vo
 	dbus_message_iter_next(&iter);
 	if (func(data, attr_callback_list, &attr, NULL)) {
 		int valid=0;
-                callback_list_call_attr_4(attr.u.callback_list, attr_command, command, NULL, NULL, &valid);
+		callback_list_call_attr_4(attr.u.callback_list, attr_command, command, NULL, NULL, &valid);
 	}
 	return empty_reply(connection, message);
 
 }
 
 static DBusHandlerResult
-request_set_add_remove_attr(DBusConnection *connection, DBusMessage *message, char *type, void *data, int (*func)(void *data, struct attr *attr))
+request_set_add_remove_attr(DBusConnection *connection, DBusMessage *message, char *type, void *data,
+                            int (*func)(void *data, struct attr *attr))
 {
-    	struct attr attr;
+	struct attr attr;
 	int ret;
 
 	if (! data)
@@ -827,7 +831,7 @@ request_set_add_remove_attr(DBusConnection *connection, DBusMessage *message, ch
 	} else {
 		dbg(lvl_error,"failed to decode attr");
 	}
-    	return dbus_error_invalid_parameter(connection, message);
+	return dbus_error_invalid_parameter(connection, message);
 }
 
 /* callback */
@@ -893,7 +897,8 @@ request_callback_new(DBusConnection *connection, DBusMessage *message)
 static DBusHandlerResult
 request_config_get_attr(DBusConnection *connection, DBusMessage *message)
 {
-	return request_get_attr(connection, message, "config", config, (int (*)(void *, enum attr_type, struct attr *, struct attr_iter *))config_get_attr);
+	return request_get_attr(connection, message, "config", config, (int (*)(void *, enum attr_type, struct attr *,
+	                        struct attr_iter *))config_get_attr);
 }
 
 static DBusHandlerResult
@@ -924,8 +929,8 @@ request_graphics_get_data(DBusConnection *connection, DBusMessage *message)
 	if (! graphics)
 		return dbus_error_invalid_object_path(connection, message);
 
-        if (!dbus_message_get_args(message, NULL, DBUS_TYPE_STRING, &data, DBUS_TYPE_INVALID))
-    		return dbus_error_invalid_parameter(connection, message);
+	if (!dbus_message_get_args(message, NULL, DBUS_TYPE_STRING, &data, DBUS_TYPE_INVALID))
+		return dbus_error_invalid_parameter(connection, message);
 	image=graphics_get_data(graphics, data);
 	if (image) {
 		DBusMessageIter iter1,iter2;
@@ -950,13 +955,15 @@ request_graphics_get_data(DBusConnection *connection, DBusMessage *message)
 static DBusHandlerResult
 request_gui_get_attr(DBusConnection *connection, DBusMessage *message)
 {
-	return request_get_attr(connection, message, "gui", NULL, (int (*)(void *, enum attr_type, struct attr *, struct attr_iter *))gui_get_attr);
+	return request_get_attr(connection, message, "gui", NULL, (int (*)(void *, enum attr_type, struct attr *,
+	                        struct attr_iter *))gui_get_attr);
 }
 
 static DBusHandlerResult
 request_gui_command(DBusConnection *connection, DBusMessage *message)
 {
-	return request_command(connection, message, "gui", NULL, (int (*)(void *, enum attr_type, struct attr *, struct attr_iter *))gui_get_attr);
+	return request_command(connection, message, "gui", NULL, (int (*)(void *, enum attr_type, struct attr *,
+	                       struct attr_iter *))gui_get_attr);
 }
 
 
@@ -964,7 +971,8 @@ request_gui_command(DBusConnection *connection, DBusMessage *message)
 static DBusHandlerResult
 request_graphics_set_attr(DBusConnection *connection, DBusMessage *message)
 {
-	return request_set_add_remove_attr(connection, message, "graphics", NULL, (int (*)(void *, struct attr *))graphics_set_attr);
+	return request_set_add_remove_attr(connection, message, "graphics", NULL, (int (*)(void *,
+	                                   struct attr *))graphics_set_attr);
 }
 
 /* layout */
@@ -972,7 +980,8 @@ request_graphics_set_attr(DBusConnection *connection, DBusMessage *message)
 static DBusHandlerResult
 request_layout_get_attr(DBusConnection *connection, DBusMessage *message)
 {
-	return request_get_attr(connection, message, "layout", NULL, (int (*)(void *, enum attr_type, struct attr *, struct attr_iter *))layout_get_attr);
+	return request_get_attr(connection, message, "layout", NULL, (int (*)(void *, enum attr_type, struct attr *,
+	                        struct attr_iter *))layout_get_attr);
 }
 
 
@@ -982,7 +991,8 @@ request_layout_get_attr(DBusConnection *connection, DBusMessage *message)
 static DBusHandlerResult
 request_map_get_attr(DBusConnection *connection, DBusMessage *message)
 {
-	return request_get_attr(connection, message, "map", NULL, (int (*)(void *, enum attr_type, struct attr *, struct attr_iter *))map_get_attr);
+	return request_get_attr(connection, message, "map", NULL, (int (*)(void *, enum attr_type, struct attr *,
+	                        struct attr_iter *))map_get_attr);
 }
 
 
@@ -1034,7 +1044,8 @@ request_mapset_attr_iter_destroy(DBusConnection *connection, DBusMessage *messag
 static DBusHandlerResult
 request_mapset_get_attr(DBusConnection *connection, DBusMessage *message)
 {
-	return request_get_attr(connection, message, "mapset", NULL, (int (*)(void *, enum attr_type, struct attr *, struct attr_iter *))mapset_get_attr);
+	return request_get_attr(connection, message, "mapset", NULL, (int (*)(void *, enum attr_type, struct attr *,
+	                        struct attr_iter *))mapset_get_attr);
 }
 
 /* navigation */
@@ -1042,7 +1053,8 @@ request_mapset_get_attr(DBusConnection *connection, DBusMessage *message)
 static DBusHandlerResult
 request_navigation_get_attr(DBusConnection *connection, DBusMessage *message)
 {
-	return request_get_attr(connection, message, "navigation", NULL, (int (*)(void *, enum attr_type, struct attr *, struct attr_iter *))navigation_get_attr);
+	return request_get_attr(connection, message, "navigation", NULL, (int (*)(void *, enum attr_type, struct attr *,
+	                        struct attr_iter *))navigation_get_attr);
 }
 
 /* osd */
@@ -1050,7 +1062,8 @@ request_navigation_get_attr(DBusConnection *connection, DBusMessage *message)
 static DBusHandlerResult
 request_osd_get_attr(DBusConnection *connection, DBusMessage *message)
 {
-	return request_get_attr(connection, message, "osd", NULL, (int (*)(void *, enum attr_type, struct attr *, struct attr_iter *))osd_get_attr);
+	return request_get_attr(connection, message, "osd", NULL, (int (*)(void *, enum attr_type, struct attr *,
+	                        struct attr_iter *))osd_get_attr);
 }
 
 
@@ -1065,14 +1078,16 @@ request_osd_set_attr(DBusConnection *connection, DBusMessage *message)
 static DBusHandlerResult
 request_roadprofile_get_attr(DBusConnection *connection, DBusMessage *message)
 {
-	return request_get_attr(connection, message, "roadprofile", NULL, (int (*)(void *, enum attr_type, struct attr *, struct attr_iter *))roadprofile_get_attr);
+	return request_get_attr(connection, message, "roadprofile", NULL, (int (*)(void *, enum attr_type, struct attr *,
+	                        struct attr_iter *))roadprofile_get_attr);
 }
 
 
 static DBusHandlerResult
 request_roadprofile_set_attr(DBusConnection *connection, DBusMessage *message)
 {
-	return request_set_add_remove_attr(connection, message, "roadprofile", NULL, (int (*)(void *, struct attr *))roadprofile_set_attr);
+	return request_set_add_remove_attr(connection, message, "roadprofile", NULL, (int (*)(void *,
+	                                   struct attr *))roadprofile_set_attr);
 }
 
 static DBusHandlerResult
@@ -1084,7 +1099,8 @@ request_roadprofile_attr_iter(DBusConnection *connection, DBusMessage *message)
 static DBusHandlerResult
 request_roadprofile_attr_iter_destroy(DBusConnection *connection, DBusMessage *message)
 {
-	return request_attr_iter_destroy(connection, message, "roadprofile", (void (*)(struct attr_iter *))roadprofile_attr_iter_destroy);
+	return request_attr_iter_destroy(connection, message, "roadprofile",
+	                                 (void (*)(struct attr_iter *))roadprofile_attr_iter_destroy);
 }
 
 /* route */
@@ -1092,7 +1108,8 @@ request_roadprofile_attr_iter_destroy(DBusConnection *connection, DBusMessage *m
 static DBusHandlerResult
 request_route_get_attr(DBusConnection *connection, DBusMessage *message)
 {
-	return request_get_attr(connection, message, "route", NULL, (int (*)(void *, enum attr_type, struct attr *, struct attr_iter *))route_get_attr);
+	return request_get_attr(connection, message, "route", NULL, (int (*)(void *, enum attr_type, struct attr *,
+	                        struct attr_iter *))route_get_attr);
 }
 
 
@@ -1111,7 +1128,8 @@ request_route_add_attr(DBusConnection *connection, DBusMessage *message)
 static DBusHandlerResult
 request_route_remove_attr(DBusConnection *connection, DBusMessage *message)
 {
-	return request_set_add_remove_attr(connection, message, "route", NULL, (int (*)(void *, struct attr *))route_remove_attr);
+	return request_set_add_remove_attr(connection, message, "route", NULL, (int (*)(void *,
+	                                   struct attr *))route_remove_attr);
 }
 
 static DBusHandlerResult
@@ -1194,7 +1212,7 @@ request_navit_add_message(DBusConnection *connection, DBusMessage *message)
 	struct navit *navit;
 	char *usermessage;
 
-    DBusMessageIter iter;
+	DBusMessageIter iter;
 
 	navit=object_get_from_message(message, "navit");
 	if (! navit)
@@ -1203,9 +1221,9 @@ request_navit_add_message(DBusConnection *connection, DBusMessage *message)
 	dbus_message_iter_init(message, &iter);
 	dbus_message_iter_get_basic(&iter, &usermessage);
 
-    navit_add_message(navit, usermessage);
+	navit_add_message(navit, usermessage);
 
-    return empty_reply(connection, message);
+	return empty_reply(connection, message);
 }
 
 
@@ -1300,20 +1318,20 @@ request_navit_set_layout(DBusConnection *connection, DBusMessage *message)
 static DBusHandlerResult
 request_navit_quit(DBusConnection *connection, DBusMessage *message)
 {
-        dbg(lvl_debug,"Got a quit request from DBUS");
-        struct attr navit;
-        navit.type=attr_navit;
-        struct navit *nav;
-        nav = object_get_from_message(message, "navit");
-        if (! nav)
-                return dbus_error_invalid_object_path(connection, message);
-        navit.u.navit=nav;
-        config_remove_attr(config, &navit);
+	dbg(lvl_debug,"Got a quit request from DBUS");
+	struct attr navit;
+	navit.type=attr_navit;
+	struct navit *nav;
+	nav = object_get_from_message(message, "navit");
+	if (! nav)
+		return dbus_error_invalid_object_path(connection, message);
+	navit.u.navit=nav;
+	config_remove_attr(config, &navit);
 
-        struct callback *callback;
-        callback=callback_new_1(callback_cast(event_main_loop_quit), NULL);
-        event_add_timeout(1000, 1, callback);
-        return empty_reply(connection, message);
+	struct callback *callback;
+	callback=callback_new_1(callback_cast(event_main_loop_quit), NULL);
+	event_add_timeout(1000, 1, callback);
+	return empty_reply(connection, message);
 }
 
 static DBusHandlerResult
@@ -1333,8 +1351,7 @@ request_navit_zoom(DBusConnection *connection, DBusMessage *message)
 
 	dbus_message_iter_get_basic(&iter, &factor);
 
-	if (dbus_message_iter_has_next(&iter))
-	{
+	if (dbus_message_iter_has_next(&iter)) {
 		dbus_message_iter_next(&iter);
 		if (!point_get_from_message(message, &iter, &p))
 			return dbus_error_invalid_parameter(connection, message);
@@ -1392,9 +1409,9 @@ request_navit_route_export_gpx(DBusConnection *connection, DBusMessage *message)
 	dbus_message_iter_get_basic(&iter, &filename);
 
 	struct navigation *nav = navit_get_navigation(navit);
-        if(!nav) {
-                return dbus_error_navigation_not_configured(connection, message);
-        }
+	if(!nav) {
+		return dbus_error_navigation_not_configured(connection, message);
+	}
 
 	dbg(lvl_debug,"Dumping route from dbus to %s", filename);
 
@@ -1404,34 +1421,35 @@ request_navit_route_export_gpx(DBusConnection *connection, DBusMessage *message)
 	struct attr attr;
 	struct coord c;
 	struct coord_geo g;
-	
-        char *header = "<?xml version='1.0' encoding='UTF-8'?>\n"
-                        "<gpx version='1.1' creator='Navit http://navit.sourceforge.net'\n"
-                        "     xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'\n"
-                        "     xmlns:navit='http://www.navit-project.org/schema/navit'\n"
-                        "     xmlns='http://www.topografix.com/GPX/1/1'\n"
-                        "     xsi:schemaLocation='http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd'>\n"
-                        "<rte>\n";
-        char *trailer = "</rte>\n</gpx>\n";
 
-        map = navigation_get_map(nav);
-        if(map)
-          mr = map_rect_new(map,NULL);
+	char *header = "<?xml version='1.0' encoding='UTF-8'?>\n"
+	               "<gpx version='1.1' creator='Navit http://navit.sourceforge.net'\n"
+	               "     xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'\n"
+	               "     xmlns:navit='http://www.navit-project.org/schema/navit'\n"
+	               "     xmlns='http://www.topografix.com/GPX/1/1'\n"
+	               "     xsi:schemaLocation='http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd'>\n"
+	               "<rte>\n";
+	char *trailer = "</rte>\n</gpx>\n";
 
-        FILE *fp;
-        fp = fopen(filename,"w");
-        fprintf(fp, "%s", header);
+	map = navigation_get_map(nav);
+	if(map)
+		mr = map_rect_new(map,NULL);
+
+	FILE *fp;
+	fp = fopen(filename,"w");
+	fprintf(fp, "%s", header);
 
 	while((item = map_rect_get_item(mr))) {
 		if(item_attr_get(item,attr_navigation_long,&attr)) {
 			item_coord_get(item, &c, 1);
 			transform_to_geo (projection_mg, &c, &g);
-			fprintf(fp,"<rtept lon='%4.16f' lat='%4.16f'><type>%s</type><name>%s</name></rtept>\n",g.lng, g.lat, item_to_name(item->type), map_convert_string_tmp(item->map,attr.u.str));
+			fprintf(fp,"<rtept lon='%4.16f' lat='%4.16f'><type>%s</type><name>%s</name></rtept>\n",g.lng, g.lat,
+			        item_to_name(item->type), map_convert_string_tmp(item->map,attr.u.str));
 		}
 	}
 	fprintf(fp,"%s",trailer);
-	
-         fclose(fp);
+
+	fclose(fp);
 
 	return empty_reply(connection, message);
 }
@@ -1445,84 +1463,85 @@ request_navit_route_export_gpx(DBusConnection *connection, DBusMessage *message)
 static DBusHandlerResult
 request_navit_route_export_geojson(DBusConnection *connection, DBusMessage *message)
 {
-        char * filename;
-        struct point p;
-        struct navit *navit;
-        DBusMessageIter iter;
+	char * filename;
+	struct point p;
+	struct navit *navit;
+	DBusMessageIter iter;
 
-        navit = object_get_from_message(message, "navit");
-        if (! navit)
-                return dbus_error_invalid_object_path(connection, message);
+	navit = object_get_from_message(message, "navit");
+	if (! navit)
+		return dbus_error_invalid_object_path(connection, message);
 
-        dbus_message_iter_init(message, &iter);
+	dbus_message_iter_init(message, &iter);
 
-        dbus_message_iter_get_basic(&iter, &filename);
+	dbus_message_iter_get_basic(&iter, &filename);
 
-        if (dbus_message_iter_has_next(&iter))
-        {
-                dbus_message_iter_next(&iter);
-                if (!point_get_from_message(message, &iter, &p))
-                        return dbus_error_invalid_parameter(connection, message);
-        }
+	if (dbus_message_iter_has_next(&iter)) {
+		dbus_message_iter_next(&iter);
+		if (!point_get_from_message(message, &iter, &p))
+			return dbus_error_invalid_parameter(connection, message);
+	}
 
-        dbg(lvl_debug,"Dumping route from dbus to %s", filename);
+	dbg(lvl_debug,"Dumping route from dbus to %s", filename);
 
-        struct map * map=NULL;
-        struct navigation * nav = NULL;
-        struct map_rect * mr=NULL;
-        struct item *item = NULL;
-        struct attr attr;
-        struct coord c;
-        struct coord_geo g;
+	struct map * map=NULL;
+	struct navigation * nav = NULL;
+	struct map_rect * mr=NULL;
+	struct item *item = NULL;
+	struct attr attr;
+	struct coord c;
+	struct coord_geo g;
 
-        char *header = "{\n"
-"  \"type\": \"FeatureCollection\",\n"
-"  \"features\": [\n"
-"    {\n"
-"      \"type\": \"Feature\",\n"
-"      \"properties\": {\n"
-"        \"name\": \"Navit route export\",\n"
-"        \"stroke\": \"red\",\n"
-"        \"stroke-width\": \"5px\"\n"
-"      },\n"
-"      \"geometry\": {\n"
-"        \"type\": \"LineString\",\n"
-"        \"coordinates\": [\n";
+	char *header = "{\n"
+	               "  \"type\": \"FeatureCollection\",\n"
+	               "  \"features\": [\n"
+	               "    {\n"
+	               "      \"type\": \"Feature\",\n"
+	               "      \"properties\": {\n"
+	               "        \"name\": \"Navit route export\",\n"
+	               "        \"stroke\": \"red\",\n"
+	               "        \"stroke-width\": \"5px\"\n"
+	               "      },\n"
+	               "      \"geometry\": {\n"
+	               "        \"type\": \"LineString\",\n"
+	               "        \"coordinates\": [\n";
 
-        nav = navit_get_navigation(navit);
-        if(!nav) {
-                return dbus_error_navigation_not_configured(connection, message);
-        }
-        map = navigation_get_map(nav);
-        if(map)
-          mr = map_rect_new(map,NULL);
+	nav = navit_get_navigation(navit);
+	if(!nav) {
+		return dbus_error_navigation_not_configured(connection, message);
+	}
+	map = navigation_get_map(nav);
+	if(map)
+		mr = map_rect_new(map,NULL);
 
-        FILE *fp;
-        fp = fopen(filename,"w");
-        fprintf(fp, "%s", header);
-        int is_first=1;
-        char * instructions;
-        instructions=g_strdup("");
-        while((item = map_rect_get_item(mr))) {
-                if(item_attr_get(item,attr_navigation_long,&attr)) {
-                        item_coord_get(item, &c, 1);
-                        transform_to_geo (projection_mg, &c, &g);
-                        if(!is_first){
-                                fprintf(fp,",\n");
-                                instructions=g_strconcat_printf(instructions,",\n");
-                        }
-                        fprintf(fp,"[ %4.16f, %4.16f ]",g.lng, g.lat);
-                         instructions=g_strconcat_printf(instructions, g_strdup_printf("    { \"type\": \"Feature\", \"properties\": { \"Instruction\": \"%s\", \"name\": \"\" }, \"geometry\": { \"type\": \"Point\", \"coordinates\": [ %4.16f, %4.16f ] } }", map_convert_string_tmp(item->map,attr.u.str), g.lng, g.lat));
-                        /* fprintf(fp,"<rtept lon='%4.16f' lat='%4.16f'><type>%s</type><name>%s</name></rtept>\n",g.lng, g.lat, item_to_name(item->type), map_convert_string_tmp(item->map,attr.u.str)); */
-                        is_first=0;
-                }
-        }
+	FILE *fp;
+	fp = fopen(filename,"w");
+	fprintf(fp, "%s", header);
+	int is_first=1;
+	char * instructions;
+	instructions=g_strdup("");
+	while((item = map_rect_get_item(mr))) {
+		if(item_attr_get(item,attr_navigation_long,&attr)) {
+			item_coord_get(item, &c, 1);
+			transform_to_geo (projection_mg, &c, &g);
+			if(!is_first) {
+				fprintf(fp,",\n");
+				instructions=g_strconcat_printf(instructions,",\n");
+			}
+			fprintf(fp,"[ %4.16f, %4.16f ]",g.lng, g.lat);
+			instructions=g_strconcat_printf(instructions,
+			                                g_strdup_printf("    { \"type\": \"Feature\", \"properties\": { \"Instruction\": \"%s\", \"name\": \"\" }, \"geometry\": { \"type\": \"Point\", \"coordinates\": [ %4.16f, %4.16f ] } }",
+			                                                map_convert_string_tmp(item->map,attr.u.str), g.lng, g.lat));
+			/* fprintf(fp,"<rtept lon='%4.16f' lat='%4.16f'><type>%s</type><name>%s</name></rtept>\n",g.lng, g.lat, item_to_name(item->type), map_convert_string_tmp(item->map,attr.u.str)); */
+			is_first=0;
+		}
+	}
 
-        fprintf(fp," ]}\n },\n%s  ]\n }\n",instructions);
+	fprintf(fp," ]}\n },\n%s  ]\n }\n",instructions);
 
-        fclose(fp);
+	fclose(fp);
 
-        return empty_reply(connection, message);
+	return empty_reply(connection, message);
 }
 
 static DBusHandlerResult
@@ -1580,7 +1599,8 @@ request_navit_resize(DBusConnection *connection, DBusMessage *message)
 static DBusHandlerResult
 request_navit_get_attr(DBusConnection *connection, DBusMessage *message)
 {
-	return request_get_attr(connection, message, "navit", NULL, (int (*)(void *, enum attr_type, struct attr *, struct attr_iter *))navit_get_attr);
+	return request_get_attr(connection, message, "navit", NULL, (int (*)(void *, enum attr_type, struct attr *,
+	                        struct attr_iter *))navit_get_attr);
 }
 
 static DBusHandlerResult
@@ -1628,7 +1648,8 @@ request_navit_add_attr(DBusConnection *connection, DBusMessage *message)
 static DBusHandlerResult
 request_navit_remove_attr(DBusConnection *connection, DBusMessage *message)
 {
-	return request_set_add_remove_attr(connection, message, "navit", NULL, (int (*)(void *, struct attr *))navit_remove_attr);
+	return request_set_add_remove_attr(connection, message, "navit", NULL, (int (*)(void *,
+	                                   struct attr *))navit_remove_attr);
 }
 
 static DBusHandlerResult
@@ -1644,7 +1665,7 @@ request_navit_set_position(DBusConnection *connection, DBusMessage *message)
 
 	dbus_message_iter_init(message, &iter);
 	if (!pcoord_get_from_message(message, &iter, &pc))
-    		return dbus_error_invalid_parameter(connection, message);
+		return dbus_error_invalid_parameter(connection, message);
 
 	navit_set_position(navit, &pc);
 	return empty_reply(connection, message);
@@ -1664,7 +1685,7 @@ request_navit_set_destination(DBusConnection *connection, DBusMessage *message)
 
 	dbus_message_iter_init(message, &iter);
 	if (!pcoord_get_from_message(message, &iter, &pc))
-    		return dbus_error_invalid_parameter(connection, message);
+		return dbus_error_invalid_parameter(connection, message);
 
 	dbus_message_iter_next(&iter);
 	dbus_message_iter_get_basic(&iter, &description);
@@ -1702,8 +1723,8 @@ request_navit_evaluate(DBusConnection *connection, DBusMessage *message)
 
 	attr.type=attr_navit;
 	attr.u.navit=navit;
-        if (!dbus_message_get_args(message, NULL, DBUS_TYPE_STRING, &command, DBUS_TYPE_INVALID))
-    		return dbus_error_invalid_parameter(connection, message);
+	if (!dbus_message_get_args(message, NULL, DBUS_TYPE_STRING, &command, DBUS_TYPE_INVALID))
+		return dbus_error_invalid_parameter(connection, message);
 	result=command_evaluate_to_string(&attr, command, &error);
 	reply = dbus_message_new_method_return(message);
 	if (error)
@@ -1755,7 +1776,8 @@ request_search_list_get_result(DBusConnection *connection, DBusMessage *message)
 	dbus_message_iter_append_basic(&iter, DBUS_TYPE_INT32, &result->id);
 	pcoord_encode(&iter, result->c);
 	dbus_message_iter_open_container(&iter, DBUS_TYPE_ARRAY, "{sa{sv}}", &iter2);
-	if (result->country && (result->country->car || result->country->iso2 || result->country->iso3 || result->country->name)) {
+	if (result->country && (result->country->car || result->country->iso2 || result->country->iso3
+	                        || result->country->name)) {
 		dbus_message_iter_open_container(&iter2, DBUS_TYPE_DICT_ENTRY, NULL, &iter3);
 		dbus_message_iter_append_basic(&iter3, DBUS_TYPE_STRING, &country);
 		dbus_message_iter_open_container(&iter3, DBUS_TYPE_ARRAY, "{sv}", &iter4);
@@ -1843,9 +1865,9 @@ request_search_list_search(DBusConnection *connection, DBusMessage *message)
 
 	dbus_message_iter_init(message, &iter);
 	if (!decode_attr_from_iter(&iter, &attr))
-    		return dbus_error_invalid_parameter(connection, message);
+		return dbus_error_invalid_parameter(connection, message);
 	if (dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_INT32)
-    		return dbus_error_invalid_parameter(connection, message);
+		return dbus_error_invalid_parameter(connection, message);
 	dbus_message_iter_get_basic(&iter, &partial);
 	search_list_search(search_list, &attr, partial);
 	return empty_reply(connection, message);
@@ -1866,12 +1888,12 @@ request_search_list_select(DBusConnection *connection, DBusMessage *message)
 	dbus_message_iter_init(message, &iter);
 	attr_type=decode_attr_type_from_iter(&iter);
 	if (attr_type == attr_none)
-    		return dbus_error_invalid_parameter(connection, message);
+		return dbus_error_invalid_parameter(connection, message);
 	if (dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_INT32)
-    		return dbus_error_invalid_parameter(connection, message);
+		return dbus_error_invalid_parameter(connection, message);
 	dbus_message_iter_get_basic(&iter, &id);
 	if (dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_INT32)
-    		return dbus_error_invalid_parameter(connection, message);
+		return dbus_error_invalid_parameter(connection, message);
 	dbus_message_iter_get_basic(&iter, &mode);
 	search_list_select(search_list, attr_type, id, mode);
 	return empty_reply(connection, message);
@@ -1882,7 +1904,8 @@ request_search_list_select(DBusConnection *connection, DBusMessage *message)
 static DBusHandlerResult
 request_tracking_get_attr(DBusConnection *connection, DBusMessage *message)
 {
-	return request_get_attr(connection, message, "tracking", NULL, (int (*)(void *, enum attr_type, struct attr *, struct attr_iter *))tracking_get_attr);
+	return request_get_attr(connection, message, "tracking", NULL, (int (*)(void *, enum attr_type, struct attr *,
+	                        struct attr_iter *))tracking_get_attr);
 }
 
 
@@ -1893,7 +1916,7 @@ static DBusHandlerResult
 request_vehicle_set_attr(DBusConnection *connection, DBusMessage *message)
 {
 	struct vehicle *vehicle;
-    	struct attr attr;
+	struct attr attr;
 	int ret;
 
 	vehicle = object_get_from_message(message, "vehicle");
@@ -1905,7 +1928,7 @@ request_vehicle_set_attr(DBusConnection *connection, DBusMessage *message)
 		if (ret)
 			return empty_reply(connection, message);
 	}
-    	return dbus_error_invalid_parameter(connection, message);
+	return dbus_error_invalid_parameter(connection, message);
 }
 
 /* vehicleprofile */
@@ -1913,35 +1936,39 @@ request_vehicle_set_attr(DBusConnection *connection, DBusMessage *message)
 static DBusHandlerResult
 request_vehicleprofile_get_attr(DBusConnection *connection, DBusMessage *message)
 {
-	return request_get_attr(connection, message, "vehicleprofile", NULL, (int (*)(void *, enum attr_type, struct attr *, struct attr_iter *))vehicleprofile_get_attr);
+	return request_get_attr(connection, message, "vehicleprofile", NULL, (int (*)(void *, enum attr_type, struct attr *,
+	                        struct attr_iter *))vehicleprofile_get_attr);
 }
 
 
 static DBusHandlerResult
 request_vehicleprofile_set_attr(DBusConnection *connection, DBusMessage *message)
 {
-	return request_set_add_remove_attr(connection, message, "vehicleprofile", NULL, (int (*)(void *, struct attr *))vehicleprofile_set_attr);
+	return request_set_add_remove_attr(connection, message, "vehicleprofile", NULL, (int (*)(void *,
+	                                   struct attr *))vehicleprofile_set_attr);
 }
 
 static DBusHandlerResult
 request_vehicleprofile_attr_iter(DBusConnection *connection, DBusMessage *message)
 {
-	return request_attr_iter(connection, message, "vehicleprofile", (struct attr_iter * (*)(void))vehicleprofile_attr_iter_new);
+	return request_attr_iter(connection, message, "vehicleprofile",
+	                         (struct attr_iter * (*)(void))vehicleprofile_attr_iter_new);
 }
 
 static DBusHandlerResult
 request_vehicleprofile_attr_iter_destroy(DBusConnection *connection, DBusMessage *message)
 {
-	return request_attr_iter_destroy(connection, message, "vehicleprofile", (void (*)(struct attr_iter *))vehicleprofile_attr_iter_destroy);
+	return request_attr_iter_destroy(connection, message, "vehicleprofile",
+	                                 (void (*)(struct attr_iter *))vehicleprofile_attr_iter_destroy);
 }
 
 struct dbus_method {
 	char *path;
 	char *method;
 	char *signature;
-    char *signature_name;
-    char *response;
-    char *response_name;
+	char *signature_name;
+	char *response;
+	char *response_name;
 	DBusHandlerResult(*func)(DBusConnection *connection, DBusMessage *message);
 } dbus_methods[] = {
 	{"",        "attr_iter",           "",        "",                                        "o",  "attr_iter",  request_config_attr_iter},
@@ -1967,9 +1994,9 @@ struct dbus_method {
 	{".navit",  "zoom",                "i(ii)",   "factor(pixel_x,pixel_y)",                 "",   "",      request_navit_zoom},
 	{".navit",  "zoom",                "i",       "factor",                                  "",   "",      request_navit_zoom},
 	{".navit",  "zoom_to_route",       "",        "",                                        "",   "",      request_navit_zoom_to_route},
-        {".navit",  "quit",                "",        "",                                        "",   "",      request_navit_quit},
+	{".navit",  "quit",                "",        "",                                        "",   "",      request_navit_quit},
 	{".navit",  "export_as_gpx",       "s",       "filename",                                "",   "",      request_navit_route_export_gpx},
-        {".navit",  "export_as_geojson",   "s",       "filename",                                "",   "",      request_navit_route_export_geojson},
+	{".navit",  "export_as_geojson",   "s",       "filename",                                "",   "",      request_navit_route_export_geojson},
 	{".navit",  "block",               "i",       "mode",                                    "",   "",      request_navit_block},
 	{".navit",  "resize",              "ii",      "upperleft,lowerright",                    "",   "",      request_navit_resize},
 	{".navit",  "attr_iter",           "",        "",                                        "o",  "attr_iter",  request_navit_attr_iter},
@@ -2057,47 +2084,50 @@ introspect_path(const char *object)
 static char *
 generate_navitintrospectxml(const char *object)
 {
-    int i,methods_size,n=0;
-    char *navitintrospectxml;
-    char *path=introspect_path(object);
-    if (!path)
-	return NULL;
-    dbg(lvl_debug,"path=%s",path);
+	int i,methods_size,n=0;
+	char *navitintrospectxml;
+	char *path=introspect_path(object);
+	if (!path)
+		return NULL;
+	dbg(lvl_debug,"path=%s",path);
 
-    // write header and make navit introspectable
-    navitintrospectxml = g_strdup_printf("%s%s%s\n", navitintrospectxml_head1, object, navitintrospectxml_head2);
+	// write header and make navit introspectable
+	navitintrospectxml = g_strdup_printf("%s%s%s\n", navitintrospectxml_head1, object, navitintrospectxml_head2);
 
-    methods_size=sizeof(dbus_methods)/sizeof(struct dbus_method);
-    for (i = 0 ; i < methods_size ; i++) {
-        // start new interface if it's the first method or it changed
-	if (strcmp(dbus_methods[i].path, path))
-		continue;
-        if ((n == 0) || strcmp(dbus_methods[i-1].path, dbus_methods[i].path))
-            navitintrospectxml = g_strconcat_printf(navitintrospectxml, "  <interface name=\"%s%s\">\n", service_name, dbus_methods[i].path);
-	n++;
+	methods_size=sizeof(dbus_methods)/sizeof(struct dbus_method);
+	for (i = 0 ; i < methods_size ; i++) {
+		// start new interface if it's the first method or it changed
+		if (strcmp(dbus_methods[i].path, path))
+			continue;
+		if ((n == 0) || strcmp(dbus_methods[i-1].path, dbus_methods[i].path))
+			navitintrospectxml = g_strconcat_printf(navitintrospectxml, "  <interface name=\"%s%s\">\n", service_name,
+			                                        dbus_methods[i].path);
+		n++;
 
-        // start the new method
-        navitintrospectxml = g_strconcat_printf(navitintrospectxml, "    <method name=\"%s\">\n", dbus_methods[i].method);
+		// start the new method
+		navitintrospectxml = g_strconcat_printf(navitintrospectxml, "    <method name=\"%s\">\n", dbus_methods[i].method);
 
-        // set input signature if existent
-        if (strcmp(dbus_methods[i].signature, ""))
-            navitintrospectxml = g_strconcat_printf(navitintrospectxml, "      <arg direction=\"in\" name=\"%s\" type=\"%s\" />\n", dbus_methods[i].signature_name, dbus_methods[i].signature);
+		// set input signature if existent
+		if (strcmp(dbus_methods[i].signature, ""))
+			navitintrospectxml = g_strconcat_printf(navitintrospectxml, "      <arg direction=\"in\" name=\"%s\" type=\"%s\" />\n",
+			                                        dbus_methods[i].signature_name, dbus_methods[i].signature);
 
-        // set response signature if existent
-        if (strcmp(dbus_methods[i].response, ""))
-            navitintrospectxml = g_strconcat_printf(navitintrospectxml, "      <arg direction=\"out\" name=\"%s\" type=\"%s\" />\n", dbus_methods[i].response_name, dbus_methods[i].response);
+		// set response signature if existent
+		if (strcmp(dbus_methods[i].response, ""))
+			navitintrospectxml = g_strconcat_printf(navitintrospectxml, "      <arg direction=\"out\" name=\"%s\" type=\"%s\" />\n",
+			                                        dbus_methods[i].response_name, dbus_methods[i].response);
 
-        // close the method
-        navitintrospectxml = g_strconcat_printf(navitintrospectxml, "    </method>\n");
+		// close the method
+		navitintrospectxml = g_strconcat_printf(navitintrospectxml, "    </method>\n");
 
-        // close the interface if we reached the last method or the interface changes
-        if ((methods_size == i+1) || ((methods_size > i+1) && strcmp(dbus_methods[i+1].path, dbus_methods[i].path)))
-            navitintrospectxml = g_strconcat_printf(navitintrospectxml, "  </interface>\n\n");
-    }
-    // close the "mother tag"
-    navitintrospectxml = g_strconcat_printf(navitintrospectxml, "</node>\n");
+		// close the interface if we reached the last method or the interface changes
+		if ((methods_size == i+1) || ((methods_size > i+1) && strcmp(dbus_methods[i+1].path, dbus_methods[i].path)))
+			navitintrospectxml = g_strconcat_printf(navitintrospectxml, "  </interface>\n\n");
+	}
+	// close the "mother tag"
+	navitintrospectxml = g_strconcat_printf(navitintrospectxml, "</node>\n");
 
-    return navitintrospectxml;
+	return navitintrospectxml;
 }
 
 static DBusHandlerResult
@@ -2105,10 +2135,12 @@ navit_handler_func(DBusConnection *connection, DBusMessage *message, void *user_
 {
 	int i;
 	char *path;
-	dbg(lvl_debug,"type=%s interface=%s path=%s member=%s signature=%s", dbus_message_type_to_string(dbus_message_get_type(message)), dbus_message_get_interface(message), dbus_message_get_path(message), dbus_message_get_member(message), dbus_message_get_signature(message));
+	dbg(lvl_debug,"type=%s interface=%s path=%s member=%s signature=%s",
+	    dbus_message_type_to_string(dbus_message_get_type(message)), dbus_message_get_interface(message),
+	    dbus_message_get_path(message), dbus_message_get_member(message), dbus_message_get_signature(message));
 	if (dbus_message_is_method_call (message, "org.freedesktop.DBus.Introspectable", "Introspect")) {
 		DBusMessage *reply;
-            	char *navitintrospectxml = generate_navitintrospectxml(dbus_message_get_path(message));
+		char *navitintrospectxml = generate_navitintrospectxml(dbus_message_get_path(message));
 		dbg(lvl_debug,"Introspect %s:Result:%s",dbus_message_get_path(message), navitintrospectxml);
 		if (navitintrospectxml) {
 			reply = dbus_message_new_method_return(message);
@@ -2121,10 +2153,10 @@ navit_handler_func(DBusConnection *connection, DBusMessage *message, void *user_
 		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 	}
 
-    for (i = 0 ; i < sizeof(dbus_methods)/sizeof(struct dbus_method) ; i++) {
+	for (i = 0 ; i < sizeof(dbus_methods)/sizeof(struct dbus_method) ; i++) {
 		path=g_strdup_printf("%s%s", service_name, dbus_methods[i].path);
 		if (dbus_message_is_method_call(message, path, dbus_methods[i].method) &&
-		    dbus_message_has_signature(message, dbus_methods[i].signature)) {
+		                dbus_message_has_signature(message, dbus_methods[i].signature)) {
 			g_free(path);
 			return dbus_methods[i].func(connection, message);
 		}
@@ -2143,7 +2175,9 @@ static DBusObjectPathVTable dbus_navit_vtable = {
 DBusHandlerResult
 filter(DBusConnection *connection, DBusMessage *message, void *user_data)
 {
-	dbg(lvl_debug,"type=%s interface=%s path=%s member=%s signature=%s", dbus_message_type_to_string(dbus_message_get_type(message)), dbus_message_get_interface(message), dbus_message_get_path(message), dbus_message_get_member(message), dbus_message_get_signature(message));
+	dbg(lvl_debug,"type=%s interface=%s path=%s member=%s signature=%s",
+	    dbus_message_type_to_string(dbus_message_get_type(message)), dbus_message_get_interface(message),
+	    dbus_message_get_path(message), dbus_message_get_member(message), dbus_message_get_signature(message));
 	if (dbus_message_is_signal(message, DBUS_INTERFACE_DBUS, "NameOwnerChanged")) {
 	}
 	return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
@@ -2181,7 +2215,7 @@ dbus_cmd_send_signal(struct navit *navit, char *command, struct attr **in, struc
 
 
 static struct command_table commands[] = {
-        {"dbus_send_signal",command_cast(dbus_cmd_send_signal)},
+	{"dbus_send_signal",command_cast(dbus_cmd_send_signal)},
 };
 
 

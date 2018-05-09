@@ -41,11 +41,16 @@
 #endif
 #include "layout.h"
 
-static struct search_list_result *search_list_result_dup(struct search_list_result *slr);
-static void search_list_country_destroy(struct search_list_country *this_);
-static void search_list_town_destroy(struct search_list_town *this_);
-static void search_list_street_destroy(struct search_list_street *this_);
-static void search_list_house_number_destroy(struct search_list_house_number *this_);
+static struct search_list_result *
+search_list_result_dup(struct search_list_result *slr);
+static void
+search_list_country_destroy(struct search_list_country *this_);
+static void
+search_list_town_destroy(struct search_list_town *this_);
+static void
+search_list_street_destroy(struct search_list_street *this_);
+static void
+search_list_house_number_destroy(struct search_list_house_number *this_);
 
 struct search_list_level {
 	struct mapset *ms;
@@ -107,7 +112,8 @@ search_list_new(struct mapset *ms)
 	return ret;
 }
 
-static void search_list_search_free(struct search_list *sl, int level);
+static void
+search_list_search_free(struct search_list *sl, int level);
 
 /**
  * @brief Determine search list level for given attr_type.
@@ -244,7 +250,8 @@ search_by_address_compare(gconstpointer a, gconstpointer b)
 
 
 static GList *
-search_by_address_attr(GList *results, struct search_list *sl, GList *phrases, GList *exclude, enum attr_type attr_type, int wordcount)
+search_by_address_attr(GList *results, struct search_list *sl, GList *phrases, GList *exclude, enum attr_type attr_type,
+                       int wordcount)
 {
 	GList *tmp=phrases;
 	struct attr attr;
@@ -385,8 +392,8 @@ search_list_select(struct search_list *this_, enum attr_type attr_type, int id, 
 	struct search_list_common *slc;
 	GList *curr;
 
-        level = search_list_level(attr_type);
-        if (level < 0)
+	level = search_list_level(attr_type);
+	if (level < 0)
 		return NULL;
 	le=&this_->levels[level];
 	curr=le->list;
@@ -417,27 +424,27 @@ search_list_common_addattr(struct attr* attr,struct search_list_common *common)
 
 	common->attrs=attr_generic_prepend_attr(common->attrs,attr);
 	switch(attr->type) {
-		case attr_town_name:
-			common->town_name=common->attrs[0]->u.str;
-			break;
-		case attr_county_name:
-			common->county_name=common->attrs[0]->u.str;
-			break;
-		case attr_district_name:
-			common->district_name=common->attrs[0]->u.str;
-			break;
-		case attr_postal:
+	case attr_town_name:
+		common->town_name=common->attrs[0]->u.str;
+		break;
+	case attr_county_name:
+		common->county_name=common->attrs[0]->u.str;
+		break;
+	case attr_district_name:
+		common->district_name=common->attrs[0]->u.str;
+		break;
+	case attr_postal:
+		common->postal=common->attrs[0]->u.str;
+		break;
+	case attr_town_postal:
+		if(!common->postal)
 			common->postal=common->attrs[0]->u.str;
-			break;
-		case attr_town_postal:
-			if(!common->postal)
-				common->postal=common->attrs[0]->u.str;
-			break;
-		case attr_postal_mask:
-			common->postal_mask=common->attrs[0]->u.str;
-			break;
-		default:
-			break;
+		break;
+	case attr_postal_mask:
+		common->postal_mask=common->attrs[0]->u.str;
+		break;
+	default:
+		break;
 	}
 }
 
@@ -446,7 +453,7 @@ search_list_common_new(struct item *item, struct search_list_common *common)
 {
 	struct attr attr;
 	int i;
-	enum attr_type common_attrs[]={
+	enum attr_type common_attrs[]= {
 		attr_state_name,
 		attr_county_name,
 		attr_municipality_name,
@@ -465,7 +472,7 @@ search_list_common_new(struct item *item, struct search_list_common *common)
 	common->postal_mask=NULL;
 	common->attrs=NULL;
 
-	for(i=0;common_attrs[i];i++) {
+	for(i=0; common_attrs[i]; i++) {
 		if (item_attr_get(item, common_attrs[i], &attr)) {
 			struct attr at;
 			at.type=attr.type;
@@ -482,7 +489,7 @@ search_list_common_dup(struct search_list_common *src, struct search_list_common
 	int i;
 
 	if(dst->attrs) {
-		for(i=0;dst->attrs[i];i++)
+		for(i=0; dst->attrs[i]; i++)
 			search_list_common_addattr(src->attrs[i],dst);
 	}
 
@@ -645,7 +652,8 @@ search_list_street_destroy(struct search_list_street *this_)
 }
 
 static struct search_list_house_number *
-search_list_house_number_new(struct item *item, struct house_number_interpolation *inter, char *inter_match, int inter_partial)
+search_list_house_number_new(struct item *item, struct house_number_interpolation *inter, char *inter_match,
+                             int inter_partial)
 {
 	struct search_list_house_number *ret=g_new0(struct search_list_house_number, 1);
 	struct attr attr;
@@ -730,8 +738,7 @@ search_list_search_free(struct search_list *sl, int level)
 {
 	struct search_list_level *le=&sl->levels[level];
 	GList *next,*curr;
-	if (le->search)
-	{
+	if (le->search) {
 		mapset_search_destroy(le->search);
 		le->search=NULL;
 	}
@@ -742,8 +749,7 @@ search_list_search_free(struct search_list *sl, int level)
 	}
 #endif
 	curr=le->list;
-	while (curr)
-	{
+	while (curr) {
 		search_list_result_destroy(level, curr->data);
 		next=g_list_next(curr);
 		curr=next;
@@ -864,25 +870,20 @@ search_list_get_result(struct search_list *this_)
 	//dbg(lvl_debug,"enter");
 	le=&this_->levels[level];
 	//dbg(lvl_debug,"le=%p", le);
-	for (;;)
-	{
+	for (;;) {
 		//dbg(lvl_debug,"le->search=%p", le->search);
-		if (! le->search)
-		{
+		if (! le->search) {
 			//dbg(lvl_debug,"partial=%d level=%d", le->partial, level);
 			if (! level)
 				le->parent=NULL;
-			else
-			{
+			else {
 				leu=&this_->levels[level-1];
 				//dbg(lvl_debug,"leu->curr=%p", leu->curr);
-				for (;;)
-				{
+				for (;;) {
 					//dbg(lvl_debug,"*********########");
 
 					struct search_list_common *slc;
-					if (! leu->curr)
-					{
+					if (! leu->curr) {
 						return NULL;
 					}
 					le->parent=leu->curr->data;
@@ -895,8 +896,7 @@ search_list_get_result(struct search_list *this_)
 						break;
 				}
 			}
-			if (le->parent)
-			{
+			if (le->parent) {
 				//dbg(lvl_debug,"mapset_search_new with item(%d,%d)", le->parent->item.id_hi, le->parent->item.id_lo);
 			}
 			//dbg(lvl_debug,"############## attr=%s", attr_to_name(le->attr->type));
@@ -904,18 +904,15 @@ search_list_get_result(struct search_list *this_)
 			le->hash=g_hash_table_new(search_item_hash_hash, search_item_hash_equal);
 		}
 		//dbg(lvl_debug,"le->search=%p", le->search);
-		if (!this_->item)
-		{
+		if (!this_->item) {
 			//dbg(lvl_debug,"sssss 1");
 			this_->item=mapset_search_get_item(le->search);
 			//dbg(lvl_debug,"sssss 1 %p",this_->item);
 		}
-		if (this_->item)
-		{
+		if (this_->item) {
 			void *p=NULL;
 			//dbg(lvl_debug,"id_hi=%d id_lo=%d", this_->item->id_hi, this_->item->id_lo);
-			if (this_->postal)
-			{
+			if (this_->postal) {
 				struct attr postal;
 				if (item_attr_get(this_->item, attr_postal_mask, &postal)) {
 					if (!postal_match(this_->postal, postal.u.str))
@@ -930,8 +927,7 @@ search_list_get_result(struct search_list *this_)
 			this_->result.street=NULL;
 			this_->result.c=NULL;
 			//dbg(lvl_debug,"case x LEVEL start %d",level);
-			switch (level)
-			{
+			switch (level) {
 			case 0:
 				//dbg(lvl_debug,"case 0 COUNTRY");
 				p=search_list_country_new(this_->item);
@@ -969,23 +965,20 @@ search_list_get_result(struct search_list *this_)
 				has_street_name=0;
 
 				// if this housenumber has a streetname tag, set the name now
-				if (item_attr_get(this_->item, attr_street_name, &attr2))
-				{
+				if (item_attr_get(this_->item, attr_street_name, &attr2)) {
 					dbg(lvl_debug,"streetname: %s",attr2.u.str);
 					has_street_name=1;
 				}
 
 				p=search_list_house_number_new(this_->item, &this_->inter, le->attr->u.str, le->partial);
-				if (!p)
-				{
+				if (!p) {
 					house_number_interpolation_clear_all(&this_->inter);
 					this_->item=NULL;
 					continue;
 				}
 
 				this_->result.house_number=p;
-				if (!this_->result.house_number->house_number_interpolation)
-				{
+				if (!this_->result.house_number->house_number_interpolation) {
 					this_->item=NULL;
 				} else {
 					dbg(lvl_debug,"interpolation!");
@@ -1014,15 +1007,11 @@ search_list_get_result(struct search_list *this_)
 				}
 #endif
 			}
-			if (p)
-			{
-				if (search_add_result(le, p))
-				{
+			if (p) {
+				if (search_add_result(le, p)) {
 					this_->result.id++;
 					return &this_->result;
-				}
-				else
-				{
+				} else {
 					search_list_result_destroy(level, p);
 				}
 			}

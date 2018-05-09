@@ -40,7 +40,7 @@ struct gui_priv {
 	struct gui *gui;
 	struct attr self;
 	struct vehicle* currVehicle;
-	
+
 	//configuration items
 	int fullscreen;
 	int menu_on_map_click;
@@ -53,7 +53,7 @@ struct gui_priv {
 	int radius;
 	int pitch;
 	int lazy; //When TRUE - menu state will not be changed during map/menu switches, FALSE - menu will be always reset to main.qml
-	
+
 	//Interface stuff
 	struct callback_list *cbl;
 	QCoreApplication *app;
@@ -90,33 +90,37 @@ struct gui_priv {
 #include "guiProxy.h"
 
 //Main window class for resizeEvent handling
-#ifdef Q_WS_X11 
+#ifdef Q_WS_X11
 #include <QX11EmbedWidget>
-class NGQMainWindow : public QX11EmbedWidget 
+class NGQMainWindow : public QX11EmbedWidget
 {
 #else
-class NGQMainWindow : public QWidget 
+class NGQMainWindow : public QWidget
 {
 #endif /* Q_WS_X11 */
 public:
 
-#ifdef Q_WS_X11 
-	NGQMainWindow(struct gui_priv* this_,QWidget *parent) : QX11EmbedWidget(parent) {
+#ifdef Q_WS_X11
+	NGQMainWindow(struct gui_priv* this_,QWidget *parent) : QX11EmbedWidget(parent)
+	{
 #else
-	NGQMainWindow(struct gui_priv* this_,QWidget *parent) : QWidget(parent) {
+	NGQMainWindow(struct gui_priv* this_,QWidget *parent) : QWidget(parent)
+	{
 #endif /* Q_WS_X11  */
 		this->object=this_;
 	}
 protected:
-	void resizeEvent(QResizeEvent *) {
+	void resizeEvent(QResizeEvent *)
+	{
 		this->object->w=this->width();
 		this->object->h=this->height();
 		//YES, i KNOW about signal/slot thing
 		this->object->guiProxy->setWidth(this->width());
 		this->object->guiProxy->setHeight(this->height());
 	}
-	void closeEvent(QCloseEvent* event) {
-	this->object->graphicsWidget->close();
+	void closeEvent(QCloseEvent* event)
+	{
+		this->object->graphicsWidget->close();
 	}
 private:
 	struct gui_priv* object;
@@ -136,7 +140,7 @@ static void gui_qml_dbus_signal(struct gui_priv *this_, struct point *p)
 	while ((di=graphics_displaylist_next(dlh))) {
 		struct item *item=graphics_displayitem_get_item(di);
 		if (item_is_point(*item) && graphics_displayitem_get_displayed(di) &&
-			graphics_displayitem_within_dist(display, di, p, 10)) {
+		                graphics_displayitem_within_dist(display, di, p, 10)) {
 			struct map_rect *mr=map_rect_new(item->map, NULL);
 			struct item *itemo=map_rect_get_item_byid(mr, item->id_hi, item->id_lo);
 			struct attr attr;
@@ -146,13 +150,13 @@ static void gui_qml_dbus_signal(struct gui_priv *this_, struct point *p)
 				attr.type=attr_data;
 				attr_list[0]=&attr;
 				attr_list[1]=NULL;
-       				if (navit_get_attr(this_->nav, attr_callback_list, &cb, NULL)) 
-               				callback_list_call_attr_4(cb.u.callback_list, attr_command, "dbus_send_signal", attr_list, NULL, &valid);
+				if (navit_get_attr(this_->nav, attr_callback_list, &cb, NULL))
+					callback_list_call_attr_4(cb.u.callback_list, attr_command, "dbus_send_signal", attr_list, NULL, &valid);
 			}
 			map_rect_destroy(mr);
 		}
 	}
-       	graphics_displaylist_close(dlh);
+	graphics_displaylist_close(dlh);
 }
 
 static void gui_qml_button(void *data, int pressed, int button, struct point *p)
@@ -239,7 +243,7 @@ gui_qml_window_closed(struct gui_priv *data)
 }
 //GUI interface calls
 static int argc=1;
-static char *argv[]={(char *)"navit",NULL};
+static char *argv[]= {(char *)"navit",NULL};
 
 static int gui_qml_set_graphics(struct gui_priv *this_, struct graphics *gra)
 {
@@ -251,10 +255,10 @@ static int gui_qml_set_graphics(struct gui_priv *this_, struct graphics *gra)
 
 	//Check if we are already in Qt environment
 	if (QApplication::instance()==NULL) {
-	    //Not yet
-	    this_->app=new QApplication(argc,argv);
+		//Not yet
+		this_->app=new QApplication(argc,argv);
 	} else {
-	    this_->app=QApplication::instance();
+		this_->app=QApplication::instance();
 	}
 
 	//Link graphics events
@@ -268,31 +272,31 @@ static int gui_qml_set_graphics(struct gui_priv *this_, struct graphics *gra)
 	graphics_add_callback(gra, this_->keypress_cb);
 	this_->window_closed_cb=callback_new_attr_1(callback_cast(gui_qml_window_closed), attr_window_closed, this_);
 	graphics_add_callback(gra, this_->window_closed_cb);
-	
-		
+
+
 	//Create main window
 	this_->switcherWidget = new QStackedLayout();
 	_mainWindow = new NGQMainWindow(this_, NULL);
 #ifdef Q_WS_X11
-		xid=getenv("NAVIT_XID");
-		if (xid.length()>0) {
-			_mainWindow->embedInto(xid.toULong(&ok,0));
-		}else{
-			dbg(lvl_error, "FATAL: Environment variable NAVIT_XID not set."
-			       "       Please set NAVIT_XID to the window ID of the window to embed into.\n");
-			exit(1);
-		}
+	xid=getenv("NAVIT_XID");
+	if (xid.length()>0) {
+		_mainWindow->embedInto(xid.toULong(&ok,0));
+	} else {
+		dbg(lvl_error, "FATAL: Environment variable NAVIT_XID not set."
+		    "       Please set NAVIT_XID to the window ID of the window to embed into.\n");
+		exit(1);
+	}
 #endif /* Q_WS_X11  */
 	this_->mainWindow=_mainWindow;
 	if ( this_->w && this_->h ) {
-	    this_->mainWindow->resize(this_->w,this_->h);
+		this_->mainWindow->resize(this_->w,this_->h);
 	}
 	if ( this_->fullscreen ) {
-	    this_->mainWindow->showFullScreen();
+		this_->mainWindow->showFullScreen();
 	}
-	
+
 	this_->mainWindow->setLayout(this_->switcherWidget);
-	
+
 	//Create proxy object and bind them to gui widget
 	this_->guiProxy = new NGQProxyGui(this_,this_->mainWindow);
 	this_->navitProxy = new NGQProxyNavit(this_,this_->mainWindow);
@@ -300,18 +304,18 @@ static int gui_qml_set_graphics(struct gui_priv *this_, struct graphics *gra)
 	this_->searchProxy = new NGQProxySearch(this_,this_->mainWindow);
 	this_->bookmarksProxy = new NGQProxyBookmarks(this_,this_->mainWindow);
 	this_->routeProxy = new NGQProxyRoute(this_,this_->mainWindow);
-		
+
 	//Check, if we have compatible graphics
 	this_->graphicsWidget = (QWidget*)graphics_get_data(gra,"qt_widget");
 	if (this_->graphicsWidget == NULL ) {
-	    this_->graphicsWidget = new QLabel(QString("Sorry, current graphics type is incompatible with this gui."));
+		this_->graphicsWidget = new QLabel(QString("Sorry, current graphics type is incompatible with this gui."));
 	}
-    this_->switcherWidget->addWidget(this_->graphicsWidget);
-	
+	this_->switcherWidget->addWidget(this_->graphicsWidget);
+
 	//Instantiate qml components
-    this_->guiWidget = new QDeclarativeView(NULL);
+	this_->guiWidget = new QDeclarativeView(NULL);
 	this_->guiWidget->setResizeMode(QDeclarativeView::SizeRootObjectToView);
-		
+
 	this_->guiWidget->rootContext()->setContextProperty("gui",this_->guiProxy);
 	this_->guiWidget->rootContext()->setContextProperty("navit",this_->navitProxy);
 	this_->guiWidget->rootContext()->setContextProperty("vehicle",this_->vehicleProxy);
@@ -321,7 +325,7 @@ static int gui_qml_set_graphics(struct gui_priv *this_, struct graphics *gra)
 	this_->guiWidget->rootContext()->setContextProperty("point",this_->currentPoint);
 
 	QString mainQml = QString(this_->source)+"/"+this_->skin+"/main.qml";
-	if (!QFile(mainQml).exists()){
+	if (!QFile(mainQml).exists()) {
 		dbg(lvl_error, "FATAL: QML file %s not found. Navit is not installed correctly.", mainQml.toAscii().constData());
 		exit(1);
 	}
@@ -388,7 +392,7 @@ gui_qml_set_attr(struct gui_priv *this_, struct attr *attr)
 struct gui_methods gui_qml_methods = {
 	NULL,
 	NULL,
-    gui_qml_set_graphics,
+	gui_qml_set_graphics,
 	NULL,
 	NULL,
 	NULL,
@@ -399,7 +403,8 @@ struct gui_methods gui_qml_methods = {
 };
 
 static void
-gui_qml_command(struct gui_priv *this_, char *function, struct attr **in, struct attr ***out, int *valid) {
+gui_qml_command(struct gui_priv *this_, char *function, struct attr **in, struct attr ***out, int *valid)
+{
 	this_->guiProxy->processCommand(function);
 }
 
@@ -418,43 +423,43 @@ static struct gui_priv * gui_qml_new(struct navit *nav, struct gui_methods *meth
 	this_->gui=gui;
 
 	this_->self.type=attr_gui;
-	this_->self.u.gui=gui;	
+	this_->self.u.gui=gui;
 
 	navit_ignore_graphics_events(this_->nav, 1);
 
 	this_->fullscreen = 0; //NO by default
 	if( (attr=attr_search(attrs,NULL,attr_fullscreen)))
-    	      this_->fullscreen=attr->u.num;
+		this_->fullscreen=attr->u.num;
 	this_->menu_on_map_click = 1; //YES by default;
 	if( (attr=attr_search(attrs,NULL,attr_menu_on_map_click)))
-			  this_->menu_on_map_click=attr->u.num;
+		this_->menu_on_map_click=attr->u.num;
 	this_->signal_on_map_click = 0; //YES by default;
 	if( (attr=attr_search(attrs,NULL,attr_signal_on_map_click)))
-			  this_->signal_on_map_click=attr->u.num;
+		this_->signal_on_map_click=attr->u.num;
 	this_->radius = 10; //Default value
 	if( (attr=attr_search(attrs,NULL,attr_radius)))
-			  this_->radius=attr->u.num;
+		this_->radius=attr->u.num;
 	this_->pitch = 20; //Default value
 	if( (attr=attr_search(attrs,NULL,attr_pitch)))
-			  this_->pitch=attr->u.num;
+		this_->pitch=attr->u.num;
 	this_->lazy = 1; //YES by default
 	if( (attr=attr_search(attrs,NULL,attr_lazy)))
-			  this_->lazy=attr->u.num;
+		this_->lazy=attr->u.num;
 	this_->w=800; //Default value
 	if( (attr=attr_search(attrs,NULL,attr_width)))
-    	      this_->w=attr->u.num;
+		this_->w=attr->u.num;
 	this_->h=600; //Default value
 	if( (attr=attr_search(attrs,NULL,attr_height)))
-    	      this_->h=attr->u.num;
+		this_->h=attr->u.num;
 	if( (attr=attr_search(attrs,NULL,attr_source)))
-    	      this_->source=attr->u.str;
+		this_->source=attr->u.str;
 	if( (attr=attr_search(attrs,NULL,attr_skin)))
-    	      this_->skin=attr->u.str;
+		this_->skin=attr->u.str;
 	if( (attr=attr_search(attrs,NULL,attr_icon_src)))
-			  this_->icon_src=attr->u.str;
+		this_->icon_src=attr->u.str;
 
 	if ( this_->source==NULL ) {
-	    this_->source=g_strjoin(NULL,getenv("NAVIT_SHAREDIR"),"/gui/qml/skins",NULL);
+		this_->source=g_strjoin(NULL,getenv("NAVIT_SHAREDIR"),"/gui/qml/skins",NULL);
 	}
 	if ( this_->skin==NULL ) {
 		this_->skin=g_strdup("navit");
@@ -472,6 +477,7 @@ static struct gui_priv * gui_qml_new(struct navit *nav, struct gui_methods *meth
 	return this_;
 }
 
-void plugin_init(void) {
-    plugin_register_category_gui("qml",gui_qml_new);
+void plugin_init(void)
+{
+	plugin_register_category_gui("qml",gui_qml_new);
 }

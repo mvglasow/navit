@@ -24,12 +24,12 @@
 #include "projection.h"
 
 struct projection_name {
-        enum projection projection;
-        char *name;
+	enum projection projection;
+	char *name;
 };
 
 
-struct projection_name projection_names[]={
+struct projection_name projection_names[]= {
 	{projection_none, ""},
 	{projection_mg, "mg"},
 	{projection_garmin, "garmin"},
@@ -58,17 +58,18 @@ utmref_letter(char l)
  * @returns projection, or projection_none if no projection could be determined
  */
 enum projection
-projection_from_name(const char *name, struct coord *utm_offset)
-{
+projection_from_name(const char *name, struct coord *utm_offset) {
 	int i;
 	int zone,baserow;
 	char ns,zone_field,square_x,square_y;
 
-	for (i=0 ; i < sizeof(projection_names)/sizeof(struct projection_name) ; i++) {
+	for (i=0 ; i < sizeof(projection_names)/sizeof(struct projection_name) ; i++)
+	{
 		if (! strcmp(projection_names[i].name, name))
 			return projection_names[i].projection;
 	}
-	if (utm_offset) {
+	if (utm_offset)
+	{
 		if (sscanf(name,"utm%d%c",&zone,&ns) == 2 && zone > 0 && zone <= 60 && (ns == 'n' || ns == 's')) {
 			utm_offset->x=zone*1000000;
 			utm_offset->y=(ns == 's' ? -10000000:0);
@@ -108,6 +109,6 @@ projection_to_name(enum projection proj)
 		if (projection_names[i].projection == proj)
 			return projection_names[i].name;
 	}
-	return NULL; 
+	return NULL;
 }
 

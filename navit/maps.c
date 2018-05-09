@@ -75,9 +75,9 @@ maps_new(struct attr *parent, struct attr **attrs)
 				mapset_add_attr(parent->u.mapset, &map);
 				navit_object_unref(map.u.navit_object);
 			}
-			
+
 		}
-		file_wordexp_destroy(wexp);	
+		file_wordexp_destroy(wexp);
 	} else {
 		dbg(lvl_error,"no data attribute");
 	}

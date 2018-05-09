@@ -45,9 +45,9 @@ gui_new(struct attr *parent, struct attr **attrs)
 		return NULL;
 	}
 
-        guitype_new=plugin_get_category_gui(type_attr->u.str);
-        if (! guitype_new)
-                return NULL;
+	guitype_new=plugin_get_category_gui(type_attr->u.str);
+	if (! guitype_new)
+		return NULL;
 
 	this_=g_new0(struct gui, 1);
 	this_->attrs=attr_list_dup(attrs);
@@ -91,7 +91,7 @@ int
 gui_add_attr(struct gui *this_, struct attr *attr)
 {
 	int ret=0;
-	if (this_->meth.add_attr) 
+	if (this_->meth.add_attr)
 		ret=this_->meth.add_attr(this_->priv, attr);
 	return ret;
 }
@@ -149,7 +149,7 @@ gui_add_bookmark(struct gui *gui, struct pcoord *c, char *description)
 	if (! gui->meth.add_bookmark)
 		return 0;
 	ret=gui->meth.add_bookmark(gui->priv, c, description);
-	
+
 	dbg(lvl_info,"ret=%d", ret);
 	return ret;
 }

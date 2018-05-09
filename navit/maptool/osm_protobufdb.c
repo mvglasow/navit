@@ -43,8 +43,8 @@ struct db_config {
 	int relation_ids_per_group;
 } db_config = {
 	200000, 30000, 500,
-	 40000,  1000,  30,
-	 10000,   500,  20,
+	40000,  1000,  30,
+	10000,   500,  20,
 };
 
 struct osm_protobufdb_context {
@@ -72,7 +72,7 @@ osm_protobufdb_write_blob(OSMPBF__Blob *blob, FILE *out)
 	OSMPBF__BlobHeader header=OSMPBF__BLOB_HEADER__INIT;
 
 
-	
+
 	blen=osmpbf__blob__get_packed_size(blob);
 	header.type="OSMData";
 	header.datasize=blen;
@@ -117,9 +117,9 @@ osm_protobufdb_finish_block(struct osm_protobufdb_context *ctx)
 	if (!ctx->pb)
 		return 0;
 	len=osmpbf__primitive_block__get_packed_size(ctx->pb);
-	
+
 	while  (ctx->current_block < ctx->active_block) {
-		osm_protobufdb_write_blob(&empty_blob, ctx->f);	
+		osm_protobufdb_write_blob(&empty_blob, ctx->f);
 		ctx->current_block++;
 	}
 	blob=g_malloc(sizeof(*blob));
@@ -250,7 +250,8 @@ osm_protobufdb_insert_densenode(long long id, OSMPBF__Node *offset, OSMPBF__Info
 }
 
 static void
-osm_protobufdb_modify_densenode(OSMPBF__Node *node, OSMPBF__Info *info, OSMPBF__Node *offset, OSMPBF__Info *offseti, int pos, OSMPBF__DenseNodes *dn)
+osm_protobufdb_modify_densenode(OSMPBF__Node *node, OSMPBF__Info *info, OSMPBF__Node *offset, OSMPBF__Info *offseti,
+                                int pos, OSMPBF__DenseNodes *dn)
 {
 	int i;
 	if (pos+1 < dn->n_id) {
@@ -294,7 +295,7 @@ osm_protobufdb_insert_node(long long id, OSMPBF__PrimitiveGroup *pg)
 
 static void
 osm_protobufdb_modify_node(OSMPBF__Node *node, OSMPBF__Info *info, int pos, OSMPBF__PrimitiveGroup *pg)
-{	
+{
 	OSMPBF__Node *n=pg->nodes[pos];
 	OSMPBF__Info *old_info;
 
@@ -303,7 +304,7 @@ osm_protobufdb_modify_node(OSMPBF__Node *node, OSMPBF__Info *info, int pos, OSMP
 	old_info=n->info;
 	*n=*node;
 	if (!info) {
-		if (old_info) 
+		if (old_info)
 			osmpbf__info__free_unpacked(old_info, &protobuf_c_system_allocator);
 		n->info=NULL;
 	} else {
@@ -313,7 +314,7 @@ osm_protobufdb_modify_node(OSMPBF__Node *node, OSMPBF__Info *info, int pos, OSMP
 			n->info=g_malloc(sizeof(*info));
 		*n->info=*info;
 	}
-	
+
 }
 
 static int
@@ -331,7 +332,7 @@ osm_protobufdb_insert_way(long long id, OSMPBF__PrimitiveGroup *pg)
 
 static void
 osm_protobufdb_modify_way(OSMPBF__Way *way, OSMPBF__Info *info, int pos, OSMPBF__PrimitiveGroup *pg)
-{	
+{
 	OSMPBF__Way *w=pg->ways[pos];
 	OSMPBF__Info *old_info;
 	int i;
@@ -347,7 +348,7 @@ osm_protobufdb_modify_way(OSMPBF__Way *way, OSMPBF__Info *info, int pos, OSMPBF_
 		ref+=w->refs[i];
 	}
 	if (!info) {
-		if (old_info) 
+		if (old_info)
 			osmpbf__info__free_unpacked(old_info, &protobuf_c_system_allocator);
 		w->info=NULL;
 	} else {
@@ -357,7 +358,7 @@ osm_protobufdb_modify_way(OSMPBF__Way *way, OSMPBF__Info *info, int pos, OSMPBF_
 			w->info=g_malloc(sizeof(*info));
 		*w->info=*info;
 	}
-	
+
 }
 
 static int
@@ -375,7 +376,7 @@ osm_protobufdb_insert_relation(long long id, OSMPBF__PrimitiveGroup *pg)
 
 static void
 osm_protobufdb_modify_relation(OSMPBF__Relation *relation, OSMPBF__Info *info, int pos, OSMPBF__PrimitiveGroup *pg)
-{	
+{
 	OSMPBF__Relation *r=pg->relations[pos];
 	OSMPBF__Info *old_info;
 	int i;
@@ -393,7 +394,7 @@ osm_protobufdb_modify_relation(OSMPBF__Relation *relation, OSMPBF__Info *info, i
 		ref+=r->memids[i];
 	}
 	if (!info) {
-		if (old_info) 
+		if (old_info)
 			osmpbf__info__free_unpacked(old_info, &protobuf_c_system_allocator);
 		r->info=NULL;
 	} else {
@@ -403,7 +404,7 @@ osm_protobufdb_modify_relation(OSMPBF__Relation *relation, OSMPBF__Info *info, i
 			r->info=g_malloc(sizeof(*info));
 		*r->info=*info;
 	}
-	
+
 }
 
 static int
@@ -411,7 +412,7 @@ osm_protobufdb_string(struct osm_protobufdb_context *ctx, char *str)
 {
 	char *strd;
 	OSMPBF__StringTable *st=ctx->st;
-	
+
 	gpointer value;
 	assert(ctx->string_hash != NULL);
 	if (g_hash_table_lookup_extended(ctx->string_hash, str, NULL, &value)) {
@@ -462,7 +463,7 @@ osm_protobufdb_start_file(struct osm_protobufdb_context *ctx, int type, int num)
 }
 
 static void
-test(void) 
+test(void)
 {
 	context.current_file=-1;
 }

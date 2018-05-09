@@ -82,7 +82,7 @@ message_delete(struct messagelist *this_, int mid)
 	}
 }
 
-static void 
+static void
 message_cleanup(struct messagelist *this_)
 {
 	struct message *msg,*next,*prev=NULL;
@@ -150,7 +150,7 @@ messagelist_init(struct messagelist *this_)
 	this_->msg_cleanup_to = event_add_timeout(1000, 1, this_->msg_cleanup_cb);
 }
 
-struct message 
+struct message
 *message_get(struct messagelist *this_)
 {
 	return this_->messages;

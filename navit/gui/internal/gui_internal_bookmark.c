@@ -22,7 +22,7 @@ gui_internal_cmd_add_bookmark_do(struct gui_priv *this, struct widget *widget)
 	GList *l;
 	struct attr attr;
 	dbg(lvl_debug,"text='%s'", widget->text);
-	if (widget->text && strlen(widget->text)){
+	if (widget->text && strlen(widget->text)) {
 		navit_get_attr(this->nav, attr_bookmarks, &attr, NULL);
 		bookmarks_add_bookmark(attr.u.bookmarks, &widget->c, widget->text);
 	}
@@ -38,7 +38,7 @@ gui_internal_cmd_add_bookmark_folder_do(struct gui_priv *this, struct widget *wi
 	GList *l;
 	struct attr attr;
 	dbg(lvl_debug,"text='%s'", widget->text);
-	if (widget->text && strlen(widget->text)){
+	if (widget->text && strlen(widget->text)) {
 		navit_get_attr(this->nav, attr_bookmarks, &attr, NULL);
 		bookmarks_add_bookmark(attr.u.bookmarks, NULL, widget->text);
 	}
@@ -67,7 +67,7 @@ gui_internal_cmd_rename_bookmark_clicked(struct gui_priv *this, struct widget *w
 	GList *l;
 	struct attr attr;
 	dbg(lvl_debug,"text='%s'", w->text);
-	if (w->text && strlen(w->text)){
+	if (w->text && strlen(w->text)) {
 		navit_get_attr(this->nav, attr_bookmarks, &attr, NULL);
 		bookmarks_rename_bookmark(attr.u.bookmarks, w->name, w->text);
 	}
@@ -103,9 +103,11 @@ gui_internal_cmd_add_bookmark2(struct gui_priv *this, struct widget *wm, void *d
 	wl=gui_internal_box_new(this, gravity_left_top|orientation_vertical|flags_expand|flags_fill);
 	gui_internal_widget_append(w, wl);
 	if (this->keyboard)
-		gui_internal_widget_append(w, gui_internal_keyboard(this, VKBD_FLAG_2 | gui_internal_keyboard_init_mode(getenv("LANG"))));
+		gui_internal_widget_append(w, gui_internal_keyboard(this,
+		                           VKBD_FLAG_2 | gui_internal_keyboard_init_mode(getenv("LANG"))));
 	else
-		gui_internal_keyboard_show_native(this, w, VKBD_FLAG_2 | gui_internal_keyboard_init_mode(getenv("LANG")), getenv("LANG"));
+		gui_internal_keyboard_show_native(this, w, VKBD_FLAG_2 | gui_internal_keyboard_init_mode(getenv("LANG")),
+		                                  getenv("LANG"));
 	gui_internal_menu_render(this);
 }
 
@@ -133,9 +135,11 @@ gui_internal_cmd_add_bookmark_folder2(struct gui_priv *this, struct widget *wm, 
 	wl=gui_internal_box_new(this, gravity_left_top|orientation_vertical|flags_expand|flags_fill);
 	gui_internal_widget_append(w, wl);
 	if (this->keyboard)
-		gui_internal_widget_append(w, gui_internal_keyboard(this, VKBD_FLAG_2 | gui_internal_keyboard_init_mode(getenv("LANG"))));
+		gui_internal_widget_append(w, gui_internal_keyboard(this,
+		                           VKBD_FLAG_2 | gui_internal_keyboard_init_mode(getenv("LANG"))));
 	else
-		gui_internal_keyboard_show_native(this, w, VKBD_FLAG_2 | gui_internal_keyboard_init_mode(getenv("LANG")), getenv("LANG"));
+		gui_internal_keyboard_show_native(this, w, VKBD_FLAG_2 | gui_internal_keyboard_init_mode(getenv("LANG")),
+		                                  getenv("LANG"));
 	gui_internal_menu_render(this);
 }
 
@@ -164,9 +168,11 @@ gui_internal_cmd_rename_bookmark(struct gui_priv *this, struct widget *wm, void 
 	wl=gui_internal_box_new(this, gravity_left_top|orientation_vertical|flags_expand|flags_fill);
 	gui_internal_widget_append(w, wl);
 	if (this->keyboard)
-		gui_internal_widget_append(w, gui_internal_keyboard(this, VKBD_FLAG_2 | gui_internal_keyboard_init_mode(getenv("LANG"))));
+		gui_internal_widget_append(w, gui_internal_keyboard(this,
+		                           VKBD_FLAG_2 | gui_internal_keyboard_init_mode(getenv("LANG"))));
 	else
-		gui_internal_keyboard_show_native(this, w, VKBD_FLAG_2 | gui_internal_keyboard_init_mode(getenv("LANG")), getenv("LANG"));
+		gui_internal_keyboard_show_native(this, w, VKBD_FLAG_2 | gui_internal_keyboard_init_mode(getenv("LANG")),
+		                                  getenv("LANG"));
 	gui_internal_menu_render(this);
 }
 
@@ -236,7 +242,7 @@ gui_internal_cmd_load_bookmarks_as_waypoints(struct gui_priv *this, struct widge
 		bookmarks_item_rewind(mattr.u.bookmarks);
 		i=0;
 		while ((item=bookmarks_get_item(mattr.u.bookmarks))) {
-			if (!item_attr_get(item, attr_label, &attr)) 
+			if (!item_attr_get(item, attr_label, &attr))
 				continue;
 			if (item->type == type_bookmark) {
 				if (item_coord_get(item, &c, 1)) {
@@ -250,7 +256,7 @@ gui_internal_cmd_load_bookmarks_as_waypoints(struct gui_priv *this, struct widge
 		}
 		bm_count=i;
 
-		if (bm_count>0){
+		if (bm_count>0) {
 			navit_set_destinations(this->nav, pc, bm_count, wm->prefix, 1);
 			if (this->flags & 512) {
 				struct attr follow;
@@ -277,16 +283,16 @@ gui_internal_cmd_replace_bookmarks_from_waypoints(struct gui_priv *this, struct 
 		struct pcoord *pc;
 		int i, bm_count;
 
-		if (bookmarks_get_bookmark_count(mattr.u.bookmarks)>0){
+		if (bookmarks_get_bookmark_count(mattr.u.bookmarks)>0) {
 			struct item *item;
 			bookmarks_item_rewind(mattr.u.bookmarks);
 
 			while ((item=bookmarks_get_item(mattr.u.bookmarks))) {
 
-				if (!item_attr_get(item, attr_label, &attr)) 
+				if (!item_attr_get(item, attr_label, &attr))
 					continue;
 
-				if (item->type == type_bookmark) 
+				if (item->type == type_bookmark)
 					bookmarks_delete_bookmark(mattr.u.bookmarks,  attr.u.str);
 
 				bookmarks_move_down(mattr.u.bookmarks,wm->prefix);
@@ -298,7 +304,7 @@ gui_internal_cmd_replace_bookmarks_from_waypoints(struct gui_priv *this, struct 
 		pc=g_alloca(bm_count*sizeof(struct pcoord));
 		navit_get_destinations(this->nav, pc, bm_count);
 
-		for (i=0; i<bm_count; i++){
+		for (i=0; i<bm_count; i++) {
 			char *tmp=navit_get_destination_description(this->nav, i);
 			desc=g_strdup_printf("%s WP%d", tmp, i+1);
 			g_free(tmp);

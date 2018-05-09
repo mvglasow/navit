@@ -80,7 +80,7 @@ setenv(char *var, char *val, int overwrite)
  * '::' replaced with NAVIT_PREFIX and LIBDIR
  * '~'  replaced with HOME
 */
-static char *environment_vars[][5]={
+static char *environment_vars[][5]= {
 	{"NAVIT_LIBDIR",      ":",          ":/"LIB_DIR,     ":\\lib",      ":/lib"},
 	{"NAVIT_SHAREDIR",    ":",          ":/"SHARE_DIR,   ":",           ":/share"},
 	{"NAVIT_LOCALEDIR",   ":/../locale",":/"LOCALE_DIR,  ":\\locale",   ":/locale"},
@@ -123,7 +123,7 @@ main_setup_environment(int mode)
 }
 
 #ifdef HAVE_API_WIN32_BASE
-char *nls_table[][3]={
+char *nls_table[][3]= {
 	// NLS Table compiled by Nick "Number6" Geoghegan
 	// Not an exhaustive list, but supports 99% of all languages in Windows
 	//{"LANGNAME", "CTRYNAME", "Language Code"},
@@ -294,7 +294,7 @@ char *nls_table[][3]={
 	{"WOL", "SEN", "wo_SN"},	// Wolof (Senegal)
 	{"III", "CHN", "ii_CN"},	// Yi (PRC)
 	{"YOR", "NGA", "yo_NG"},	// Yoruba (Nigeria)
-	{NULL,NULL,NULL},		// Default - Can't find the language / Language not listed above		
+	{NULL,NULL,NULL},		// Default - Can't find the language / Language not listed above
 };
 
 static void
@@ -303,8 +303,8 @@ win_set_nls(void)
 	char country[32],lang[32];
 	int i=0;
 
-#ifdef HAVE_API_WIN32_CE 
-	wchar_t wcountry[32],wlang[32];	
+#ifdef HAVE_API_WIN32_CE
+	wchar_t wcountry[32],wlang[32];
 	GetLocaleInfo(LOCALE_USER_DEFAULT, LOCALE_SABBREVLANGNAME, wlang, sizeof(wlang));
 	WideCharToMultiByte(CP_ACP,0,wlang,-1,lang,sizeof(lang),NULL,NULL);
 	GetLocaleInfo(LOCALE_USER_DEFAULT, LOCALE_SABBREVCTRYNAME, wcountry, sizeof(wcountry));
@@ -330,7 +330,7 @@ main_init(const char *program)
 {
 	char *s;
 #ifdef _UNICODE		/* currently for wince */
-		wchar_t wfilename[MAX_PATH + 1];
+	wchar_t wfilename[MAX_PATH + 1];
 #endif
 
 	spawn_process_init();
@@ -376,20 +376,17 @@ main_init(const char *program)
 	}
 
 #else		/* _WIN32 || _WIN32_WCE */
-	if (!getenv("NAVIT_PREFIX"))
-	{
+	if (!getenv("NAVIT_PREFIX")) {
 		char  filename[MAX_PATH + 1],
-		     *end;
+		      *end;
 		int len;
 
 		*filename = '\0';
 #ifdef _UNICODE		/* currently for wince */
-		if (GetModuleFileNameW(NULL, wfilename, MAX_PATH))
-		{
+		if (GetModuleFileNameW(NULL, wfilename, MAX_PATH)) {
 			wcstombs(filename, wfilename, MAX_PATH);
 #else
-		if (GetModuleFileName(NULL, filename, MAX_PATH))
-		{
+		if (GetModuleFileName(NULL, filename, MAX_PATH)) {
 #endif
 			end = strrchr(filename, L'\\');	/* eliminate the file name which is on the right side */
 			if(end)

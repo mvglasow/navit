@@ -30,20 +30,43 @@ struct block_index_item {
 	unsigned int blocks;*/
 	unsigned char p[8];
 };
-static inline unsigned int block_index_item_get_blocknum(struct block_index_item * blk) { unsigned char *p = blk->p; return get_u32(&p); }
-static inline unsigned int block_index_item_get_blocks(struct block_index_item * blk) { unsigned char *p = blk->p+4; return get_u32(&p); }
+static inline unsigned int block_index_item_get_blocknum(struct block_index_item * blk)
+{
+	unsigned char *p = blk->p;
+	return get_u32(&p);
+}
+static inline unsigned int block_index_item_get_blocks(struct block_index_item * blk)
+{
+	unsigned char *p = blk->p+4;
+	return get_u32(&p);
+}
 
 struct block_index {
-/*	unsigned int blocks;
-        unsigned int size;
-        unsigned int next;      
-	struct block_index_item list[0];*/
+	/*	unsigned int blocks;
+	        unsigned int size;
+	        unsigned int next;
+		struct block_index_item list[0];*/
 	unsigned char p[12];
 };
-static inline unsigned int block_index_get_blocks(struct block_index * blk) { unsigned char *p = blk->p; return get_u32(&p); }
-static inline unsigned int block_index_get_size(struct block_index * blk) { unsigned char *p = blk->p+4; return get_u32(&p); }
-static inline unsigned int block_index_get_next(struct block_index * blk) { unsigned char *p = blk->p+8; return get_u32(&p); }
-static inline struct block_index_item * block_index_get_list(struct block_index * blk) { return (struct block_index_item *)(blk->p+12); }
+static inline unsigned int block_index_get_blocks(struct block_index * blk)
+{
+	unsigned char *p = blk->p;
+	return get_u32(&p);
+}
+static inline unsigned int block_index_get_size(struct block_index * blk)
+{
+	unsigned char *p = blk->p+4;
+	return get_u32(&p);
+}
+static inline unsigned int block_index_get_next(struct block_index * blk)
+{
+	unsigned char *p = blk->p+8;
+	return get_u32(&p);
+}
+static inline struct block_index_item * block_index_get_list(struct block_index * blk)
+{
+	return (struct block_index_item *)(blk->p+12);
+}
 
 static struct block *
 block_get(unsigned char **p)
@@ -158,7 +181,7 @@ block_init(struct map_rect_priv *mr)
 		mr->b.bt.p=NULL;
 		mr->b.bt.block_count=0;
 	}
-	if (mr->cur_sel && !coord_rect_overlap(&mr->cur_sel->u.c_rect, &mr->b.b_rect)) 
+	if (mr->cur_sel && !coord_rect_overlap(&mr->cur_sel->u.c_rect, &mr->b.b_rect))
 		return 0;
 	return block_next(mr);
 }
@@ -172,7 +195,7 @@ block_next_lin(struct map_rect_priv *mr)
 		block_lin_count++;
 		block_mem+=sizeof(struct block *);
 		mr->b.block_num++;
-		if (! mr->b.block_num) 
+		if (! mr->b.block_num)
 			mr->b.p=mr->file->begin+0x2000;
 		else
 			mr->b.p=mr->b.block_start+block_get_blocks(mr->b.b)*512;
@@ -230,11 +253,11 @@ block_next(struct map_rect_priv *mr)
 		while (mr->b.bt.p < mr->b.bt.end) {
 			block_idx_count++;
 			blk_num=get_u32(&mr->b.bt.p);
-			coord=get_u32(&mr->b.bt.p); 
+			coord=get_u32(&mr->b.bt.p);
 			block_mem+=8;
 			dbg(lvl_debug,"%p vs %p coord 0x%x ", mr->b.bt.end, mr->b.bt.p, coord);
 			dbg(lvl_debug,"block 0x%x", blk_num);
-		
+
 			r_w=bt->r_curr.rl.x-bt->r_curr.lu.x;
 			r_h=bt->r_curr.lu.y-bt->r_curr.rl.y;
 			mr->b.b=NULL;
@@ -280,6 +303,6 @@ block_next(struct map_rect_priv *mr)
 			}
 		}
 		bt->p=NULL;
-	}	
+	}
 	return 0;
 }

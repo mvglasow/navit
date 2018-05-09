@@ -94,7 +94,7 @@ struct cache *
 cache_new(int id_size, int size)
 {
 	struct cache *cache=g_new0(struct cache, 1);
-	
+
 	cache->id_size=id_size/4;
 	cache->entry_size=cache->id_size*sizeof(int)+sizeof(struct cache_entry);
 	cache->size=size;
@@ -131,14 +131,14 @@ cache_insert_mru(struct cache *cache, struct cache_entry_list *list, struct cach
 	if (! list->last)
 		list->last=entry;
 	list->size+=entry->size;
-	if (cache) 
+	if (cache)
 		g_hash_table_insert(cache->hash, (gpointer)entry->id, entry);
 }
 
 static void
 cache_remove_from_list(struct cache_entry_list *list, struct cache_entry *entry)
 {
-	if (entry->prev) 
+	if (entry->prev)
 		entry->prev->next=entry->next;
 	else
 		list->first=entry->next;
@@ -183,7 +183,7 @@ cache_remove_lru(struct cache *cache, struct cache_entry_list *list)
 		seen+=last->size;
 	}
 	last=list->last;
-	if (! last || last->usage || seen >= list->size) 
+	if (! last || last->usage || seen >= list->size)
 		return NULL;
 	dbg(lvl_debug,"removing %d", last->id[0]);
 	cache_remove_lru_helper(list);
@@ -221,22 +221,19 @@ cache_trim(struct cache *cache, struct cache_entry *entry)
 	struct cache_entry *new_entry;
 	dbg(lvl_debug,"trim 0x%x 0x%x 0x%x 0x%x 0x%x", entry->id[0], entry->id[1], entry->id[2], entry->id[3], entry->id[4]);
 	dbg(lvl_debug,"Trim %x from %d -> %d", entry->id[0], entry->size, cache->size);
-	if ( cache->entry_size < entry->size )
-	{
-	    g_hash_table_remove(cache->hash, (gpointer)(entry->id));
+	if ( cache->entry_size < entry->size ) {
+		g_hash_table_remove(cache->hash, (gpointer)(entry->id));
 
-	    new_entry = g_slice_alloc0(cache->entry_size);
-	    memcpy(new_entry, entry, cache->entry_size);
-	    g_slice_free1( entry->size, entry);
-	    new_entry->size = cache->entry_size;
+		new_entry = g_slice_alloc0(cache->entry_size);
+		memcpy(new_entry, entry, cache->entry_size);
+		g_slice_free1( entry->size, entry);
+		new_entry->size = cache->entry_size;
 
-	    g_hash_table_insert(cache->hash, (gpointer)new_entry->id, new_entry);
+		g_hash_table_insert(cache->hash, (gpointer)new_entry->id, new_entry);
+	} else {
+		new_entry = entry;
 	}
-	else
-	{
-	    new_entry = entry; 
-	}
-	
+
 	return new_entry;
 }
 
@@ -295,7 +292,8 @@ cache_flush_data(struct cache *cache, void *data)
 
 
 void *
-cache_lookup(struct cache *cache, void *id) {
+cache_lookup(struct cache *cache, void *id)
+{
 	struct cache_entry *entry;
 
 	dbg(lvl_debug,"get %d", ((int *)id)[0]);
@@ -362,7 +360,7 @@ cache_insert(struct cache *cache, void *data)
 			}
 		} else {
 			if (cache->t1.size + cache->t2.size + cache->b1.size + cache->b2.size >= cache->size) {
-				if (cache->t1.size + cache->t2.size + cache->b1.size + cache->b2.size >= 2*cache->size) 
+				if (cache->t1.size + cache->t2.size + cache->b1.size + cache->b2.size >= 2*cache->size)
 					cache_remove_lru(cache, &cache->b2);
 				cache_replace(cache);
 			}
@@ -376,13 +374,14 @@ cache_insert_new(struct cache *cache, void *id, int size)
 {
 	void *data=cache_entry_new(cache, id, size);
 	cache_insert(cache, data);
-	return data;	
+	return data;
 }
 
 static void
 cache_stats(struct cache *cache)
 {
-	dbg(lvl_debug,"hits %d misses %d hitratio %d size %d entry_size %d id_size %d T1 target %d", cache->hits, cache->misses, cache->hits*100/(cache->hits+cache->misses), cache->size, cache->entry_size, cache->id_size, cache->t1_target);
+	dbg(lvl_debug,"hits %d misses %d hitratio %d size %d entry_size %d id_size %d T1 target %d", cache->hits, cache->misses,
+	    cache->hits*100/(cache->hits+cache->misses), cache->size, cache->entry_size, cache->id_size, cache->t1_target);
 	dbg(lvl_debug,"T1:%d B1:%d T2:%d B2:%d", cache->t1.size, cache->b1.size, cache->t2.size, cache->b2.size);
 	cache->hits=0;
 	cache->misses=0;
