@@ -282,12 +282,8 @@ workflows:
       - build_wince:
           requires:
             - sanity_check
-      - build_tomtom_minimal:
-          requires:
-            - sanity_check
-      - build_tomtom_plugin:
-          requires:
-            - sanity_check
+      - build_tomtom_minimal
+      - build_tomtom_plugin
       - run_doxygen:
           requires:
             - build_linux
