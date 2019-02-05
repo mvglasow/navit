@@ -65,11 +65,6 @@ public class NavitGraphics {
     private int                            bgcolor;
     private float                          trackball_x;
     private float                          trackball_y;
-    private int                            status_bar_height               = 0;
-    private int                            action_bar_default_height       = 0;
-    private int                            navigation_bar_height           = 0;
-    private int                            navigation_bar_height_landscape = 0;
-    private int                            navigation_bar_width            = 0;
     private int                            padding_left                    = 0;
     private int                            padding_right                   = 0;
     private int                            padding_top                     = 0;
@@ -800,11 +795,11 @@ public class NavitGraphics {
             int nhid = resources.getIdentifier("navigation_bar_height", "dimen", "android");
             int nhlid = resources.getIdentifier("navigation_bar_height_landscape", "dimen", "android");
             int nwid = resources.getIdentifier("navigation_bar_width", "dimen", "android");
-            status_bar_height = (shid > 0) ? resources.getDimensionPixelSize(shid) : 0;
-            action_bar_default_height = (adhid > 0) ? resources.getDimensionPixelSize(adhid) : 0;
-            navigation_bar_height = (nhid > 0) ? resources.getDimensionPixelSize(nhid) : 0;
-            navigation_bar_height_landscape = (nhlid > 0) ? resources.getDimensionPixelSize(nhlid) : 0;
-            navigation_bar_width = (nwid > 0) ? resources.getDimensionPixelSize(nwid) : 0;
+            int status_bar_height = (shid > 0) ? resources.getDimensionPixelSize(shid) : 0;
+            int action_bar_default_height = (adhid > 0) ? resources.getDimensionPixelSize(adhid) : 0;
+            int navigation_bar_height = (nhid > 0) ? resources.getDimensionPixelSize(nhid) : 0;
+            int navigation_bar_height_landscape = (nhlid > 0) ? resources.getDimensionPixelSize(nhlid) : 0;
+            int navigation_bar_width = (nwid > 0) ? resources.getDimensionPixelSize(nwid) : 0;
             Log.d(TAG, String.format(
                     "status_bar_height=%d, action_bar_default_height=%d, navigation_bar_height=%d, "
                             + "navigation_bar_height_landscape=%d, navigation_bar_width=%d",
