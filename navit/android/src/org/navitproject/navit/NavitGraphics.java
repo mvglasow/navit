@@ -766,8 +766,14 @@ public class NavitGraphics {
         } else {
             Log.d(TAG, String.format("handleResize w=%d h=%d", w, h));
 
+            /* Fallback if we can't determine padding: assume 0 all around */
+            padding_left = 0;
+            padding_right = 0;
+            padding_top = 0;
+            padding_bottom = 0;
+
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT_WATCH) {
-                // TODO use WindowInsets
+                /* On API 20+ we can query window insets to determine the area which is obscured by the system bars. */
                 if (view == null) {
                     Log.e(TAG, "view is null!");
                 } else {
@@ -775,81 +781,75 @@ public class NavitGraphics {
                             view.getWidth(), view.getHeight(), view.getX(), view.getY()));
                     if (view.getRootWindowInsets() == null)
                         Log.e(TAG, "No root window insets");
-                    else
+                    else {
                         Log.e(TAG, String.format("RootWindowInsets left=%d right=%d top=%d bottom=%d",
                                 view.getRootWindowInsets().getSystemWindowInsetLeft(),
                                 view.getRootWindowInsets().getSystemWindowInsetRight(),
                                 view.getRootWindowInsets().getSystemWindowInsetTop(),
                                 view.getRootWindowInsets().getSystemWindowInsetBottom()));
+                        padding_left = view.getRootWindowInsets().getSystemWindowInsetLeft();
+                        padding_right = view.getRootWindowInsets().getSystemWindowInsetRight();
+                        padding_top = view.getRootWindowInsets().getSystemWindowInsetTop();
+                        padding_bottom = view.getRootWindowInsets().getSystemWindowInsetBottom();
+                    }
                 }
             } else {
-                /* use the old kludge
-                 */
-            }
-            // Status and navigation bar sizes
-            // These are platform defaults and do not change with rotation, but we have to figure out which ones apply
-            // (is the navigation bar visible? on the side or at the bottom?)
-            Resources resources = view.getResources();
-            int shid = resources.getIdentifier("status_bar_height", "dimen", "android");
-            int adhid = resources.getIdentifier("action_bar_default_height", "dimen", "android");
-            int nhid = resources.getIdentifier("navigation_bar_height", "dimen", "android");
-            int nhlid = resources.getIdentifier("navigation_bar_height_landscape", "dimen", "android");
-            int nwid = resources.getIdentifier("navigation_bar_width", "dimen", "android");
-            int status_bar_height = (shid > 0) ? resources.getDimensionPixelSize(shid) : 0;
-            int action_bar_default_height = (adhid > 0) ? resources.getDimensionPixelSize(adhid) : 0;
-            int navigation_bar_height = (nhid > 0) ? resources.getDimensionPixelSize(nhid) : 0;
-            int navigation_bar_height_landscape = (nhlid > 0) ? resources.getDimensionPixelSize(nhlid) : 0;
-            int navigation_bar_width = (nwid > 0) ? resources.getDimensionPixelSize(nwid) : 0;
-            Log.d(TAG, String.format(
-                    "status_bar_height=%d, action_bar_default_height=%d, navigation_bar_height=%d, "
-                            + "navigation_bar_height_landscape=%d, navigation_bar_width=%d",
-                            status_bar_height, action_bar_default_height, navigation_bar_height,
-                            navigation_bar_height_landscape, navigation_bar_width));
-
-            /* frameLayout is only created on platforms supporting navigation and status bar tinting */
-            if (frameLayout == null) {
-                padding_left = 0;
-                padding_right = 0;
-                padding_top = 0;
-                padding_bottom = 0;
-            } else if (activity == null) {
-                Log.w(TAG, "Main Activity is not a Navit instance, cannot update padding");
-                padding_left = 0;
-                padding_right = 0;
-                padding_top = 0;
-                padding_bottom = 0;
-            } else {
-                Navit navit = activity;
-
-                /* The status bar is always visible unless we are in fullscreen mode. */
-                final Boolean isStatusShowing = !navit.isFullscreen;
-
-                /*
-                 * Determine visibility of navigation bar.
-                 * This logic is based on the presence of a hardware menu button and is known to work on
-                 * devices which allow switching between hw and sw buttons (OnePlus One running CyanogenMod).
-                 */
-                final Boolean isNavShowing = !ViewConfigurationCompat.hasPermanentMenuKey(ViewConfiguration.get(navit));
-                Log.d(TAG, String.format("isStatusShowing=%b isNavShowing=%b", isStatusShowing, isNavShowing));
-
-                /*
-                 * Determine where the navigation bar would be displayed.
-                 * Logic is taken from AOSP RenderSessionImpl.findNavigationBar()
+                /* 
+                 * Android 4.x does not support window insets, forcing us to make an educated guess:
+                 * 
+                 * Status and navigation bar sizes are platform defaults and do not change with rotation, but we have
+                 * to figure out which ones apply.
+                 * 
+                 * The status bar is always visible unless we are in fullscreen mode.
+                 * 
+                 * The navigation bar is shown on devices that report they have no physical menu button. This seems to
+                 * work even on devices that allow disabling the physical buttons (and use the navigation bar, in which
+                 * case they report no physical menu button is available; tested with a OnePlus One running CyanogenMod).
+                 * 
+                 * If shown, the navigation bar may appear on the side or at the bottom. The logic to determine this is
+                 * taken from AOSP RenderSessionImpl.findNavigationBar()
                  * platform/frameworks/base/tools/layoutlib/bridge/src/com/android/layoutlib/bridge/impl/RenderSessionImpl.java
                  */
-                final Boolean isLandscape = (navit.getResources().getConfiguration().orientation
-                        == Configuration.ORIENTATION_LANDSCAPE);
-                final Boolean isNavAtBottom = (!isLandscape)
-                        || (navit.getResources().getConfiguration().smallestScreenWidthDp >= 600);
-                Log.d(TAG, String.format("isNavAtBottom=%b (Configuration.smallestScreenWidthDp=%d, isLandscape=%b)",
-                        isNavAtBottom, navit.getResources().getConfiguration().smallestScreenWidthDp, isLandscape));
+                Resources resources = view.getResources();
+                int shid = resources.getIdentifier("status_bar_height", "dimen", "android");
+                int adhid = resources.getIdentifier("action_bar_default_height", "dimen", "android");
+                int nhid = resources.getIdentifier("navigation_bar_height", "dimen", "android");
+                int nhlid = resources.getIdentifier("navigation_bar_height_landscape", "dimen", "android");
+                int nwid = resources.getIdentifier("navigation_bar_width", "dimen", "android");
+                int status_bar_height = (shid > 0) ? resources.getDimensionPixelSize(shid) : 0;
+                int action_bar_default_height = (adhid > 0) ? resources.getDimensionPixelSize(adhid) : 0;
+                int navigation_bar_height = (nhid > 0) ? resources.getDimensionPixelSize(nhid) : 0;
+                int navigation_bar_height_landscape = (nhlid > 0) ? resources.getDimensionPixelSize(nhlid) : 0;
+                int navigation_bar_width = (nwid > 0) ? resources.getDimensionPixelSize(nwid) : 0;
+                Log.d(TAG, String.format(
+                        "status_bar_height=%d, action_bar_default_height=%d, navigation_bar_height=%d, "
+                                + "navigation_bar_height_landscape=%d, navigation_bar_width=%d",
+                                status_bar_height, action_bar_default_height, navigation_bar_height,
+                                navigation_bar_height_landscape, navigation_bar_width));
 
-                padding_left = 0;
-                padding_top = isStatusShowing ? status_bar_height : 0;
-                padding_right = (isNavShowing && !isNavAtBottom) ? navigation_bar_width : 0;
-                padding_bottom = (!(isNavShowing
-                        && isNavAtBottom)) ? 0 : (
-                                isLandscape ? navigation_bar_height_landscape : navigation_bar_height);
+                if (activity == null) {
+                    Log.w(TAG, "Main Activity is not a Navit instance, cannot update padding");
+                } else if (frameLayout != null) {
+                    /* frameLayout is only created on platforms supporting navigation and status bar tinting */
+
+                    Navit navit = activity;
+                    boolean isStatusShowing = !navit.isFullscreen;
+                    boolean isNavShowing = !ViewConfigurationCompat.hasPermanentMenuKey(ViewConfiguration.get(navit));
+                    Log.d(TAG, String.format("isStatusShowing=%b isNavShowing=%b", isStatusShowing, isNavShowing));
+
+                    boolean isLandscape = (navit.getResources().getConfiguration().orientation
+                            == Configuration.ORIENTATION_LANDSCAPE);
+                    boolean isNavAtBottom = (!isLandscape)
+                            || (navit.getResources().getConfiguration().smallestScreenWidthDp >= 600);
+                    Log.d(TAG, String.format("isNavAtBottom=%b (Configuration.smallestScreenWidthDp=%d, isLandscape=%b)",
+                            isNavAtBottom, navit.getResources().getConfiguration().smallestScreenWidthDp, isLandscape));
+
+                    padding_left = 0;
+                    padding_top = isStatusShowing ? status_bar_height : 0;
+                    padding_right = (isNavShowing && !isNavAtBottom) ? navigation_bar_width : 0;
+                    padding_bottom = (!(isNavShowing && isNavAtBottom)) ? 0 : (
+                            isLandscape ? navigation_bar_height_landscape : navigation_bar_height);
+                }
             }
 
             Log.d(TAG, String.format("Padding left=%d top=%d right=%d bottom=%d",
