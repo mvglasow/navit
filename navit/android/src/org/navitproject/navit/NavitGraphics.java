@@ -23,6 +23,7 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
@@ -64,6 +65,11 @@ public class NavitGraphics {
     private int                            bgcolor;
     private float                          trackball_x;
     private float                          trackball_y;
+    private int                            status_bar_height               = 0;
+    private int                            action_bar_default_height       = 0;
+    private int                            navigation_bar_height           = 0;
+    private int                            navigation_bar_height_landscape = 0;
+    private int                            navigation_bar_width            = 0;
     private View                           view;
     private SystemBarTintView              navigationTintView;
     private SystemBarTintView              statusTintView;
@@ -727,11 +733,11 @@ public class NavitGraphics {
                     isNavAtBottom, navit.getResources().getConfiguration().smallestScreenWidthDp, isLandscape));
 
         int left = 0;
-        int top = isStatusShowing ? Navit.status_bar_height : 0;
-        int right = (isNavShowing && !isNavAtBottom) ? Navit.navigation_bar_width : 0;
+        int top = isStatusShowing ? status_bar_height : 0;
+        int right = (isNavShowing && !isNavAtBottom) ? navigation_bar_width : 0;
         final int bottom = (!(isNavShowing
                     && isNavAtBottom)) ? 0 : (
-                    isLandscape ? Navit.navigation_bar_height_landscape : Navit.navigation_bar_height);
+                    isLandscape ? navigation_bar_height_landscape : navigation_bar_height);
 
         /* hide tint bars during update to prevent ugly effects */
         statusTintView.setVisibility(View.GONE);
@@ -742,17 +748,17 @@ public class NavitGraphics {
             public void run() {
                 statusTintView.setVisibility(isStatusShowing ? View.VISIBLE : View.GONE);
                 FrameLayout.LayoutParams statusLayoutParams = new FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT,
-                        Navit.status_bar_height, Gravity.TOP);
+                        status_bar_height, Gravity.TOP);
 
                 /* Prevent tint views from overlapping when navigation is on the right */
                 statusLayoutParams.setMargins(0, 0,
-                        (isNavShowing && !isNavAtBottom) ? Navit.navigation_bar_width : 0, 0);
+                        (isNavShowing && !isNavAtBottom) ? navigation_bar_width : 0, 0);
                 statusTintView.setLayoutParams(statusLayoutParams);
                 Log.d(TAG, String.format("statusTintView: width=%d height=%d",
                             statusTintView.getWidth(), statusTintView.getHeight()));
                 navigationTintView.setVisibility(isNavShowing ? View.VISIBLE : View.GONE);
                 LayoutParams navigationLayoutParams = new FrameLayout.LayoutParams(
-                        isNavAtBottom ? LayoutParams.MATCH_PARENT : Navit.navigation_bar_width,  // X
+                        isNavAtBottom ? LayoutParams.MATCH_PARENT : navigation_bar_width,  // X
                         isNavAtBottom ? bottom : LayoutParams.MATCH_PARENT, // Y
                         Gravity.BOTTOM | Gravity.RIGHT);
                 navigationTintView.setLayoutParams(navigationLayoutParams);
@@ -778,6 +784,46 @@ public class NavitGraphics {
             this.parent_graphics.handleResize(w, h);
         } else {
             Log.d(TAG, String.format("handleResize w=%d h=%d", w, h));
+
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT_WATCH) {
+                // TODO use WindowInsets
+                if (view == null) {
+                    Log.e(TAG, "view is null!");
+                } else {
+                    Log.e(TAG, String.format("view w=%d h=%d x=%.0f y=%.0f",
+                            view.getWidth(), view.getHeight(), view.getX(), view.getY()));
+                    if (view.getRootWindowInsets() == null)
+                        Log.e(TAG, "No root window insets");
+                    else
+                        Log.e(TAG, String.format("RootWindowInsets left=%d right=%d top=%d bottom=%d",
+                                view.getRootWindowInsets().getSystemWindowInsetLeft(),
+                                view.getRootWindowInsets().getSystemWindowInsetRight(),
+                                view.getRootWindowInsets().getSystemWindowInsetTop(),
+                                view.getRootWindowInsets().getSystemWindowInsetBottom()));
+                }
+            } else {
+                /* use the old kludge
+                 */
+            }
+            // Status and navigation bar sizes
+            // These are platform defaults and do not change with rotation, but we have to figure out which ones apply
+            // (is the navigation bar visible? on the side or at the bottom?)
+            Resources resources = view.getResources();
+            int shid = resources.getIdentifier("status_bar_height", "dimen", "android");
+            int adhid = resources.getIdentifier("action_bar_default_height", "dimen", "android");
+            int nhid = resources.getIdentifier("navigation_bar_height", "dimen", "android");
+            int nhlid = resources.getIdentifier("navigation_bar_height_landscape", "dimen", "android");
+            int nwid = resources.getIdentifier("navigation_bar_width", "dimen", "android");
+            status_bar_height = (shid > 0) ? resources.getDimensionPixelSize(shid) : 0;
+            action_bar_default_height = (adhid > 0) ? resources.getDimensionPixelSize(adhid) : 0;
+            navigation_bar_height = (nhid > 0) ? resources.getDimensionPixelSize(nhid) : 0;
+            navigation_bar_height_landscape = (nhlid > 0) ? resources.getDimensionPixelSize(nhlid) : 0;
+            navigation_bar_width = (nwid > 0) ? resources.getDimensionPixelSize(nwid) : 0;
+            Log.d(TAG, String.format(
+                        "status_bar_height=%d, action_bar_default_height=%d, navigation_bar_height=%d, "
+                        + "navigation_bar_height_landscape=%d, navigation_bar_width=%d",
+                        status_bar_height, action_bar_default_height, navigation_bar_height,
+                        navigation_bar_height_landscape, navigation_bar_width));
 
             adjustSystemBarsTintingViews();
 
