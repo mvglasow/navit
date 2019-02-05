@@ -354,25 +354,6 @@ public class Navit extends Activity {
         Notification NavitNotification = builder.build();
         nm.notify(R.string.app_name, NavitNotification);// Show the notification
 
-        // Status and navigation bar sizes
-        // These are platform defaults and do not change with rotation, but we have to figure out which ones apply
-        // (is the navigation bar visible? on the side or at the bottom?)
-        Resources resources = getResources();
-        int shid = resources.getIdentifier("status_bar_height", "dimen", "android");
-        int adhid = resources.getIdentifier("action_bar_default_height", "dimen", "android");
-        int nhid = resources.getIdentifier("navigation_bar_height", "dimen", "android");
-        int nhlid = resources.getIdentifier("navigation_bar_height_landscape", "dimen", "android");
-        int nwid = resources.getIdentifier("navigation_bar_width", "dimen", "android");
-        status_bar_height = (shid > 0) ? resources.getDimensionPixelSize(shid) : 0;
-        action_bar_default_height = (adhid > 0) ? resources.getDimensionPixelSize(adhid) : 0;
-        navigation_bar_height = (nhid > 0) ? resources.getDimensionPixelSize(nhid) : 0;
-        navigation_bar_height_landscape = (nhlid > 0) ? resources.getDimensionPixelSize(nhlid) : 0;
-        navigation_bar_width = (nwid > 0) ? resources.getDimensionPixelSize(nwid) : 0;
-        Log.d(TAG, String.format(
-                    "status_bar_height=%d, action_bar_default_height=%d, navigation_bar_height=%d, "
-                    + "navigation_bar_height_landscape=%d, navigation_bar_width=%d",
-                    status_bar_height, action_bar_default_height, navigation_bar_height,
-                    navigation_bar_height_landscape, navigation_bar_width));
         if ((ContextCompat.checkSelfPermission(this,
                 Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
                     || (ContextCompat.checkSelfPermission(this,
@@ -533,10 +514,30 @@ public class Navit extends Activity {
                             v.getRootWindowInsets().getSystemWindowInsetBottom()));
             }
         } else {
-            /* TODO move the old kludge from onCreate() in here, it's essentially Android 4.x only (which allowed
+            /* TODO move the old kludge below in here, it's essentially Android 4.x only (which allowed
              * translucent/transparent system bars but lacked any way to query their dimensions)
              */
         }
+        // Status and navigation bar sizes
+        // These are platform defaults and do not change with rotation, but we have to figure out which ones apply
+        // (is the navigation bar visible? on the side or at the bottom?)
+        Resources resources = getResources();
+        int shid = resources.getIdentifier("status_bar_height", "dimen", "android");
+        int adhid = resources.getIdentifier("action_bar_default_height", "dimen", "android");
+        int nhid = resources.getIdentifier("navigation_bar_height", "dimen", "android");
+        int nhlid = resources.getIdentifier("navigation_bar_height_landscape", "dimen", "android");
+        int nwid = resources.getIdentifier("navigation_bar_width", "dimen", "android");
+        status_bar_height = (shid > 0) ? resources.getDimensionPixelSize(shid) : 0;
+        action_bar_default_height = (adhid > 0) ? resources.getDimensionPixelSize(adhid) : 0;
+        navigation_bar_height = (nhid > 0) ? resources.getDimensionPixelSize(nhid) : 0;
+        navigation_bar_height_landscape = (nhlid > 0) ? resources.getDimensionPixelSize(nhlid) : 0;
+        navigation_bar_width = (nwid > 0) ? resources.getDimensionPixelSize(nwid) : 0;
+        Log.d(TAG, String.format(
+                    "status_bar_height=%d, action_bar_default_height=%d, navigation_bar_height=%d, "
+                    + "navigation_bar_height_landscape=%d, navigation_bar_width=%d",
+                    status_bar_height, action_bar_default_height, navigation_bar_height,
+                    navigation_bar_height_landscape, navigation_bar_width));
+
         if (show_soft_keyboard_now_showing) {
             /* Calling showNativeKeyboard() directly won't work here, we need to use the message queue */
             View cf = getCurrentFocus();
