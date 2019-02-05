@@ -796,16 +796,16 @@ public class NavitGraphics {
             } else {
                 /* 
                  * Android 4.x does not support window insets, forcing us to make an educated guess:
-                 * 
+                 *
                  * Status and navigation bar sizes are platform defaults and do not change with rotation, but we have
                  * to figure out which ones apply.
-                 * 
+                 *
                  * The status bar is always visible unless we are in fullscreen mode.
-                 * 
+                 *
                  * The navigation bar is shown on devices that report they have no physical menu button. This seems to
                  * work even on devices that allow disabling the physical buttons (and use the navigation bar, in which
                  * case they report no physical menu button is available; tested with a OnePlus One running CyanogenMod).
-                 * 
+                 *
                  * If shown, the navigation bar may appear on the side or at the bottom. The logic to determine this is
                  * taken from AOSP RenderSessionImpl.findNavigationBar()
                  * platform/frameworks/base/tools/layoutlib/bridge/src/com/android/layoutlib/bridge/impl/RenderSessionImpl.java
