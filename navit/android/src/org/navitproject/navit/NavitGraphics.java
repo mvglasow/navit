@@ -20,6 +20,7 @@
 package org.navitproject.navit;
 
 import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
@@ -760,6 +761,7 @@ public class NavitGraphics {
      * {@code onSizeChanged()} event handler fires or when toggling Fullscreen mode.
      *
      */
+    @TargetApi(20)
     public void handleResize(int w, int h) {
         if (this.parent_graphics != null) {
             this.parent_graphics.handleResize(w, h);
