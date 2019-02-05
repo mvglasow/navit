@@ -794,7 +794,7 @@ public class NavitGraphics {
                     }
                 }
             } else {
-                /* 
+                /*
                  * Android 4.x does not support window insets, forcing us to make an educated guess:
                  *
                  * Status and navigation bar sizes are platform defaults and do not change with rotation, but we have
