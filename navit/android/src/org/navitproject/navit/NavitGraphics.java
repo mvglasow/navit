@@ -761,7 +761,7 @@ public class NavitGraphics {
      * {@code onSizeChanged()} event handler fires or when toggling Fullscreen mode.
      *
      */
-    @TargetApi(20)
+    @TargetApi(23)
     public void handleResize(int w, int h) {
         if (this.parent_graphics != null) {
             this.parent_graphics.handleResize(w, h);
@@ -774,8 +774,8 @@ public class NavitGraphics {
             padding_top = 0;
             padding_bottom = 0;
 
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT_WATCH) {
-                /* On API 20+ we can query window insets to determine the area which is obscured by the system bars. */
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                /* On API 23+ we can query window insets to determine the area which is obscured by the system bars. */
                 if (view == null) {
                     Log.e(TAG, "view is null!");
                 } else {
@@ -797,7 +797,8 @@ public class NavitGraphics {
                 }
             } else {
                 /*
-                 * Android 4.x does not support window insets, forcing us to make an educated guess:
+                 * Android 4.x does not support window insets at all, and Android 5.x does not support root window
+                 * insets, forcing us to make an educated guess:
                  *
                  * Status and navigation bar sizes are platform defaults and do not change with rotation, but we have
                  * to figure out which ones apply.

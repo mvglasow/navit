@@ -20,6 +20,7 @@
 package org.navitproject.navit;
 
 import android.Manifest;
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -450,6 +451,7 @@ public class Navit extends Activity {
     }
 
     @Override
+    @TargetApi(23)
     public void onResume() {
         super.onResume();
         Log.d(TAG, "OnResume");
@@ -478,7 +480,7 @@ public class Navit extends Activity {
             }
         }
         Log.d(TAG, "onResume");
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT_WATCH) {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
             // TODO use WindowInsets
             View v = getCurrentFocus();
             if (v == null) {
