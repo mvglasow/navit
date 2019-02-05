@@ -502,6 +502,41 @@ public class Navit extends Activity {
             }
         }
         Log.d(TAG, "onResume");
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT_WATCH) {
+            // TODO use WindowInsets
+            View v = getCurrentFocus();
+            if (v == null) {
+                Log.e(TAG, "No view in focus");
+            } else {
+                Log.e(TAG, String.format("Focused View w=%d h=%d x=%.0f y=%.0f", v.getWidth(), v.getHeight(), v.getX(), v.getY()));
+                if (v.getRootWindowInsets() == null)
+                    Log.e(TAG, "No root window insets");
+                else
+                    Log.e(TAG, String.format("RootWindowInsets left=%d right=%d top=%d bottom=%d",
+                            v.getRootWindowInsets().getSystemWindowInsetLeft(),
+                            v.getRootWindowInsets().getSystemWindowInsetRight(),
+                            v.getRootWindowInsets().getSystemWindowInsetTop(),
+                            v.getRootWindowInsets().getSystemWindowInsetBottom()));
+            }
+            v = getWindow().getDecorView();
+            if (v == null) {
+                Log.e(TAG, "No view in focus");
+            } else {
+                Log.e(TAG, String.format("DecorView w=%d h=%d x=%.0f y=%.0f", v.getWidth(), v.getHeight(), v.getX(), v.getY()));
+                if (v.getRootWindowInsets() == null)
+                    Log.e(TAG, "No root window insets");
+                else
+                    Log.e(TAG, String.format("RootWindowInsets left=%d right=%d top=%d bottom=%d",
+                            v.getRootWindowInsets().getSystemWindowInsetLeft(),
+                            v.getRootWindowInsets().getSystemWindowInsetRight(),
+                            v.getRootWindowInsets().getSystemWindowInsetTop(),
+                            v.getRootWindowInsets().getSystemWindowInsetBottom()));
+            }
+        } else {
+            /* TODO move the old kludge from onCreate() in here, it's essentially Android 4.x only (which allowed
+             * translucent/transparent system bars but lacked any way to query their dimensions)
+             */
+        }
         if (show_soft_keyboard_now_showing) {
             /* Calling showNativeKeyboard() directly won't work here, we need to use the message queue */
             View cf = getCurrentFocus();
