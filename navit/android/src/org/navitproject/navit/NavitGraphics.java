@@ -45,6 +45,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup.LayoutParams;
+import android.view.WindowInsets;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.FrameLayout;
 import android.widget.RelativeLayout;
@@ -157,6 +158,25 @@ public class NavitGraphics {
             } catch (Exception e) {
                 Log.e(TAG, "Multitouch zoom not supported");
             }
+        }
+
+        @Override
+        @TargetApi(20)
+        public WindowInsets onApplyWindowInsets (WindowInsets insets) {
+            Log.e(TAG, String.format("NavitView#onApplyWindowInsets enter: left=%d right=%d top=%d bottom=%d isConsumed=%s",
+                    insets.getSystemWindowInsetLeft(),
+                    insets.getSystemWindowInsetRight(),
+                    insets.getSystemWindowInsetTop(),
+                    insets.getSystemWindowInsetBottom(),
+                    insets.isConsumed() ? "true" : "false"));
+            WindowInsets result = super.onApplyWindowInsets(insets);
+            Log.e(TAG, String.format("NavitView#onApplyWindowInsets return: left=%d right=%d top=%d bottom=%d isConsumed=%s",
+                    result.getSystemWindowInsetLeft(),
+                    result.getSystemWindowInsetRight(),
+                    result.getSystemWindowInsetTop(),
+                    result.getSystemWindowInsetBottom(),
+                    result.isConsumed() ? "true" : "false"));
+            return result;
         }
 
         @Override
