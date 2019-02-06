@@ -738,36 +738,37 @@ public class NavitGraphics {
                 FrameLayout.LayoutParams leftLayoutParams = new FrameLayout.LayoutParams(padding_left,
                         LayoutParams.MATCH_PARENT, Gravity.BOTTOM | Gravity.LEFT);
                 leftTintView.setLayoutParams(leftLayoutParams);
-                Log.d(TAG, String.format("leftTintView: width=%d height=%d",
-                        leftTintView.getWidth(), leftTintView.getHeight()));
 
                 FrameLayout.LayoutParams rightLayoutParams = new FrameLayout.LayoutParams(padding_right,
                         LayoutParams.MATCH_PARENT, Gravity.BOTTOM | Gravity.RIGHT);
                 rightTintView.setLayoutParams(rightLayoutParams);
-                Log.d(TAG, String.format("rightTintView: width=%d height=%d",
-                        rightTintView.getWidth(), rightTintView.getHeight()));
 
                 FrameLayout.LayoutParams topLayoutParams = new FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT,
                         padding_top, Gravity.TOP);
                 /* Prevent horizontal and vertical tint views from overlapping */
                 topLayoutParams.setMargins(padding_left, 0, padding_right, 0);
                 topTintView.setLayoutParams(topLayoutParams);
-                Log.d(TAG, String.format("topTintView: width=%d height=%d",
-                        topTintView.getWidth(), topTintView.getHeight()));
 
                 FrameLayout.LayoutParams bottomLayoutParams = new FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT,
                         padding_bottom, Gravity.BOTTOM);
                 /* Prevent horizontal and vertical tint views from overlapping */
                 bottomLayoutParams.setMargins(padding_left, 0, padding_right, 0);
                 bottomTintView.setLayoutParams(bottomLayoutParams);
-                Log.d(TAG, String.format("bottomTintView: width=%d height=%d",
-                        bottomTintView.getWidth(), bottomTintView.getHeight()));
 
                 /* show tint bars again */
                 leftTintView.setVisibility(View.VISIBLE);
                 rightTintView.setVisibility(View.VISIBLE);
                 topTintView.setVisibility(View.VISIBLE);
                 bottomTintView.setVisibility(View.VISIBLE);
+
+                Log.d(TAG, String.format("leftTintView: width=%d height=%d",
+                        leftTintView.getWidth(), leftTintView.getHeight()));
+                Log.d(TAG, String.format("rightTintView: width=%d height=%d",
+                        rightTintView.getWidth(), rightTintView.getHeight()));
+                Log.d(TAG, String.format("topTintView: width=%d height=%d",
+                        topTintView.getWidth(), topTintView.getHeight()));
+                Log.d(TAG, String.format("bottomTintView: width=%d height=%d",
+                        bottomTintView.getWidth(), bottomTintView.getHeight()));
             }
         });
 
