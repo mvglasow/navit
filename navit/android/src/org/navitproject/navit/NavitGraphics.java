@@ -805,7 +805,6 @@ public class NavitGraphics {
             Log.d(TAG, String.format("handleResize w=%d h=%d", w, h));
 
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-                /*  */
                 /*
                  * On API 23+ we can query window insets to determine the area which is obscured by the system bars.
                  * This appears to have a bug, though, causing an inset to be reported for the navigation bar even
