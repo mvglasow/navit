@@ -174,10 +174,9 @@ public class NavitGraphics {
             /*
              * We're skipping the top inset here because it appears to have a bug on most Android versions tested,
              * causing it to report between 24 and 64 dip more than what is actually occupied by the system UI.
-             * The top inset is retrieved in handleResize(), but this relies on logic which required API 23+.
-             * Therefore on API 20-22 we still need to rely on the KitKat-style guessing game.
+             * The top inset is retrieved in handleResize(), with logic depending on the platform version.
              */
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT_WATCH) {
                 padding_left = insets.getSystemWindowInsetLeft();
                 padding_right = insets.getSystemWindowInsetRight();
                 padding_bottom = insets.getSystemWindowInsetBottom();
@@ -828,15 +827,32 @@ public class NavitGraphics {
                         padding_top = view.getRootWindowInsets().getSystemWindowInsetTop();
                     }
                 }
+            } else if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT_WATCH) {
+                /*
+                 * API 20-22 do not support root window insets, forcing us to make an educated guess about the
+                 * navigation bar height:
+                 *
+                 * The size is a platform default and does not change with rotation, but we have to figure out if it
+                 * applies, i.e. if the status bar is visible.
+                 *
+                 * The status bar is always visible unless we are in fullscreen mode. (Fortunately, none of the
+                 * versions affected by this support split screen mode, which would have further complicated things.)
+                 */
+                if (activity.isFullscreen)
+                    padding_top = 0;
+                else {
+                    Resources resources = view.getResources();
+                    int shid = resources.getIdentifier("status_bar_height", "dimen", "android");
+                    padding_top = (shid > 0) ? resources.getDimensionPixelSize(shid) : 0;
+                }
             } else if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
                 /*
-                 * API 19 does not support window insets at all, and API 20/21 does not support root window insets,
-                 * forcing us to make an educated guess:
+                 * API 19 does not support window insets at all, forcing us to do even more guessing than on API 20-22:
                  *
-                 * Status and navigation bar sizes are platform defaults and do not change with rotation, but we have
+                 * All system bar sizes are platform defaults and do not change with rotation, but we have
                  * to figure out which ones apply.
                  *
-                 * The status bar is always visible unless we are in fullscreen mode.
+                 * Status bar visibility is as on API 20-22.
                  *
                  * The navigation bar is shown on devices that report they have no physical menu button. This seems to
                  * work even on devices that allow disabling the physical buttons (and use the navigation bar, in which
