@@ -161,14 +161,15 @@ public class NavitGraphics {
         }
 
         @Override
-        @TargetApi(20)
+        @TargetApi(21)
         public WindowInsets onApplyWindowInsets (WindowInsets insets) {
             Log.e(TAG, String.format("NavitView#onApplyWindowInsets enter: left=%d right=%d top=%d bottom=%d isConsumed=%s",
                     insets.getSystemWindowInsetLeft(),
                     insets.getSystemWindowInsetRight(),
                     insets.getSystemWindowInsetTop(),
                     insets.getSystemWindowInsetBottom(),
-                    insets.isConsumed() ? "true" : "false"));
+                    (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) ?
+                            insets.isConsumed() ? "true" : "false" : "(not supported)"));
 
             /*
              * We're skipping the top inset here because it appears to have a bug on most Android versions tested,
@@ -188,7 +189,8 @@ public class NavitGraphics {
                     result.getSystemWindowInsetRight(),
                     result.getSystemWindowInsetTop(),
                     result.getSystemWindowInsetBottom(),
-                    result.isConsumed() ? "true" : "false"));
+                    (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) ?
+                            insets.isConsumed() ? "true" : "false" : "(not supported)"));
             return result;
         }
 
