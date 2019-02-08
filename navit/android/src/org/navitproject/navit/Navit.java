@@ -876,6 +876,7 @@ public class Navit extends Activity {
     public void onDestroy() {
         super.onDestroy();
         Log.d(TAG, "OnDestroy");
+        Thread.dumpStack();
     }
 
     public void fullscreen(int fullscreen) {
