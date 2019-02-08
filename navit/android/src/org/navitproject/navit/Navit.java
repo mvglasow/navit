@@ -313,10 +313,17 @@ public class Navit extends Activity {
         }
     }
 
+    @Override
+    public void onConfigurationChanged (Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        Log.d(TAG, "***** Configuration changed, preserving Activity");
+    }
+
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.d(TAG, String.format("Creating new Activity, config changes: %d", getChangingConfigurations()));
         if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.HONEYCOMB) {
             this.requestWindowFeature(Window.FEATURE_NO_TITLE);
         } else {
