@@ -75,6 +75,9 @@ public class NavitTraff extends BroadcastReceiver {
         this.context = context;
         this.cbid = cbid;
 
+        Log.d("NavitTraff", "<init>");
+        Thread.dumpStack();
+
         traffFilter.addAction(ACTION_TRAFF_FEED);
         traffFilter.addAction(ACTION_TRAFF_POLL);
 
