@@ -2545,6 +2545,7 @@ static void graphics_load_mapset(struct graphics *gra, struct displaylist *displ
     if (displaylist->busy) {
         if (async == 1)
             return;
+        dbg(lvl_debug,"displaylist is busy, async=false, canceling pending draw operation");
         do_draw(displaylist, 1, flags);
     }
     xdisplay_free(displaylist);
@@ -2564,6 +2565,7 @@ static void graphics_load_mapset(struct graphics *gra, struct displaylist *displ
     displaylist->order=order>0?order:0;
     displaylist->busy=1;
     displaylist->layout=l;
+    dbg(lvl_debug,"triggering draw operation (do_draw)");
     if (async) {
         if (! displaylist->idle_cb)
             displaylist->idle_cb=callback_new_3(callback_cast(do_draw), displaylist, 0, flags);
