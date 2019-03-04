@@ -2416,6 +2416,7 @@ static void do_draw(struct displaylist *displaylist, int cancel, int flags) {
                 displaylist->sel=displaylist_get_selection(displaylist);
             displaylist->mr=map_rect_new(displaylist->m, displaylist->sel);
         }
+        dbg(lvl_debug, "msh=%p m=%p mr=%p", displaylist->msh, displaylist->m, displaylist->mr);
         if (displaylist->mr) {
             while ((item=map_rect_get_item(displaylist->mr))) {
                 int label_count=0;
