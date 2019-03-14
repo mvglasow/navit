@@ -3788,6 +3788,13 @@ static int traffic_process_messages_int(struct traffic * this_, int flags) {
     if (this_->shared->message_queue)
         dbg(lvl_debug, "*****enter, %d messages in queue", g_list_length(this_->shared->message_queue));
 
+#if USE_POSIX_THREADS
+    dbg(lvl_error, "!!! We support POSIX threads. This could be so much faster!");
+#endif
+#ifdef G_THREADS_ENABLED
+    dbg(lvl_error, "!!! We support GLib threads. This could be so much faster!");
+#endif
+
     gettimeofday(&start, NULL);
     for (; this_->shared->message_queue && (msec < TIME_SLICE);
             this_->shared->message_queue = g_list_remove(this_->shared->message_queue, message)) {
