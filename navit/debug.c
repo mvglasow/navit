@@ -51,6 +51,11 @@ static int debug_socket=-1;
 static struct sockaddr_in debug_sin;
 #endif
 
+#ifdef G_THREADS_ENABLED
+/** Read/write lock for console output */
+static GRWLock rw_lock;
+#endif
+
 
 #define DEFAULT_DEBUG_LEVEL lvl_error
 dbg_level max_debug_level=DEFAULT_DEBUG_LEVEL;
@@ -412,9 +417,15 @@ void debug_vprintf(dbg_level level, const char *module, const int mlen, const ch
 void debug_printf(dbg_level level, const char *module, const int mlen,const char *function, const int flen,
                   int prefix, const char *fmt, ...) {
     va_list ap;
+#ifdef G_THREADS_ENABLED
+    g_rw_lock_reader_lock(&rw_lock);
+#endif
     va_start(ap, fmt);
     debug_vprintf(level, module, mlen, function, flen, prefix, fmt, ap);
     va_end(ap);
+#ifdef G_THREADS_ENABLED
+    g_rw_lock_reader_unlock(&rw_lock);
+#endif
 }
 
 void debug_assert_fail(const char *module, const int mlen,const char *function, const int flen, const char *file,
