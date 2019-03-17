@@ -2489,7 +2489,8 @@ static void do_draw(struct displaylist *displaylist, int cancel, int flags) {
     map_rect_destroy(displaylist->mr);
     if (!route_selection)
         map_selection_destroy(displaylist->sel);
-    mapset_close(displaylist->msh);
+    if (displaylist->msh)
+        mapset_close(displaylist->msh);
     displaylist->mr=NULL;
     displaylist->sel=NULL;
     displaylist->m=NULL;
