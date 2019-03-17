@@ -53,7 +53,11 @@ static struct sockaddr_in debug_sin;
 
 #ifdef G_THREADS_ENABLED
 /** Read/write lock for console output */
+#if GLIB_CHECK_VERSION(2,34,0)
 static GRWLock rw_lock;
+#else
+static GStaticRWLock rw_lock;
+#endif
 #endif
 
 
@@ -418,13 +422,21 @@ void debug_printf(dbg_level level, const char *module, const int mlen,const char
                   int prefix, const char *fmt, ...) {
     va_list ap;
 #ifdef G_THREADS_ENABLED
+#if GLIB_CHECK_VERSION(2,34,0)
     g_rw_lock_reader_lock(&rw_lock);
+#else
+    g_static_rw_lock_reader_lock(&rw_lock);
+#endif
 #endif
     va_start(ap, fmt);
     debug_vprintf(level, module, mlen, function, flen, prefix, fmt, ap);
     va_end(ap);
 #ifdef G_THREADS_ENABLED
+#if GLIB_CHECK_VERSION(2,34,0)
     g_rw_lock_reader_unlock(&rw_lock);
+#else
+    g_static_rw_lock_reader_unlock(&rw_lock);
+#endif
 #endif
 }
 
