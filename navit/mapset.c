@@ -29,6 +29,7 @@
 #include <string.h>
 #include <glib.h>
 #include <glib/gprintf.h>
+#include "thread.h"
 #include "debug.h"
 #include "item.h"
 #include "mapset.h"
@@ -44,6 +45,7 @@
 struct mapset {
     NAVIT_OBJECT
     GList *maps; /**< Linked list of all the maps in the mapset */
+    thread_lock *rw_lock; /**< Lock for insertions, deletions or iterations over maps in the mapset */
 };
 
 struct attr_iter {
@@ -62,13 +64,17 @@ struct mapset *mapset_new(struct attr *parent, struct attr **attrs) {
     ms->func=&mapset_func;
     navit_object_ref((struct navit_object *)ms);
     ms->attrs=attr_list_dup(attrs);
+    ms->rw_lock = thread_lock_new();
 
     return ms;
 }
 
 struct mapset *mapset_dup(struct mapset *ms) {
     struct mapset *ret=mapset_new(NULL, ms->attrs);
+    thread_lock_acquire_read(ms->rw_lock);
     ret->maps=g_list_copy(ms->maps);
+    thread_lock_release_read(ms->rw_lock);
+    ret->rw_lock = thread_lock_new();
     return ret;
 }
 
@@ -83,48 +89,81 @@ void mapset_attr_iter_destroy(struct attr_iter *iter) {
 }
 
 /**
- * @brief Adds a map to a mapset
+ * @brief Adds a map to a mapset.
+ *
+ * Attribute types other than `attr_map` are not supported.
+ *
+ * If Navit was built with GLib thread support, this call will block as long as any thread still has a mapset handle
+ * open.
  *
  * @param ms The mapset to add the map to
- * @param m The map to be added
+ * @param attr The attribute for the map to be added
  */
 int mapset_add_attr(struct mapset *ms, struct attr *attr) {
     switch (attr->type) {
     case attr_map:
+        thread_lock_acquire_write(ms->rw_lock);
         ms->attrs=attr_generic_add_attr(ms->attrs,attr);
         ms->maps=g_list_append(ms->maps, attr->u.map);
+        thread_lock_release_write(ms->rw_lock);
         return 1;
     default:
         return 0;
     }
 }
 
+/**
+ * @brief Removes a map from a mapset.
+ *
+ * Attribute types other than `attr_map` are not supported.
+ *
+ * If Navit was built with GLib thread support, this call will block as long as any thread still has a mapset handle
+ * open.
+ *
+ * @param ms The mapset to remove the map from
+ * @param attr The attribute for the map to be removed
+ */
 int mapset_remove_attr(struct mapset *ms, struct attr *attr) {
     switch (attr->type) {
     case attr_map:
+        thread_lock_acquire_write(ms->rw_lock);
         ms->attrs=attr_generic_remove_attr(ms->attrs,attr);
         ms->maps=g_list_remove(ms->maps, attr->u.map);
+        thread_lock_release_write(ms->rw_lock);
         return 1;
     default:
         return 0;
     }
 }
 
+/**
+ * @brief Retrieves a map from a mapset.
+ *
+ * Attribute types other than `attr_map` are not supported.
+ *
+ * @param ms The mapset to retrieve the map from
+ * @param type The attribute type, only `attr_map` is supported
+ * @param attr Points to a buffer which will receive the attribute
+ * @param iter An iterator (if NULL, the first map in the set is retrieved)
+ */
 int mapset_get_attr(struct mapset *ms, enum attr_type type, struct attr *attr, struct attr_iter *iter) {
     GList *map;
     map=ms->maps;
     attr->type=type;
     switch (type) {
     case attr_map:
+        thread_lock_acquire_read(ms->rw_lock);
         while (map) {
             if (!iter || iter->last == g_list_previous(map)) {
                 attr->u.map=map->data;
                 if (iter)
                     iter->last=map;
+                thread_lock_release_read(ms->rw_lock);
                 return 1;
             }
             map=g_list_next(map);
         }
+        thread_lock_release_read(ms->rw_lock);
         break;
     default:
         break;
@@ -141,6 +180,7 @@ int mapset_get_attr(struct mapset *ms, enum attr_type type, struct attr *attr, s
  * @param ms The mapset to be destroyed
  */
 void mapset_destroy(struct mapset *ms) {
+    thread_lock_destroy(ms->rw_lock);
     g_list_free(ms->maps);
     attr_list_free(ms->attrs);
     g_free(ms);
@@ -154,13 +194,17 @@ void mapset_destroy(struct mapset *ms) {
  */
 struct mapset_handle {
     GList *l;	/**< Pointer to the current (next) map */
+    thread_lock * ms_rw_lock; /**< Lock for insertions, deletions or iterations over maps in the mapset */
 };
 
 /**
- * @brief Returns a new handle for a mapset
+ * @brief Returns a new handle for a mapset.
  *
  * This returns a new handle for an existing mapset. The new handle points to the first
  * map in the set.
+ *
+ * If Navit was built with GLib thread support, this will obtain a read lock on the mapset, which is released when the
+ * mapset is closed again. Until then, no maps can be added to or removed from the mapset.
  *
  * @param ms The mapset to get a handle of
  * @return The new mapset handle
@@ -170,6 +214,8 @@ mapset_open(struct mapset *ms) {
     struct mapset_handle *ret=NULL;
     if(ms) {
         ret=g_new(struct mapset_handle, 1);
+        thread_lock_acquire_read(ms->rw_lock);
+        ret->ms_rw_lock = ms->rw_lock;
         ret->l=ms->maps;
     }
 
@@ -245,11 +291,15 @@ mapset_get_map_by_name(struct mapset *ms, const char*map_name) {
 }
 
 /**
- * @brief Closes a mapset handle after it is no longer used
+ * @brief Closes a mapset handle after it is no longer used.
+ *
+ * If Navit was built with GLib thread support, this will also release the lock on the mapset. Maps can be added to or
+ * removed from the mapset when there are no more mapset handles.
  *
  * @param msh Mapset handle to be closed
  */
 void mapset_close(struct mapset_handle *msh) {
+    thread_lock_release_read(msh->ms_rw_lock);
     g_free(msh);
 }
 
@@ -320,6 +370,7 @@ mapset_search_get_item(struct mapset_search *this_) {
     struct attr active_attr;
     int country_search=this_->search_attr->type >= attr_country_all && this_->search_attr->type <= attr_country_name;
 
+    thread_lock_acquire_read(this_->mapset->rw_lock);
     while ((this_) && (this_->mapset) && (!this_->ms
                                           || !(ret=map_search_get_item(this_->ms)))) { /* The current map has no more items to be returned */
 
@@ -360,6 +411,7 @@ mapset_search_get_item(struct mapset_search *this_) {
             break;
         this_->ms=map_search_new(this_->map->data, this_->item, this_->search_attr, this_->partial);
     }
+    thread_lock_release_read(this_->mapset->rw_lock);
     return ret;
 }
 
