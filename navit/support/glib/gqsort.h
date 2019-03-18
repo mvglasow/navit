@@ -1,4 +1,4 @@
-/* GLIB - Library of useful routines for C programming
+ /* GLIB - Library of useful routines for C programming
  * Copyright (C) 1995-1997  Peter Mattis, Spencer Kimball and Josh MacDonald
  *
  * This library is free software; you can redistribute it and/or
@@ -24,23 +24,23 @@
  * GLib at ftp://ftp.gtk.org/pub/gtk/.
  */
 
-#ifndef __G_LIB_H__
-#define __G_LIB_H__
+#if defined(G_DISABLE_SINGLE_INCLUDES) && !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
+#error "Only <glib.h> can be included directly."
+#endif
 
-#define __GLIB_H_INSIDE__
-#include <glib/galloca.h>
-#include <glib/garray.h>
-#include <glib/gerror.h>
-#include <glib/fake.h>
-#include <glib/ghash.h>
-#include <glib/gmessages.h>
-#include <glib/gslist.h>
-#include <glib/gstrfuncs.h>
-#include <glib/gthread.h>
-#include <glib/gtimer.h>
-#include <glib/gunicode.h>
-#include <glib/gutils.h>
+#ifndef __G_QSORT_H__
+#define __G_QSORT_H__
 
-#undef __GLIB_H_INSIDE__
+#include <glib/gtypes.h>
 
-#endif /* __G_LIB_H__ */
+G_BEGIN_DECLS
+
+void g_qsort_with_data (gconstpointer    pbase,
+			gint             total_elems,
+			gsize            size,
+			GCompareDataFunc compare_func,
+			gpointer         user_data);
+
+G_END_DECLS
+
+#endif /* __G_QSORT_H__ */

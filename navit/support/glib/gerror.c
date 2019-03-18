@@ -248,6 +248,7 @@ g_set_error_literal (GError      **err,
   else
     g_warning (ERROR_OVERWRITTEN_WARNING, new->message);    
 }
+#endif
 
 /**
  * g_propagate_error:
@@ -278,6 +279,7 @@ g_propagate_error (GError       **dest,
     }
 }
 
+#if NOT_NEEDED_FOR_NAVIT
 /**
  * g_clear_error:
  * @err: a #GError return location

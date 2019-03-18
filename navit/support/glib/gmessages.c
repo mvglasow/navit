@@ -508,6 +508,7 @@ g_logv (const gchar   *log_domain,
 	}
     }
 }
+#endif
 
 void
 g_log (const gchar   *log_domain,
@@ -522,6 +523,7 @@ g_log (const gchar   *log_domain,
   va_end (args);
 }
 
+#if NOT_NEEDED_FOR_NAVIT
 void
 g_return_if_fail_warning (const char *log_domain,
 			  const char *pretty_function,

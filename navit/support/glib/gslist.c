@@ -173,7 +173,6 @@ g_slist_free (GSList *list)
   g_slice_free_chain (GSList, list, next);
 }
 
-#if NOT_NEEDED_FOR_NAVIT
 /**
  * g_slist_free_1:
  * @list: a #GSList element
@@ -194,6 +193,7 @@ g_slist_free_1 (GSList *list)
   _g_slist_free1 (list);
 }
 
+#if NOT_NEEDED_FOR_NAVIT
 /**
  * g_slist_free_full:
  * @list: a pointer to a #GSList
@@ -440,6 +440,7 @@ g_slist_concat (GSList *list1, GSList *list2)
 
   return list1;
 }
+#endif
 
 /**
  * g_slist_remove:
@@ -478,6 +479,7 @@ g_slist_remove (GSList        *list,
   return list;
 }
 
+#if NOT_NEEDED_FOR_NAVIT
 /**
  * g_slist_remove_all:
  * @list: a #GSList
@@ -569,6 +571,7 @@ g_slist_remove_link (GSList *list,
 {
   return _g_slist_remove_link (list, link_);
 }
+#endif
 
 /**
  * g_slist_delete_link:
@@ -591,6 +594,7 @@ g_slist_delete_link (GSList *list,
   return list;
 }
 
+#if NOT_NEEDED_FOR_NAVIT
 /**
  * g_slist_copy:
  * @list: a #GSList
