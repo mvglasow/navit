@@ -42,9 +42,7 @@
 #include <errno.h>
 
 #include "glib.h"
-#if NOT_NEEDED_FOR_NAVIT
 #include "gdebug.h"
-#endif /* NOT_NEEDED_FOR_NAVIT */
 #include "gprintfint.h"
 #include "gthreadprivate.h"
 #include "galias.h"
@@ -59,6 +57,7 @@
 #  include <windows.h>
 #  undef STRICT
 #endif
+#endif /* NOT_NEEDED_FOR_NAVIT */
 
 /* --- structures --- */
 typedef struct _GLogDomain	GLogDomain;
@@ -84,13 +83,16 @@ struct _GLogHandler
 static GMutex        *g_messages_lock = NULL;
 static GLogDomain    *g_log_domains = NULL;
 static GLogLevelFlags g_log_always_fatal = G_LOG_FATAL_MASK;
+#if NOT_NEEDED_FOR_NAVIT
 static GPrintFunc     glib_print_func = NULL;
 static GPrintFunc     glib_printerr_func = NULL;
+#endif /* NOT_NEEDED_FOR_NAVIT */
 static GPrivate	     *g_log_depth = NULL;
 static GLogLevelFlags g_log_msg_prefix = G_LOG_LEVEL_ERROR | G_LOG_LEVEL_WARNING | G_LOG_LEVEL_CRITICAL | G_LOG_LEVEL_DEBUG;
 static GLogFunc       default_log_func = g_log_default_handler;
 static gpointer       default_log_data = NULL;
 
+#if NOT_NEEDED_FOR_NAVIT
 /* --- functions --- */
 #ifdef G_OS_WIN32
 #  define STRICT
@@ -126,6 +128,7 @@ dowrite (int          fd,
 #define write(fd, buf, len) dowrite(fd, buf, len)
 
 #endif
+#endif /* NOT_NEEDED_FOR_NAVIT */
 
 static void
 write_string (int          fd,
@@ -177,6 +180,7 @@ g_log_find_domain_L (const gchar *log_domain)
   return NULL;
 }
 
+#if NOT_NEEDED_FOR_NAVIT
 static GLogDomain*
 g_log_domain_new_L (const gchar *log_domain)
 {
@@ -221,6 +225,7 @@ g_log_domain_check_free_L (GLogDomain *domain)
 	}  
     }
 }
+#endif /* NOT_NEEDED_FOR_NAVIT */
 
 static GLogFunc
 g_log_domain_get_handler_L (GLogDomain	*domain,
@@ -269,6 +274,7 @@ g_log_set_always_fatal (GLogLevelFlags fatal_mask)
   return old_mask;
 }
 
+#if NOT_NEEDED_FOR_NAVIT
 GLogLevelFlags
 g_log_set_fatal_mask (const gchar   *log_domain,
 		      GLogLevelFlags fatal_mask)
@@ -390,6 +396,7 @@ g_log_remove_handler (const gchar *log_domain,
   g_warning ("%s: could not find handler with id `%d' for domain \"%s\"",
 	     G_STRLOC, handler_id, log_domain);
 }
+#endif /* NOT_NEEDED_FOR_NAVIT */
 
 void
 g_logv (const gchar   *log_domain,
@@ -522,6 +529,7 @@ g_log (const gchar   *log_domain,
   va_end (args);
 }
 
+#if NOT_NEEDED_FOR_NAVIT
 void
 g_return_if_fail_warning (const char *log_domain,
 			  const char *pretty_function,
@@ -585,6 +593,7 @@ g_assert_warning (const char *log_domain,
 	 expression);
   abort ();
 }
+#endif /* NOT_NEEDED_FOR_NAVIT */
 
 #define CHAR_IS_SAFE(wc) (!((wc < 0x20 && wc != '\t' && wc != '\n' && wc != '\r') || \
 			    (wc == 0x7f) || \
@@ -955,6 +964,7 @@ g_log_default_handler (const gchar   *log_domain,
   g_free (string);
 }
 
+#if NOT_NEEDED_FOR_NAVIT
 GPrintFunc
 g_set_print_handler (GPrintFunc func)
 {
@@ -1080,6 +1090,7 @@ _g_messages_thread_init_nomessage (void)
   g_messages_prefixed_init ();
   _g_debug_init ();
 }
+#endif /* NOT_NEEDED_FOR_NAVIT */
 
 gboolean _g_debug_initialized = FALSE;
 guint _g_debug_flags = 0;
@@ -1120,7 +1131,6 @@ _g_debug_init (void)
       g_log_set_always_fatal (fatal_mask);
     }
 }
-#endif /* NOT_NEEDED_FOR_NAVIT */
 
 #define __G_MESSAGES_C__
 #include "galiasdef.c"

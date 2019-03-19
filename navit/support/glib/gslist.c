@@ -520,6 +520,7 @@ g_slist_remove_all (GSList        *list,
 
   return list;
 }
+#endif /* NOT_NEEDED_FOR_NAVIT */
 
 static inline GSList*
 _g_slist_remove_link (GSList *list,
@@ -551,6 +552,7 @@ _g_slist_remove_link (GSList *list,
   return list;
 }
 
+#if NOT_NEEDED_FOR_NAVIT
 /**
  * g_slist_remove_link:
  * @list: a #GSList
@@ -569,6 +571,7 @@ g_slist_remove_link (GSList *list,
 {
   return _g_slist_remove_link (list, link_);
 }
+#endif /* NOT_NEEDED_FOR_NAVIT */
 
 /**
  * g_slist_delete_link:
@@ -591,6 +594,7 @@ g_slist_delete_link (GSList *list,
   return list;
 }
 
+#if NOT_NEEDED_FOR_NAVIT
 /**
  * g_slist_copy:
  * @list: a #GSList
@@ -696,6 +700,7 @@ g_slist_nth_data (GSList   *list,
 
   return list ? list->data : NULL;
 }
+#endif /* NOT_NEEDED_FOR_NAVIT */
 
 /**
  * g_slist_find:
@@ -722,6 +727,7 @@ g_slist_find (GSList        *list,
   return list;
 }
 
+#if NOT_NEEDED_FOR_NAVIT
 /**
  * g_slist_find_custom:
  * @list: a #GSList

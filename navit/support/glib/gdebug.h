@@ -1,5 +1,5 @@
 /* GLIB - Library of useful routines for C programming
- * Copyright (C) 1995-1997  Peter Mattis, Spencer Kimball and Josh MacDonald
+ * Copyright (C) 1995-1997 Peter Mattis, Spencer Kimball and Josh MacDonald
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -8,7 +8,7 @@
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
@@ -21,28 +21,39 @@
  * Modified by the GLib Team and others 1997-2000.  See the AUTHORS
  * file for a list of people on the GLib Team.  See the ChangeLog
  * files for a list of changes.  These files are distributed with
- * GLib at ftp://ftp.gtk.org/pub/gtk/.
+ * GTK+ at ftp://ftp.gtk.org/pub/gtk/. 
  */
 
-#ifndef __G_LIB_H__
-#define __G_LIB_H__
+#ifndef __G_DEBUG_H__
+#define __G_DEBUG_H__
 
-#define __GLIB_H_INSIDE__
-#include <glib/galloca.h>
-#include <glib/garray.h>
-#include <glib/gconvert.h>
-#include <glib/gerror.h>
-#include <glib/fake.h>
-#include <glib/ghash.h>
-#include <glib/gmessages.h>
-#include <glib/gslist.h>
-#include <glib/gstrfuncs.h>
-#include <glib/gstring.h>
-#include <glib/gtestutils.h>
-#include <glib/gthread.h>
-#include <glib/gunicode.h>
-#include <glib/gutils.h>
+G_BEGIN_DECLS 
 
-#undef __GLIB_H_INSIDE__
+typedef enum {
+  G_DEBUG_FATAL_WARNINGS  = 1 << 0,
+  G_DEBUG_FATAL_CRITICALS = 1 << 1
+} GDebugFlag;
 
-#endif /* __G_LIB_H__ */
+
+#ifdef G_ENABLE_DEBUG
+
+#define G_NOTE(type, action)            G_STMT_START { \
+    if (!_g_debug_initialized)                         \
+       { _g_debug_init (); }                           \
+    if (_g_debug_flags & G_DEBUG_##type)               \
+       { action; };                         } G_STMT_END
+
+#else /* !G_ENABLE_DEBUG */
+
+#define G_NOTE(type, action)
+      
+#endif /* G_ENABLE_DEBUG */
+
+GLIB_VAR gboolean _g_debug_initialized;
+GLIB_VAR guint _g_debug_flags;
+
+G_GNUC_INTERNAL void _g_debug_init (void);
+
+G_END_DECLS
+
+#endif /* __G_DEBUG_H__ */

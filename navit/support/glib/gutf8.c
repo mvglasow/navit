@@ -36,9 +36,9 @@
 #undef STRICT
 #endif
 
-#ifdef NOT_NEEDED_FOR_NAVIT
 #include "libcharset/libcharset.h"
 
+#ifdef NOT_NEEDED_FOR_NAVIT
 #include "glibintl.h"
 #include "galias.h"
 #endif
@@ -387,9 +387,9 @@ g_utf8_strncpy (gchar       *dest,
   return dest;
 }
 
-#if NOT_NEEDED_FOR_NAVIT
 G_LOCK_DEFINE_STATIC (aliases);
 
+#if NOT_NEEDED_FOR_NAVIT
 static GHashTable *
 get_alias_hash (void)
 {
@@ -445,6 +445,7 @@ _g_charset_get_aliases (const char *canonical_name)
 
   return g_hash_table_lookup (alias_hash, canonical_name);
 }
+#endif /* NOT_NEEDED_FOR_NAVIT */
 
 static gboolean
 g_utf8_get_charset_internal (const char  *raw_data,
@@ -558,7 +559,6 @@ g_get_charset (G_CONST_RETURN char **charset)
 
   return cache->is_utf8;
 }
-#endif
 
 /* unicode_strchr */
 

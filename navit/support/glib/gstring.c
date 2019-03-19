@@ -103,7 +103,6 @@ g_str_hash (gconstpointer v)
   return h;
 }
 
-#if NOT_NEEDED_FOR_NAVIT
 #define MY_MAXSIZE ((gsize)-1)
 
 static inline gsize
@@ -124,6 +123,7 @@ nearest_power (gsize base, gsize num)
     }
 }
 
+#if NOT_NEEDED_FOR_NAVIT
 /* String Chunks.
  */
 
@@ -349,6 +349,7 @@ g_string_chunk_insert_len (GStringChunk *chunk,
 
   return pos;
 }
+#endif /* NOT_NEEDED_FOR_NAVIT */
 
 /* Strings.
  */
@@ -418,6 +419,7 @@ g_string_new (const gchar *init)
   return string;
 }
 
+#if NOT_NEEDED_FOR_NAVIT
 /**
  * g_string_new_len:
  * @init: initial contents of the string
@@ -451,6 +453,7 @@ g_string_new_len (const gchar *init,
       return string;
     }
 }
+#endif /* NOT_NEEDED_FOR_NAVIT */
 
 /**
  * g_string_free:
@@ -484,6 +487,7 @@ g_string_free (GString *string,
   return segment;
 }
 
+#if NOT_NEEDED_FOR_NAVIT
 /**
  * g_string_equal:
  * @v: a #GString
@@ -625,6 +629,7 @@ g_string_set_size (GString *string,
 
   return string;
 }
+#endif /* NOT_NEEDED_FOR_NAVIT */
 
 /**
  * g_string_insert_len:
@@ -716,6 +721,7 @@ g_string_insert_len (GString     *string,
   return string;
 }
 
+#if NOT_NEEDED_FOR_NAVIT
 #define SUB_DELIM_CHARS  "!$&'()*+,;="
 
 static gboolean
@@ -797,6 +803,7 @@ g_string_append_uri_escaped (GString *string,
 
   return string;
 }
+#endif /* NOT_NEEDED_FOR_NAVIT */
 
 /**
  * g_string_append:
@@ -845,6 +852,7 @@ g_string_append_len (GString	 *string,
   return g_string_insert_len (string, -1, val, len);
 }
 
+#if NOT_NEEDED_FOR_NAVIT
 /**
  * g_string_append_c:
  * @string: a #GString
@@ -968,6 +976,7 @@ g_string_prepend_unichar (GString  *string,
   
   return g_string_insert_unichar (string, 0, wc);
 }
+#endif /* NOT_NEEDED_FOR_NAVIT */
 
 /**
  * g_string_insert:
@@ -1030,6 +1039,7 @@ g_string_insert_c (GString *string,
   return string;
 }
 
+#if NOT_NEEDED_FOR_NAVIT
 /**
  * g_string_insert_unichar:
  * @string: a #GString
@@ -1182,6 +1192,7 @@ g_string_overwrite_len (GString     *string,
 
   return string;
 }
+#endif /* NOT_NEEDED_FOR_NAVIT */
 
 /**
  * g_string_erase:
@@ -1221,6 +1232,7 @@ g_string_erase (GString *string,
   return string;
 }
 
+#if NOT_NEEDED_FOR_NAVIT
 /**
  * g_string_ascii_down:
  * @string: a GString
@@ -1350,6 +1362,7 @@ g_string_up (GString *string)
 
   return string;
 }
+#endif /* NOT_NEEDED_FOR_NAVIT */
 
 /**
  * g_string_append_vprintf:
@@ -1386,6 +1399,7 @@ g_string_append_vprintf (GString     *string,
     }
 }
 
+#if NOT_NEEDED_FOR_NAVIT
 /**
  * g_string_vprintf:
  * @string: a #GString
@@ -1447,6 +1461,7 @@ g_string_printf (GString     *string,
   g_string_append_vprintf (string, format, args);
   va_end (args);
 }
+#endif /* NOT_NEEDED_FOR_NAVIT */
 
 /**
  * g_string_sprintfa:
@@ -1483,6 +1498,5 @@ g_string_append_printf (GString     *string,
   va_end (args);
 }
 
-#endif /* NOT_NEEDED_FOR_NAVIT */
 #define __G_STRING_C__
 #include "galiasdef.c"

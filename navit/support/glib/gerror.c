@@ -110,6 +110,7 @@ g_error_new_literal (GQuark         domain,
   
   return err;
 }
+#endif /* NOT_NEEDED_FOR_NAVIT */
 
 /**
  * g_error_free:
@@ -128,6 +129,7 @@ g_error_free (GError *error)
   g_slice_free (GError, error);
 }
 
+#if NOT_NEEDED_FOR_NAVIT
 /**
  * g_error_copy:
  * @error: a #GError
@@ -151,6 +153,7 @@ g_error_copy (const GError *error)
 
   return copy;
 }
+#endif /* NOT_NEEDED_FOR_NAVIT */
 
 /**
  * g_error_matches:
@@ -176,7 +179,6 @@ g_error_matches (const GError *error,
 #define ERROR_OVERWRITTEN_WARNING "GError set over the top of a previous GError or uninitialized memory.\n" \
                "This indicates a bug in someone's code. You must ensure an error is NULL before it's set.\n" \
                "The overwriting error message was: %s"
-#endif /* NOT_NEEDED_FOR_NAVIT */
 
 /**
  * g_set_error:
@@ -248,6 +250,7 @@ g_set_error_literal (GError      **err,
   else
     g_warning (ERROR_OVERWRITTEN_WARNING, new->message);    
 }
+#endif /* NOT_NEEDED_FOR_NAVIT */
 
 /**
  * g_propagate_error:
@@ -278,6 +281,7 @@ g_propagate_error (GError       **dest,
     }
 }
 
+#if NOT_NEEDED_FOR_NAVIT
 /**
  * g_clear_error:
  * @err: a #GError return location

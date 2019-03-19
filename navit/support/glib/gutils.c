@@ -577,6 +577,7 @@ g_find_program_in_path (const gchar *program)
 
   return NULL;
 }
+#endif /* NOT_NEEDED_FOR_NAVIT */
 
 static gboolean
 debug_key_matches (const gchar *key,
@@ -655,6 +656,7 @@ g_parse_debug_string  (const gchar     *string,
   return result;
 }
 
+#if NOT_NEEDED_FOR_NAVIT
 /**
  * g_basename:
  * @file_name: the name of the file.
@@ -1031,6 +1033,7 @@ g_get_current_dir (void)
   return dir;
 #endif /* !Win32 */
 }
+#endif /* NOT_NEEDED_FOR_NAVIT */
 
 /**
  * g_getenv:
@@ -1131,6 +1134,7 @@ g_getenv (const gchar *variable)
 #endif /* G_OS_WIN32 */
 }
 
+#if NOT_NEEDED_FOR_NAVIT
 /* _g_getenv_nomalloc
  * this function does a getenv() without doing any kind of allocation
  * through glib. it's suitable for chars <= 127 only (both, for the
@@ -3296,8 +3300,10 @@ glib_gettext (const gchar *str)
 
   return g_dgettext (GETTEXT_PACKAGE, str);
 }
+#endif /* NOT_NEEDED_FOR_NAVIT */
 
 #if defined (G_OS_WIN32) && !defined (_WIN64)
+#if NOT_NEEDED_FOR_NAVIT
 
 /* Binary compatibility versions. Not for newly compiled code. */
 
@@ -3329,6 +3335,7 @@ g_get_current_dir (void)
   g_free (utf8_dir);
   return dir;
 }
+#endif /* NOT_NEEDED_FOR_NAVIT */
 
 #undef g_getenv
 
@@ -3350,6 +3357,7 @@ g_getenv (const gchar *variable)
   return g_quark_to_string (quark);
 }
 
+#if NOT_NEEDED_FOR_NAVIT
 #undef g_setenv
 
 gboolean
@@ -3415,8 +3423,8 @@ g_get_tmp_dir (void)
   return g_tmp_dir_cp;
 }
 
-#endif
 #endif /* NOT_NEEDED_FOR_NAVIT */
+#endif
 
 #define __G_UTILS_C__
 #include "galiasdef.c"
