@@ -33,6 +33,8 @@
 #include <sys/types.h>
 #endif
 #include <sys/time.h>
+#include <glib.h>
+#include "thread.h"
 #include "glib_slice.h"
 #include "config.h"
 #include "navit.h"
@@ -88,13 +90,23 @@
 /** Time slice for idle loops, in milliseconds */
 #define TIME_SLICE 40
 
+/** Name for the traffic worker thread */
+#define TRAFFIC_WORKER_THREAD_NAME "traffic"
+
 /**
  * @brief Private data shared between all traffic instances.
  */
 struct traffic_shared_priv {
+    int refcount;               /**< Reference count */
     GList * messages;           /**< Currently active messages */
     GList * message_queue;      /**< Queued messages, waiting to be processed */
     // TODO messages by ID?                 In a later phase…
+#if HAVE_GLIB_THREADS
+    int destroying;             /**< Whether the worker thread should exit because the destructor has been invoked */
+    GRWLock messages_rw_lock;   /**< Read/write lock for `messages` */
+    GRWLock message_queue_rw_lock; /**< Read/write lock for `message_queue` */
+    GThread * worker_thread;    /**< Worker thread for message processing */
+#endif
 };
 
 /**
@@ -275,6 +287,7 @@ static void traffic_location_populate_route_graph(struct traffic_location * this
 static void traffic_dump_messages_to_xml(struct traffic * this_);
 static void traffic_loop(struct traffic * this_);
 static struct traffic * traffic_new(struct attr *parent, struct attr **attrs);
+static void traffic_destroy(struct traffic *this_);
 static int traffic_process_messages_int(struct traffic * this_, int flags);
 static void traffic_message_dump_to_stderr(struct traffic_message * this_);
 static struct seg_data * traffic_message_parse_events(struct traffic_message * this_);
@@ -1742,6 +1755,7 @@ static struct map_rect * traffic_location_open_map_rect(struct traffic_location 
  * @param rg The route graph
  * @param ms The mapset to read the ramps from
  */
+// (location is still thread-private at this time, so is the route graph)
 static void traffic_location_populate_route_graph(struct traffic_location * this_, struct route_graph * rg,
         struct mapset * ms) {
     /* The item being processed */
@@ -1780,6 +1794,7 @@ static void traffic_location_populate_route_graph(struct traffic_location * this
     rg->h = mapset_open(ms);
 
     while ((rg->m = mapset_next(rg->h, 2))) {
+        // FIXME check thread safety from here onwards
         if (!traffic_location_open_map_rect(this_, rg))
             continue;
         while ((item = map_rect_get_item(rg->mr))) {
@@ -2435,6 +2450,7 @@ static int traffic_location_get_point_match(struct traffic_location * this_, str
  *
  * @return The matched points as a `GList`. The `data` member of each item points to a `struct point_data` for the point.
  */
+// FIXME check thread safety for this method (everything except mapset is still thread-private at this time)
 static GList * traffic_location_get_matching_points(struct traffic_location * this_, int point,
         struct route_graph * rg, struct route_graph_point * start, int match_start, struct mapset * ms) {
     GList * ret = NULL;
@@ -2584,6 +2600,7 @@ static int route_graph_point_is_endpoint_candidate(struct route_graph_point *thi
  *
  * @return `true` if the locations were matched successfully, `false` if there was a failure.
  */
+// (message is still thread-private at this time)
 static int traffic_message_add_segments(struct traffic_message * this_, struct mapset * ms, struct seg_data * data,
                                         struct map *map, struct route * route) {
     int i;
@@ -3020,6 +3037,7 @@ static int traffic_message_add_segments(struct traffic_message * this_, struct m
 
         dbg(lvl_debug, "*****checkpoint ADD-4.6 (loop start)");
         while (s) {
+            // FIXME check thread safety for item_coord_get_within_range()
             ccnt = item_coord_get_within_range(&s->data.item, ca, 2047, &s->start->c, &s->end->c);
             c = ca;
             cs = g_new0(struct coord, ccnt);
@@ -3119,6 +3137,7 @@ static int traffic_message_add_segments(struct traffic_message * this_, struct m
             }
 
 
+            // FIXME check thread safety from here onwards
             item = tm_add_item(map, type_traffic_distortion, s->data.item.id_hi, s->data.item.id_lo, flags, data->attrs, cs, ccnt,
                                this_->id);
 
@@ -3534,6 +3553,7 @@ static struct seg_data * traffic_message_parse_events(struct traffic_message * t
  * @param new If non-NULL, items referenced by this message will be skipped, see description
  * @param route The route affected by the changes
  */
+// FIXME check thread safety for this method
 static void traffic_message_remove_item_data(struct traffic_message * old, struct traffic_message * new,
         struct route * route) {
     int i, j;
@@ -3566,6 +3586,44 @@ static void traffic_message_remove_item_data(struct traffic_message * old, struc
     }
 }
 
+#if HAVE_GLIB_THREADS
+/**
+ * @brief Main function for the traffic worker thread.
+ *
+ * This function checks if new messages are in the queue. If so, it calls `traffic_process_messages()` to process them,
+ * else it goes to sleep and repeats the operation.
+ *
+ * @param data Pointer to the `struct traffic` for the instance that created this thread
+ * @return NULL
+ */
+static gpointer traffic_worker_thread_main(gpointer data) {
+    int run;
+    struct traffic *this_ = (struct traffic *) data;
+    while (!this_->shared->destroying) {
+        thread_lock_read(&this_->shared->message_queue_rw_lock);
+        run = (this_->shared->message_queue != NULL);
+        thread_unlock_read(&this_->shared->message_queue_rw_lock);
+        // TODO this could be done more nicely with a GCond and timed wait, rather than this construct
+        /*
+         * There is a potential race condition here, allowing another thread to insert messages after we have just
+         * determined the queue is empty and gone to sleep. This is not critical as we would pick up the messages with
+         * the next pass. To prevent the race condition, we would have to hold the lock for the entire duration of
+         * traffic_process_messages_int. As the latter is a lengthy operation, we would risk blocking the UI thread
+         * for long periods of time.
+         */
+        if (run) {
+            // TODO sort out flags for traffic_process_messages_int:
+            // PROCESS_MESSAGES_NO_DUMP_STORE for the initial cache read
+            // PROCESS_MESSAGES_PURGE_EXPIRED once every second
+            traffic_process_messages_int(this_, PROCESS_MESSAGES_PURGE_EXPIRED);
+        } else {
+            g_usleep(1000);
+        }
+    }
+    return NULL;
+}
+#endif
+
 /**
  * @brief Ensures the traffic instance points to valid shared data.
  *
@@ -3596,7 +3654,14 @@ static void traffic_set_shared(struct traffic *this_) {
 
     if (!this_->shared) {
         this_->shared = g_new0(struct traffic_shared_priv, 1);
+#if HAVE_GLIB_THREADS
+        g_rw_lock_init(&this_->shared->messages_rw_lock);
+        g_rw_lock_init(&this_->shared->message_queue_rw_lock);
+        this_->shared->worker_thread = g_thread_new(TRAFFIC_WORKER_THREAD_NAME, traffic_worker_thread_main, this_);
+#endif
     }
+
+    this_->shared->refcount++;
 }
 
 /**
@@ -3617,6 +3682,7 @@ static void traffic_dump_messages_to_xml(struct traffic * this_) {
         FILE *f = fopen(traffic_filename,"w");
         if (f) {
             fprintf(f, "<navit_messages>\n");
+            thread_lock_read(&this_->shared->messages_rw_lock);
             for (msgiter = this_->shared->messages; msgiter; msgiter = g_list_next(msgiter)) {
                 message = (struct traffic_message *) msgiter->data;
                 points[0] = message->location->from;
@@ -3714,6 +3780,7 @@ static void traffic_dump_messages_to_xml(struct traffic * this_) {
                 fprintf(f, "    </events>\n");
                 fprintf(f, "  </message>\n");
             }
+            thread_unlock_read(&this_->shared->messages_rw_lock);
             fprintf(f, "</navit_messages>\n");
             fclose(f);
         } else {
@@ -3739,6 +3806,9 @@ static void traffic_dump_messages_to_xml(struct traffic * this_) {
  *
  * Traffic messages are always read from `this->shared->message_queue`. It can be empty, which makes sense e.g. when
  * the `PROCESS_MESSAGES_PURGE_EXPIRED` flag is used, to just purge expired messages.
+ *
+ * In multi-threaded environments, this method runs on the traffic worker thread. Bear this in mind when making changes
+ * to the code, and ensure any access to shared data is synchronized.
  *
  * @param this_ The traffic instance
  * @param flags Flags, see description
@@ -3782,16 +3852,32 @@ static int traffic_process_messages_int(struct traffic * this_, int flags) {
     struct traffic_location * swap_location;
     struct item ** swap_items;
 
+#if !HAVE_GLIB_THREADS
     /* Time elapsed since start */
     double msec = 0;
+
+    gettimeofday(&start, NULL);
+#endif
 
     if (this_->shared->message_queue)
         dbg(lvl_debug, "*****enter, %d messages in queue", g_list_length(this_->shared->message_queue));
 
-    gettimeofday(&start, NULL);
-    for (; this_->shared->message_queue && (msec < TIME_SLICE);
-            this_->shared->message_queue = g_list_remove(this_->shared->message_queue, message)) {
+    while (1) {
+#if HAVE_GLIB_THREADS
+        if (this_->shared->destroying)
+            break;
+        thread_lock_write(&this_->shared->message_queue_rw_lock);
+        if (!this_->shared->message_queue) {
+            thread_unlock_write(&this_->shared->message_queue_rw_lock);
+            break;
+        }
+#else
+        if ((msec >= TIME_SLICE) || !this_->shared->message_queue)
+            break;
+#endif
         message = (struct traffic_message *) this_->shared->message_queue->data;
+        this_->shared->message_queue = g_list_remove(this_->shared->message_queue, message);
+        thread_unlock_write(&this_->shared->message_queue_rw_lock);
         i++;
         if (message->expiration_time < time(NULL)) {
             dbg(lvl_debug, "message is no longer valid, ignoring");
@@ -3800,15 +3886,18 @@ static int traffic_process_messages_int(struct traffic * this_, int flags) {
             dbg(lvl_debug, "*****checkpoint PROCESS-1, id='%s'", message->id);
             ret |= MESSAGE_UPDATE_MESSAGES;
 
+            thread_lock_read(&this_->shared->messages_rw_lock);
             for (msg_iter = this_->shared->messages; msg_iter; msg_iter = g_list_next(msg_iter)) {
                 stored_msg = (struct traffic_message *) msg_iter->data;
                 if (!strcmp(stored_msg->id, message->id))
                     msgs_to_remove = g_list_append(msgs_to_remove, stored_msg);
-                else
-                    for (replaces = ((struct traffic_message *) this_->shared->message_queue->data)->replaces; replaces; replaces++)
+                else {
+                    for (replaces = message->replaces; replaces; replaces++)
                         if (!strcmp(stored_msg->id, *replaces) && !g_list_find(msgs_to_remove, message))
                             msgs_to_remove = g_list_append(msgs_to_remove, stored_msg);
+                }
             }
+            thread_unlock_read(&this_->shared->messages_rw_lock);
 
             if (!message->is_cancellation) {
                 dbg(lvl_debug, "*****checkpoint PROCESS-2");
@@ -3825,6 +3914,7 @@ static int traffic_process_messages_int(struct traffic * this_, int flags) {
                         swap_candidate = stored_msg;
                 }
 
+                // FIXME swap_candidate is an active message, get a write lock before we mess with it (message_rw_lock?)
                 if (swap_candidate) {
                     dbg(lvl_debug, "*****checkpoint PROCESS-4, swap candidate found");
                     /* reuse location and segments if we are replacing a matching message */
@@ -3839,23 +3929,35 @@ static int traffic_process_messages_int(struct traffic * this_, int flags) {
                     /* else find matching segments from scratch */
                     traffic_message_add_segments(message, this_->ms, data, this_->map, this_->rt);
                     ret |= MESSAGE_UPDATE_SEGMENTS;
+#if HAVE_GLIB_THREADS
+                    // TODO trigger redraw and route recalculation
+#endif
                 }
 
                 g_free(data);
 
                 /* store message */
+                thread_lock_write(&this_->shared->messages_rw_lock);
                 this_->shared->messages = g_list_append(this_->shared->messages, message);
+                thread_unlock_write(&this_->shared->messages_rw_lock);
                 dbg(lvl_debug, "*****checkpoint PROCESS-5");
             }
 
+            // FIXME do not release lock between these two operations
             /* delete replaced messages */
             if (msgs_to_remove) {
                 dbg(lvl_debug, "*****checkpoint PROCESS (messages to remove, start)");
                 for (msg_iter = msgs_to_remove; msg_iter; msg_iter = g_list_next(msg_iter)) {
                     stored_msg = (struct traffic_message *) msg_iter->data;
-                    if (stored_msg->priv->items)
+                    if (stored_msg->priv->items) {
                         ret |= MESSAGE_UPDATE_SEGMENTS;
+#if HAVE_GLIB_THREADS
+                        // TODO trigger redraw and route recalculation
+#endif
+                    }
+                    thread_lock_write(&this_->shared->messages_rw_lock);
                     this_->shared->messages = g_list_remove_all(this_->shared->messages, stored_msg);
+                    thread_unlock_write(&this_->shared->messages_rw_lock);
                     traffic_message_remove_item_data(stored_msg, message, this_->rt);
                     traffic_message_destroy(stored_msg);
                 }
@@ -3872,13 +3974,16 @@ static int traffic_process_messages_int(struct traffic * this_, int flags) {
 
             dbg(lvl_debug, "*****checkpoint PROCESS-6");
         }
+#if !HAVE_GLIB_THREADS
         gettimeofday(&now, NULL);
         msec = (now.tv_usec - start.tv_usec) / ((double)1000) + (now.tv_sec - start.tv_sec) * 1000;
+#endif
     }
 
     if (i)
         dbg(lvl_debug, "processed %d message(s), %d still in queue", i, g_list_length(this_->shared->message_queue));
 
+#if !HAVE_GLIB_THREADS
     if (this_->shared->message_queue) {
         /* if we're in the middle of the queue, trigger a redraw (if needed) and exit */
         if ((ret & MESSAGE_UPDATE_SEGMENTS) && (navit_get_ready(this_->navit) == 3))
@@ -3893,9 +3998,11 @@ static int traffic_process_messages_int(struct traffic * this_, int flags) {
         this_->idle_ev = NULL;
         this_->idle_cb = NULL;
     }
+#endif
 
     if (flags & PROCESS_MESSAGES_PURGE_EXPIRED) {
         /* find and remove expired messages */
+        thread_lock_write(&this_->shared->messages_rw_lock);
         for (msg_iter = this_->shared->messages; msg_iter; msg_iter = g_list_next(msg_iter)) {
             stored_msg = (struct traffic_message *) msg_iter->data;
             if (stored_msg->expiration_time < time(NULL))
@@ -3905,8 +4012,12 @@ static int traffic_process_messages_int(struct traffic * this_, int flags) {
         if (msgs_to_remove) {
             for (msg_iter = msgs_to_remove; msg_iter; msg_iter = g_list_next(msg_iter)) {
                 stored_msg = (struct traffic_message *) msg_iter->data;
-                if (stored_msg->priv->items)
+                if (stored_msg->priv->items) {
                     ret |= MESSAGE_UPDATE_SEGMENTS;
+#if HAVE_GLIB_THREADS
+                    // TODO trigger redraw and route recalculation
+#endif
+                }
                 this_->shared->messages = g_list_remove_all(this_->shared->messages, stored_msg);
                 traffic_message_remove_item_data(stored_msg, NULL, this_->rt);
                 traffic_message_destroy(stored_msg);
@@ -3916,8 +4027,10 @@ static int traffic_process_messages_int(struct traffic * this_, int flags) {
 
             g_list_free(msgs_to_remove);
         }
+        thread_unlock_write(&this_->shared->messages_rw_lock);
     }
 
+    // TODO make sure this runs periodically even if the queue is never empty
     if (ret && !(flags & PROCESS_MESSAGES_NO_DUMP_STORE)) {
 #ifdef TRAFFIC_DEBUG
         /* dump map if messages have been added, deleted or expired */
@@ -3928,12 +4041,13 @@ static int traffic_process_messages_int(struct traffic * this_, int flags) {
         traffic_dump_messages_to_xml(this_);
     }
 
-    /* TODO see comment on route_recalculate_partial about thread-safety */
+#if !HAVE_GLIB_THREADS
     route_recalculate_partial(this_->rt);
 
     /* trigger redraw if segments have changed */
     if ((ret & MESSAGE_UPDATE_SEGMENTS) && (navit_get_ready(this_->navit) == 3))
         navit_draw_async(this_->navit, 1);
+#endif
 
     return ret;
 }
@@ -3949,10 +4063,13 @@ static void traffic_loop(struct traffic * this_) {
     struct traffic_message ** cur_msg;
 
     messages = this_->meth.get_messages(this_->priv);
+    thread_lock_write(&this_->shared->message_queue_rw_lock);
     for (cur_msg = messages; cur_msg && *cur_msg; cur_msg++)
         this_->shared->message_queue = g_list_append(this_->shared->message_queue, *cur_msg);
+    thread_unlock_write(&this_->shared->message_queue_rw_lock);
     g_free(messages);
 
+#if !HAVE_GLIB_THREADS
     /* make sure traffic_process_messages_int runs at least once to ensure purging of expired messages */
     if (this_->shared->message_queue) {
         if (this_->idle_ev)
@@ -3964,6 +4081,7 @@ static void traffic_loop(struct traffic * this_) {
         this_->idle_ev = event_add_idle(50, this_->idle_cb);
     } else
         traffic_process_messages_int(this_, PROCESS_MESSAGES_PURGE_EXPIRED);
+#endif
 }
 
 /**
@@ -4020,10 +4138,48 @@ static struct traffic * traffic_new(struct attr *parent, struct attr **attrs) {
 
     this_->map = NULL;
 
-    if (!this_->shared)
-        traffic_set_shared(this_);
+    traffic_set_shared(this_);
 
     return this_;
+}
+
+/**
+ * @brief Destroys a traffic plugin instance.
+ *
+ * @param this_ The traffic instance to destroy.
+ */
+static void traffic_destroy(struct traffic *this_) {
+    struct traffic_message * message;
+
+    this_->shared->refcount--;
+    if (this_->shared->refcount <= 0) {
+#if HAVE_GLIB_THREADS
+        /* tell the traffic worker thread to exit and wait for it to finish */
+        this_->shared->destroying = 1;
+        g_thread_join(this_->shared->worker_thread);
+#endif
+        thread_lock_write(&this_->shared->message_queue_rw_lock);
+        while (this_->shared->message_queue) {
+            message = (struct traffic_message *) this_->shared->message_queue->data;
+            this_->shared->message_queue = g_list_remove(this_->shared->message_queue, message);
+            traffic_message_destroy(message);
+        }
+        thread_unlock_write(&this_->shared->message_queue_rw_lock);
+        thread_lock_write(&this_->shared->messages_rw_lock);
+        while (this_->shared->messages) {
+            message = (struct traffic_message *) this_->shared->messages->data;
+            this_->shared->messages = g_list_remove(this_->shared->messages, message);
+            traffic_message_destroy(message);
+        }
+        thread_unlock_write(&this_->shared->messages_rw_lock);
+#if HAVE_GLIB_THREADS
+        g_rw_lock_clear(&this_->shared->messages_rw_lock);
+        g_rw_lock_clear(&this_->shared->message_queue_rw_lock);
+#endif
+        g_free(this_->shared);
+    }
+    // TODO priv, callback, timeout
+    navit_object_destroy((struct navit_object *) this_);
 }
 
 /**
@@ -5190,9 +5346,17 @@ struct map * traffic_get_map(struct traffic *this_) {
         g_free(filename);
 
         if (messages) {
+            thread_lock_write(&this_->shared->message_queue_rw_lock);
             for (cur_msg = messages; *cur_msg; cur_msg++)
                 this_->shared->message_queue = g_list_append(this_->shared->message_queue, *cur_msg);
+            /*
+             * Since this runs on the main UI thread, we are being a bit greedy and holding the lock throughout the
+             * entire update process. This should not hurt, as the operation is a rather quick one, but will prevent
+             * the traffic worker thread from locking up the UI as it processes the messages.
+             */
+            thread_unlock_write(&this_->shared->message_queue_rw_lock);
             g_free(messages);
+#if !HAVE_GLIB_THREADS
             if (this_->shared->message_queue) {
                 if (!this_->idle_cb)
                     this_->idle_cb = callback_new_2(callback_cast(traffic_process_messages_int),
@@ -5200,6 +5364,7 @@ struct map * traffic_get_map(struct traffic *this_) {
                 if (!this_->idle_ev)
                     this_->idle_ev = event_add_idle(50, this_->idle_cb);
             }
+#endif
         }
     }
 
@@ -5266,15 +5431,21 @@ struct traffic_message ** traffic_get_messages_from_xml_string(struct traffic * 
 }
 
 struct traffic_message ** traffic_get_stored_messages(struct traffic *this_) {
-    struct traffic_message ** ret = g_new0(struct traffic_message *, g_list_length(this_->shared->messages) + 1);
-    struct traffic_message ** out = ret;
-    GList * in = this_->shared->messages;
+    struct traffic_message ** ret;
+    struct traffic_message ** out;
+    GList * in;
 
+    thread_lock_read(&this_->shared->messages_rw_lock);
+    ret = g_new0(struct traffic_message *, g_list_length(this_->shared->messages) + 1);
+    out = ret;
+    in = this_->shared->messages;
     while (in) {
         *out = (struct traffic_message *) in->data;
         in = g_list_next(in);
         out++;
     }
+    thread_unlock_read(&this_->shared->messages_rw_lock);
+    // FIXME returned messages can be freed by the worker thread any time
 
     return ret;
 }
@@ -5282,8 +5453,16 @@ struct traffic_message ** traffic_get_stored_messages(struct traffic *this_) {
 void traffic_process_messages(struct traffic * this_, struct traffic_message ** messages) {
     struct traffic_message ** cur_msg;
 
+    thread_lock_write(&this_->shared->message_queue_rw_lock);
     for (cur_msg = messages; cur_msg && *cur_msg; cur_msg++)
         this_->shared->message_queue = g_list_append(this_->shared->message_queue, *cur_msg);
+    /*
+     * Since this runs on the main UI thread, we are being a bit greedy and holding the lock throughout the
+     * entire update process. This should not hurt, as the operation is a rather quick one, but will prevent
+     * the traffic worker thread from locking up the UI as it processes the messages.
+     */
+    thread_unlock_write(&this_->shared->message_queue_rw_lock);
+#if !HAVE_GLIB_THREADS
     if (this_->shared->message_queue) {
         if (this_->idle_ev)
             event_remove_idle(this_->idle_ev);
@@ -5292,6 +5471,7 @@ void traffic_process_messages(struct traffic * this_, struct traffic_message ** 
         this_->idle_cb = callback_new_2(callback_cast(traffic_process_messages_int), this_, 0);
         this_->idle_ev = event_add_idle(50, this_->idle_cb);
     }
+#endif
 }
 
 void traffic_set_mapset(struct traffic *this_, struct mapset *ms) {
@@ -5312,7 +5492,7 @@ struct object_func traffic_func = {
     (object_func_add_attr)navit_object_add_attr,
     (object_func_remove_attr)navit_object_remove_attr,
     (object_func_init)NULL,
-    (object_func_destroy)navit_object_destroy,
+    (object_func_destroy)traffic_destroy,
     (object_func_dup)NULL,
     (object_func_ref)navit_object_ref,
     (object_func_unref)navit_object_unref,
