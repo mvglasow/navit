@@ -45,9 +45,7 @@
 struct mapset {
     NAVIT_OBJECT
     GList *maps; /**< Linked list of all the maps in the mapset */
-#if HAVE_GLIB_THREADS
-    GRWLock *rw_lock; /**< Read/write lock for the mapset */
-#endif
+    thread_lock *rw_lock; /**< Lock for insertions, deletions or iterations over maps in the mapset */
 };
 
 struct attr_iter {
@@ -66,23 +64,17 @@ struct mapset *mapset_new(struct attr *parent, struct attr **attrs) {
     ms->func=&mapset_func;
     navit_object_ref((struct navit_object *)ms);
     ms->attrs=attr_list_dup(attrs);
-#if HAVE_GLIB_THREADS
-    ms->rw_lock = g_new0(GRWLock, 1);
-    g_rw_lock_init(ms->rw_lock);
-#endif
+    ms->rw_lock = thread_lock_new();
 
     return ms;
 }
 
 struct mapset *mapset_dup(struct mapset *ms) {
     struct mapset *ret=mapset_new(NULL, ms->attrs);
-    thread_lock_read(ms->rw_lock);
+    thread_lock_acquire_read(ms->rw_lock);
     ret->maps=g_list_copy(ms->maps);
-    thread_unlock_read(ms->rw_lock);
-#if HAVE_GLIB_THREADS
-    ret->rw_lock = g_new0(GRWLock, 1);
-    g_rw_lock_init(ret->rw_lock);
-#endif
+    thread_lock_release_read(ms->rw_lock);
+    ret->rw_lock = thread_lock_new();
     return ret;
 }
 
@@ -110,10 +102,10 @@ void mapset_attr_iter_destroy(struct attr_iter *iter) {
 int mapset_add_attr(struct mapset *ms, struct attr *attr) {
     switch (attr->type) {
     case attr_map:
-        thread_lock_write(ms->rw_lock);
+        thread_lock_acquire_write(ms->rw_lock);
         ms->attrs=attr_generic_add_attr(ms->attrs,attr);
         ms->maps=g_list_append(ms->maps, attr->u.map);
-        thread_unlock_write(ms->rw_lock);
+        thread_lock_release_write(ms->rw_lock);
         return 1;
     default:
         return 0;
@@ -134,10 +126,10 @@ int mapset_add_attr(struct mapset *ms, struct attr *attr) {
 int mapset_remove_attr(struct mapset *ms, struct attr *attr) {
     switch (attr->type) {
     case attr_map:
-        thread_lock_write(ms->rw_lock);
+        thread_lock_acquire_write(ms->rw_lock);
         ms->attrs=attr_generic_remove_attr(ms->attrs,attr);
         ms->maps=g_list_remove(ms->maps, attr->u.map);
-        thread_unlock_write(ms->rw_lock);
+        thread_lock_release_write(ms->rw_lock);
         return 1;
     default:
         return 0;
@@ -160,18 +152,18 @@ int mapset_get_attr(struct mapset *ms, enum attr_type type, struct attr *attr, s
     attr->type=type;
     switch (type) {
     case attr_map:
-        thread_lock_read(ms->rw_lock);
+        thread_lock_acquire_read(ms->rw_lock);
         while (map) {
             if (!iter || iter->last == g_list_previous(map)) {
                 attr->u.map=map->data;
                 if (iter)
                     iter->last=map;
-                thread_unlock_read(ms->rw_lock);
+                thread_lock_release_read(ms->rw_lock);
                 return 1;
             }
             map=g_list_next(map);
         }
-        thread_unlock_read(ms->rw_lock);
+        thread_lock_release_read(ms->rw_lock);
         break;
     default:
         break;
@@ -188,10 +180,7 @@ int mapset_get_attr(struct mapset *ms, enum attr_type type, struct attr *attr, s
  * @param ms The mapset to be destroyed
  */
 void mapset_destroy(struct mapset *ms) {
-#if HAVE_GLIB_THREADS
-    g_rw_lock_clear(ms->rw_lock);
-    g_free(ms->rw_lock);
-#endif
+    thread_lock_destroy(ms->rw_lock);
     g_list_free(ms->maps);
     attr_list_free(ms->attrs);
     g_free(ms);
@@ -205,9 +194,7 @@ void mapset_destroy(struct mapset *ms) {
  */
 struct mapset_handle {
     GList *l;	/**< Pointer to the current (next) map */
-#if HAVE_GLIB_THREADS
-    GRWLock * ms_rw_lock; /**< Pointer to the mapset’s read/write lock */
-#endif
+    thread_lock * ms_rw_lock; /**< Lock for insertions, deletions or iterations over maps in the mapset */
 };
 
 /**
@@ -227,10 +214,8 @@ mapset_open(struct mapset *ms) {
     struct mapset_handle *ret=NULL;
     if(ms) {
         ret=g_new(struct mapset_handle, 1);
-        thread_lock_read(ms->rw_lock);
-#if HAVE_GLIB_THREADS
+        thread_lock_acquire_read(ms->rw_lock);
         ret->ms_rw_lock = ms->rw_lock;
-#endif
         ret->l=ms->maps;
     }
 
@@ -314,7 +299,8 @@ mapset_get_map_by_name(struct mapset *ms, const char*map_name) {
  * @param msh Mapset handle to be closed
  */
 void mapset_close(struct mapset_handle *msh) {
-    thread_unlock_read(msh->ms_rw_lock);
+    thread_lock_release_read(msh->ms_rw_lock);
+    thread_lock_destroy(msh->ms_rw_lock);
     g_free(msh);
 }
 
@@ -385,7 +371,7 @@ mapset_search_get_item(struct mapset_search *this_) {
     struct attr active_attr;
     int country_search=this_->search_attr->type >= attr_country_all && this_->search_attr->type <= attr_country_name;
 
-    thread_lock_read(this_->mapset->rw_lock);
+    thread_lock_acquire_read(this_->mapset->rw_lock);
     while ((this_) && (this_->mapset) && (!this_->ms
                                           || !(ret=map_search_get_item(this_->ms)))) { /* The current map has no more items to be returned */
 
@@ -426,7 +412,7 @@ mapset_search_get_item(struct mapset_search *this_) {
             break;
         this_->ms=map_search_new(this_->map->data, this_->item, this_->search_attr, this_->partial);
     }
-    thread_unlock_read(this_->mapset->rw_lock);
+    thread_lock_release_read(this_->mapset->rw_lock);
     return ret;
 }
 
