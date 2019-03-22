@@ -300,7 +300,6 @@ mapset_get_map_by_name(struct mapset *ms, const char*map_name) {
  */
 void mapset_close(struct mapset_handle *msh) {
     thread_lock_release_read(msh->ms_rw_lock);
-    thread_lock_destroy(msh->ms_rw_lock);
     g_free(msh);
 }
 
