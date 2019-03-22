@@ -60,6 +60,7 @@ thread *thread_new(int (*main)(void *), void * data, char * name) {
     thread * ret = g_new0(thread, 1);
     struct thread_main_data * main_data = g_new0(struct thread_main_data, 1);
     main_data->main = main;
+    main_data->data = data;
     err = pthread_create(ret, NULL, thread_main_wrapper, (void *) main_data);
     if (err) {
         dbg(lvl_error, "error %d, thread=%p", err, ret);
