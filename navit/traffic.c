@@ -3615,7 +3615,7 @@ static int traffic_worker_thread_main(void * data) {
             // PROCESS_MESSAGES_PURGE_EXPIRED once every second
             traffic_process_messages_int(this_, PROCESS_MESSAGES_PURGE_EXPIRED);
         } else {
-            g_usleep(1000);
+            thread_sleep(1000);
         }
     }
     return 0;
