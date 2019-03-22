@@ -19,23 +19,7 @@
 
 /** @file
  *
- * @brief Helper definitions and macros for working with GLib threads.
- *
- * This file contains convenience macros for thread-related functions, mostly for the purpose of making the code easier
- * to read by avoiding excessive conditionals. It should be included immediately after `glib.h`.
- *
- * Callers should use `#if HAVE_GLIB_THREADS` (defined in this header) instead of `#ifdef G_THREADS_ENABLED`. This
- * makes it easier to disable multithreading in one single place and build a single-threaded version of Navit even on a
- * platform with multithreading support. (Note that even in a single-threaded build, third-party libraries may still
- * spawn additional threads.)
- *
- * It is perfectly OK to use the standard GLib functions instead of the shorthands defined here, as long as they are
- * wrapped in an `#if HAVE_GLIB_THREADS` condition.
- *
- * Where macros occur immediately before or after other portions which need to be wrapped in an `#if HAVE_GLIB_THREADS`
- * condition, they can be placed inside or outside the condition. For the sake of code legibility, consistency is
- * recommended: place macros outside conditions where possible, and if you need to place one macro inside the
- * condition, do the same for its counterpart. Avoid adding extra conditionals.
+ * @brief Abstraction layer for system-specific thread routines.
  */
 
 #include "thread.h"
