@@ -101,7 +101,7 @@ thread *thread_new(int (*main)(void *), void * data, char * name);
  *
  * If Navit was built without thread support, this is a no-op.
  */
-void thread_destroy(thread* thread);
+void thread_destroy(thread* this_);
 
 /**
  * @brief Pauses the current thread for a set amount of time.
@@ -130,7 +130,7 @@ void thread_exit(int result);
  *
  * @return The thread’s exit value, -1 if an error was encountered.
  */
-int thread_join(thread * thread);
+int thread_join(thread * this_);
 
 /**
  * @brief Creates a new lock.
@@ -147,7 +147,7 @@ thread_lock *thread_lock_new(void);
  * If Navit was built without thread support, this is a no-op. If `lock` is NULL on a platform with thread support,
  * the behavior is undefined.
  */
-void thread_lock_destroy(thread_lock *lock);
+void thread_lock_destroy(thread_lock *this_);
 
 /**
  * @brief Acquires a read lock for the current thread.
@@ -158,14 +158,14 @@ void thread_lock_destroy(thread_lock *lock);
  *
  * If Navit was built without thread support, this is a no-op.
  */
-void thread_lock_acquire_read(thread_lock *lock);
+void thread_lock_acquire_read(thread_lock *this_);
 
 /**
  * @brief Releases a read lock for the current thread.
  *
  * If Navit was built without thread support, this is a no-op.
  */
-void thread_lock_release_read(thread_lock *lock);
+void thread_lock_release_read(thread_lock *this_);
 
 /**
  * @brief Acquires a write lock for the current thread.
@@ -175,14 +175,14 @@ void thread_lock_release_read(thread_lock *lock);
  *
  * If Navit was built without thread support, this is a no-op.
  */
-void thread_lock_acquire_write(thread_lock *lock);
+void thread_lock_acquire_write(thread_lock *this_);
 
 /**
  * @brief Releases a write lock for the current thread.
  *
  * If Navit was built without thread support, this is a no-op.
  */
-void thread_lock_release_write(thread_lock *lock);
+void thread_lock_release_write(thread_lock *this_);
 
 
 #ifdef __cplusplus

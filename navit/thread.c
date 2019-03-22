@@ -69,7 +69,7 @@ thread *thread_new(int (*main)(void *), void * data, char * name) {
     }
 #ifdef __USE_GNU
     if (name) {
-        err = pthread_setname_np(*thread, name);
+        err = pthread_setname_np(*ret, name);
         if (err)
             dbg(lvl_warning, "error %d, thread=%p", err, ret);
     }
@@ -80,9 +80,9 @@ thread *thread_new(int (*main)(void *), void * data, char * name) {
 #endif
 }
 
-void thread_destroy(thread* thread) {
+void thread_destroy(thread* this_) {
 #if HAVE_POSIX_THREADS
-    g_free(thread);
+    g_free(this_);
 #endif
 }
 
@@ -106,12 +106,12 @@ void thread_exit(int result) {
 #endif
 }
 
-int thread_join(thread * thread) {
+int thread_join(thread * this_) {
 #if HAVE_POSIX_THREADS
     void * ret;
-    int err = pthread_join(*thread, &ret);
+    int err = pthread_join(*this_, &ret);
     if (err) {
-        dbg(lvl_error, "error %d, thread=%p", err, thread);
+        dbg(lvl_error, "error %d, thread=%p", err, this_);
         return -1;
     }
     return (int) ret;
@@ -135,43 +135,43 @@ thread_lock *thread_lock_new(void) {
 #endif
 }
 
-void thread_lock_destroy(thread_lock *lock) {
+void thread_lock_destroy(thread_lock *this_) {
 #if HAVE_POSIX_THREADS
-    int err = pthread_rwlock_destroy(lock);
+    int err = pthread_rwlock_destroy(this_);
     if (err)
-        dbg(lvl_error, "error %d, lock=%p", err, lock);
-    g_free(lock);
+        dbg(lvl_error, "error %d, lock=%p", err, this_);
+    g_free(this_);
 #endif
 }
 
-void thread_lock_acquire_read(thread_lock *lock) {
+void thread_lock_acquire_read(thread_lock *this_) {
 #if HAVE_POSIX_THREADS
-    int err = pthread_rwlock_rdlock(lock);
+    int err = pthread_rwlock_rdlock(this_);
     if (err)
-        dbg(lvl_error, "error %d, lock=%p", err, lock);
+        dbg(lvl_error, "error %d, lock=%p", err, this_);
 #endif
 }
 
-void thread_lock_release_read(thread_lock *lock) {
+void thread_lock_release_read(thread_lock *this_) {
 #if HAVE_POSIX_THREADS
-    int err = pthread_rwlock_unlock(lock);
+    int err = pthread_rwlock_unlock(this_);
     if (err)
-        dbg(lvl_error, "error %d, lock=%p", err, lock);
+        dbg(lvl_error, "error %d, lock=%p", err, this_);
 #endif
 }
 
-void thread_lock_acquire_write(thread_lock *lock) {
+void thread_lock_acquire_write(thread_lock *this_) {
 #if HAVE_POSIX_THREADS
-    int err = pthread_rwlock_wrlock(lock);
+    int err = pthread_rwlock_wrlock(this_);
     if (err)
-        dbg(lvl_error, "error %d, lock=%p", err, lock);
+        dbg(lvl_error, "error %d, lock=%p", err, this_);
 #endif
 }
 
-void thread_lock_release_write(thread_lock *lock) {
+void thread_lock_release_write(thread_lock *this_) {
 #if HAVE_POSIX_THREADS
-    int err = pthread_rwlock_unlock(lock);
+    int err = pthread_rwlock_unlock(this_);
     if (err)
-        dbg(lvl_error, "error %d, lock=%p", err, lock);
+        dbg(lvl_error, "error %d, lock=%p", err, this_);
 #endif
 }
