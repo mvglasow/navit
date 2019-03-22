@@ -101,12 +101,10 @@ struct traffic_shared_priv {
     GList * messages;           /**< Currently active messages */
     GList * message_queue;      /**< Queued messages, waiting to be processed */
     // TODO messages by ID?                 In a later phase…
-#if HAVE_GLIB_THREADS
     int destroying;             /**< Whether the worker thread should exit because the destructor has been invoked */
-    GRWLock messages_rw_lock;   /**< Read/write lock for `messages` */
-    GRWLock message_queue_rw_lock; /**< Read/write lock for `message_queue` */
-    GThread * worker_thread;    /**< Worker thread for message processing */
-#endif
+    thread_lock * messages_rw_lock;      /**< Read/write lock for `messages` */
+    thread_lock * message_queue_rw_lock; /**< Read/write lock for `message_queue` */
+    thread * worker_thread;              /**< Worker thread for message processing */
 };
 
 /**
@@ -3586,7 +3584,7 @@ static void traffic_message_remove_item_data(struct traffic_message * old, struc
     }
 }
 
-#if HAVE_GLIB_THREADS
+#if HAVE_NAVIT_THREADS
 /**
  * @brief Main function for the traffic worker thread.
  *
@@ -3594,16 +3592,16 @@ static void traffic_message_remove_item_data(struct traffic_message * old, struc
  * else it goes to sleep and repeats the operation.
  *
  * @param data Pointer to the `struct traffic` for the instance that created this thread
- * @return NULL
+ * @return 0
  */
-static gpointer traffic_worker_thread_main(gpointer data) {
+static int traffic_worker_thread_main(void * data) {
     int run;
     struct traffic *this_ = (struct traffic *) data;
     while (!this_->shared->destroying) {
-        thread_lock_read(&this_->shared->message_queue_rw_lock);
+        thread_lock_acquire_read(this_->shared->message_queue_rw_lock);
         run = (this_->shared->message_queue != NULL);
-        thread_unlock_read(&this_->shared->message_queue_rw_lock);
-        // TODO this could be done more nicely with a GCond and timed wait, rather than this construct
+        thread_lock_release_read(this_->shared->message_queue_rw_lock);
+        // TODO this could be done more nicely with a condition and timed wait, rather than this construct
         /*
          * There is a potential race condition here, allowing another thread to insert messages after we have just
          * determined the queue is empty and gone to sleep. This is not critical as we would pick up the messages with
@@ -3620,7 +3618,7 @@ static gpointer traffic_worker_thread_main(gpointer data) {
             g_usleep(1000);
         }
     }
-    return NULL;
+    return 0;
 }
 #endif
 
@@ -3654,10 +3652,10 @@ static void traffic_set_shared(struct traffic *this_) {
 
     if (!this_->shared) {
         this_->shared = g_new0(struct traffic_shared_priv, 1);
-#if HAVE_GLIB_THREADS
-        g_rw_lock_init(&this_->shared->messages_rw_lock);
-        g_rw_lock_init(&this_->shared->message_queue_rw_lock);
-        this_->shared->worker_thread = g_thread_new(TRAFFIC_WORKER_THREAD_NAME, traffic_worker_thread_main, this_);
+        this_->shared->messages_rw_lock = thread_lock_new();
+        this_->shared->message_queue_rw_lock = thread_lock_new();
+#if HAVE_NAVIT_THREADS
+        this_->shared->worker_thread = thread_new(traffic_worker_thread_main, this_, TRAFFIC_WORKER_THREAD_NAME);
 #endif
     }
 
@@ -3682,7 +3680,7 @@ static void traffic_dump_messages_to_xml(struct traffic * this_) {
         FILE *f = fopen(traffic_filename,"w");
         if (f) {
             fprintf(f, "<navit_messages>\n");
-            thread_lock_read(&this_->shared->messages_rw_lock);
+            thread_lock_acquire_read(this_->shared->messages_rw_lock);
             for (msgiter = this_->shared->messages; msgiter; msgiter = g_list_next(msgiter)) {
                 message = (struct traffic_message *) msgiter->data;
                 points[0] = message->location->from;
@@ -3780,7 +3778,7 @@ static void traffic_dump_messages_to_xml(struct traffic * this_) {
                 fprintf(f, "    </events>\n");
                 fprintf(f, "  </message>\n");
             }
-            thread_unlock_read(&this_->shared->messages_rw_lock);
+            thread_lock_release_read(this_->shared->messages_rw_lock);
             fprintf(f, "</navit_messages>\n");
             fclose(f);
         } else {
@@ -3852,7 +3850,7 @@ static int traffic_process_messages_int(struct traffic * this_, int flags) {
     struct traffic_location * swap_location;
     struct item ** swap_items;
 
-#if !HAVE_GLIB_THREADS
+#if !HAVE_NAVIT_THREADS
     /* Time elapsed since start */
     double msec = 0;
 
@@ -3863,12 +3861,12 @@ static int traffic_process_messages_int(struct traffic * this_, int flags) {
         dbg(lvl_debug, "*****enter, %d messages in queue", g_list_length(this_->shared->message_queue));
 
     while (1) {
-#if HAVE_GLIB_THREADS
+#if HAVE_NAVIT_THREADS
         if (this_->shared->destroying)
             break;
-        thread_lock_write(&this_->shared->message_queue_rw_lock);
+        thread_lock_acquire_write(this_->shared->message_queue_rw_lock);
         if (!this_->shared->message_queue) {
-            thread_unlock_write(&this_->shared->message_queue_rw_lock);
+            thread_lock_release_write(this_->shared->message_queue_rw_lock);
             break;
         }
 #else
@@ -3877,7 +3875,7 @@ static int traffic_process_messages_int(struct traffic * this_, int flags) {
 #endif
         message = (struct traffic_message *) this_->shared->message_queue->data;
         this_->shared->message_queue = g_list_remove(this_->shared->message_queue, message);
-        thread_unlock_write(&this_->shared->message_queue_rw_lock);
+        thread_lock_release_write(this_->shared->message_queue_rw_lock);
         i++;
         if (message->expiration_time < time(NULL)) {
             dbg(lvl_debug, "message is no longer valid, ignoring");
@@ -3886,7 +3884,7 @@ static int traffic_process_messages_int(struct traffic * this_, int flags) {
             dbg(lvl_debug, "*****checkpoint PROCESS-1, id='%s'", message->id);
             ret |= MESSAGE_UPDATE_MESSAGES;
 
-            thread_lock_read(&this_->shared->messages_rw_lock);
+            thread_lock_acquire_read(this_->shared->messages_rw_lock);
             for (msg_iter = this_->shared->messages; msg_iter; msg_iter = g_list_next(msg_iter)) {
                 stored_msg = (struct traffic_message *) msg_iter->data;
                 if (!strcmp(stored_msg->id, message->id))
@@ -3897,7 +3895,7 @@ static int traffic_process_messages_int(struct traffic * this_, int flags) {
                             msgs_to_remove = g_list_append(msgs_to_remove, stored_msg);
                 }
             }
-            thread_unlock_read(&this_->shared->messages_rw_lock);
+            thread_lock_release_read(this_->shared->messages_rw_lock);
 
             if (!message->is_cancellation) {
                 dbg(lvl_debug, "*****checkpoint PROCESS-2");
@@ -3929,7 +3927,7 @@ static int traffic_process_messages_int(struct traffic * this_, int flags) {
                     /* else find matching segments from scratch */
                     traffic_message_add_segments(message, this_->ms, data, this_->map, this_->rt);
                     ret |= MESSAGE_UPDATE_SEGMENTS;
-#if HAVE_GLIB_THREADS
+#if HAVE_NAVIT_THREADS
                     // TODO trigger redraw and route recalculation
 #endif
                 }
@@ -3937,9 +3935,9 @@ static int traffic_process_messages_int(struct traffic * this_, int flags) {
                 g_free(data);
 
                 /* store message */
-                thread_lock_write(&this_->shared->messages_rw_lock);
+                thread_lock_acquire_write(this_->shared->messages_rw_lock);
                 this_->shared->messages = g_list_append(this_->shared->messages, message);
-                thread_unlock_write(&this_->shared->messages_rw_lock);
+                thread_lock_release_write(this_->shared->messages_rw_lock);
                 dbg(lvl_debug, "*****checkpoint PROCESS-5");
             }
 
@@ -3951,13 +3949,13 @@ static int traffic_process_messages_int(struct traffic * this_, int flags) {
                     stored_msg = (struct traffic_message *) msg_iter->data;
                     if (stored_msg->priv->items) {
                         ret |= MESSAGE_UPDATE_SEGMENTS;
-#if HAVE_GLIB_THREADS
+#if HAVE_NAVIT_THREADS
                         // TODO trigger redraw and route recalculation
 #endif
                     }
-                    thread_lock_write(&this_->shared->messages_rw_lock);
+                    thread_lock_acquire_write(this_->shared->messages_rw_lock);
                     this_->shared->messages = g_list_remove_all(this_->shared->messages, stored_msg);
-                    thread_unlock_write(&this_->shared->messages_rw_lock);
+                    thread_lock_release_write(this_->shared->messages_rw_lock);
                     traffic_message_remove_item_data(stored_msg, message, this_->rt);
                     traffic_message_destroy(stored_msg);
                 }
@@ -3974,7 +3972,7 @@ static int traffic_process_messages_int(struct traffic * this_, int flags) {
 
             dbg(lvl_debug, "*****checkpoint PROCESS-6");
         }
-#if !HAVE_GLIB_THREADS
+#if !HAVE_NAVIT_THREADS
         gettimeofday(&now, NULL);
         msec = (now.tv_usec - start.tv_usec) / ((double)1000) + (now.tv_sec - start.tv_sec) * 1000;
 #endif
@@ -3983,7 +3981,7 @@ static int traffic_process_messages_int(struct traffic * this_, int flags) {
     if (i)
         dbg(lvl_debug, "processed %d message(s), %d still in queue", i, g_list_length(this_->shared->message_queue));
 
-#if !HAVE_GLIB_THREADS
+#if !HAVE_NAVIT_THREADS
     if (this_->shared->message_queue) {
         /* if we're in the middle of the queue, trigger a redraw (if needed) and exit */
         if ((ret & MESSAGE_UPDATE_SEGMENTS) && (navit_get_ready(this_->navit) == 3))
@@ -4002,7 +4000,7 @@ static int traffic_process_messages_int(struct traffic * this_, int flags) {
 
     if (flags & PROCESS_MESSAGES_PURGE_EXPIRED) {
         /* find and remove expired messages */
-        thread_lock_write(&this_->shared->messages_rw_lock);
+        thread_lock_acquire_write(this_->shared->messages_rw_lock);
         for (msg_iter = this_->shared->messages; msg_iter; msg_iter = g_list_next(msg_iter)) {
             stored_msg = (struct traffic_message *) msg_iter->data;
             if (stored_msg->expiration_time < time(NULL))
@@ -4014,7 +4012,7 @@ static int traffic_process_messages_int(struct traffic * this_, int flags) {
                 stored_msg = (struct traffic_message *) msg_iter->data;
                 if (stored_msg->priv->items) {
                     ret |= MESSAGE_UPDATE_SEGMENTS;
-#if HAVE_GLIB_THREADS
+#if HAVE_NAVIT_THREADS
                     // TODO trigger redraw and route recalculation
 #endif
                 }
@@ -4027,7 +4025,7 @@ static int traffic_process_messages_int(struct traffic * this_, int flags) {
 
             g_list_free(msgs_to_remove);
         }
-        thread_unlock_write(&this_->shared->messages_rw_lock);
+        thread_lock_release_write(this_->shared->messages_rw_lock);
     }
 
     // TODO make sure this runs periodically even if the queue is never empty
@@ -4041,7 +4039,7 @@ static int traffic_process_messages_int(struct traffic * this_, int flags) {
         traffic_dump_messages_to_xml(this_);
     }
 
-#if !HAVE_GLIB_THREADS
+#if !HAVE_NAVIT_THREADS
     route_recalculate_partial(this_->rt);
 
     /* trigger redraw if segments have changed */
@@ -4063,13 +4061,13 @@ static void traffic_loop(struct traffic * this_) {
     struct traffic_message ** cur_msg;
 
     messages = this_->meth.get_messages(this_->priv);
-    thread_lock_write(&this_->shared->message_queue_rw_lock);
+    thread_lock_acquire_write(this_->shared->message_queue_rw_lock);
     for (cur_msg = messages; cur_msg && *cur_msg; cur_msg++)
         this_->shared->message_queue = g_list_append(this_->shared->message_queue, *cur_msg);
-    thread_unlock_write(&this_->shared->message_queue_rw_lock);
+    thread_lock_release_write(this_->shared->message_queue_rw_lock);
     g_free(messages);
 
-#if !HAVE_GLIB_THREADS
+#if !HAVE_NAVIT_THREADS
     /* make sure traffic_process_messages_int runs at least once to ensure purging of expired messages */
     if (this_->shared->message_queue) {
         if (this_->idle_ev)
@@ -4153,29 +4151,27 @@ static void traffic_destroy(struct traffic *this_) {
 
     this_->shared->refcount--;
     if (this_->shared->refcount <= 0) {
-#if HAVE_GLIB_THREADS
+#if HAVE_NAVIT_THREADS
         /* tell the traffic worker thread to exit and wait for it to finish */
         this_->shared->destroying = 1;
-        g_thread_join(this_->shared->worker_thread);
+        thread_join(this_->shared->worker_thread);
 #endif
-        thread_lock_write(&this_->shared->message_queue_rw_lock);
+        thread_lock_acquire_write(this_->shared->message_queue_rw_lock);
         while (this_->shared->message_queue) {
             message = (struct traffic_message *) this_->shared->message_queue->data;
             this_->shared->message_queue = g_list_remove(this_->shared->message_queue, message);
             traffic_message_destroy(message);
         }
-        thread_unlock_write(&this_->shared->message_queue_rw_lock);
-        thread_lock_write(&this_->shared->messages_rw_lock);
+        thread_lock_release_write(this_->shared->message_queue_rw_lock);
+        thread_lock_acquire_write(this_->shared->messages_rw_lock);
         while (this_->shared->messages) {
             message = (struct traffic_message *) this_->shared->messages->data;
             this_->shared->messages = g_list_remove(this_->shared->messages, message);
             traffic_message_destroy(message);
         }
-        thread_unlock_write(&this_->shared->messages_rw_lock);
-#if HAVE_GLIB_THREADS
-        g_rw_lock_clear(&this_->shared->messages_rw_lock);
-        g_rw_lock_clear(&this_->shared->message_queue_rw_lock);
-#endif
+        thread_lock_release_write(this_->shared->messages_rw_lock);
+        thread_lock_destroy(this_->shared->messages_rw_lock);
+        thread_lock_destroy(this_->shared->message_queue_rw_lock);
         g_free(this_->shared);
     }
     // TODO priv, callback, timeout
@@ -5346,7 +5342,7 @@ struct map * traffic_get_map(struct traffic *this_) {
         g_free(filename);
 
         if (messages) {
-            thread_lock_write(&this_->shared->message_queue_rw_lock);
+            thread_lock_acquire_write(this_->shared->message_queue_rw_lock);
             for (cur_msg = messages; *cur_msg; cur_msg++)
                 this_->shared->message_queue = g_list_append(this_->shared->message_queue, *cur_msg);
             /*
@@ -5354,9 +5350,9 @@ struct map * traffic_get_map(struct traffic *this_) {
              * entire update process. This should not hurt, as the operation is a rather quick one, but will prevent
              * the traffic worker thread from locking up the UI as it processes the messages.
              */
-            thread_unlock_write(&this_->shared->message_queue_rw_lock);
+            thread_lock_release_write(this_->shared->message_queue_rw_lock);
             g_free(messages);
-#if !HAVE_GLIB_THREADS
+#if !HAVE_NAVIT_THREADS
             if (this_->shared->message_queue) {
                 if (!this_->idle_cb)
                     this_->idle_cb = callback_new_2(callback_cast(traffic_process_messages_int),
@@ -5435,7 +5431,7 @@ struct traffic_message ** traffic_get_stored_messages(struct traffic *this_) {
     struct traffic_message ** out;
     GList * in;
 
-    thread_lock_read(&this_->shared->messages_rw_lock);
+    thread_lock_acquire_read(this_->shared->messages_rw_lock);
     ret = g_new0(struct traffic_message *, g_list_length(this_->shared->messages) + 1);
     out = ret;
     in = this_->shared->messages;
@@ -5444,7 +5440,7 @@ struct traffic_message ** traffic_get_stored_messages(struct traffic *this_) {
         in = g_list_next(in);
         out++;
     }
-    thread_unlock_read(&this_->shared->messages_rw_lock);
+    thread_lock_release_read(this_->shared->messages_rw_lock);
     // FIXME returned messages can be freed by the worker thread any time
 
     return ret;
@@ -5453,7 +5449,7 @@ struct traffic_message ** traffic_get_stored_messages(struct traffic *this_) {
 void traffic_process_messages(struct traffic * this_, struct traffic_message ** messages) {
     struct traffic_message ** cur_msg;
 
-    thread_lock_write(&this_->shared->message_queue_rw_lock);
+    thread_lock_acquire_write(this_->shared->message_queue_rw_lock);
     for (cur_msg = messages; cur_msg && *cur_msg; cur_msg++)
         this_->shared->message_queue = g_list_append(this_->shared->message_queue, *cur_msg);
     /*
@@ -5461,8 +5457,8 @@ void traffic_process_messages(struct traffic * this_, struct traffic_message ** 
      * entire update process. This should not hurt, as the operation is a rather quick one, but will prevent
      * the traffic worker thread from locking up the UI as it processes the messages.
      */
-    thread_unlock_write(&this_->shared->message_queue_rw_lock);
-#if !HAVE_GLIB_THREADS
+    thread_lock_release_write(this_->shared->message_queue_rw_lock);
+#if !HAVE_NAVIT_THREADS
     if (this_->shared->message_queue) {
         if (this_->idle_ev)
             event_remove_idle(this_->idle_ev);
