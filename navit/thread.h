@@ -75,8 +75,8 @@ extern "C" {
 #define thread pthread_t
 #define thread_lock pthread_rwlock_t
 #else
-#define thread void
-#define thread_lock void
+#define thread int
+#define thread_lock int
 #endif
 
 /**
