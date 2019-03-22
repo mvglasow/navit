@@ -24,6 +24,7 @@
 #include <string.h>
 #include <time.h>
 #include <glib.h>
+#include "thread.h"
 #ifndef _MSC_VER
 #include <sys/time.h>
 #endif /* _MSC_VER */
@@ -51,7 +52,7 @@ static int debug_socket=-1;
 static struct sockaddr_in debug_sin;
 #endif
 
-#ifdef G_THREADS_ENABLED
+#if HAVE_GLIB_THREADS
 /** Read/write lock for console output */
 static GRWLock rw_lock;
 #endif
@@ -417,15 +418,11 @@ void debug_vprintf(dbg_level level, const char *module, const int mlen, const ch
 void debug_printf(dbg_level level, const char *module, const int mlen,const char *function, const int flen,
                   int prefix, const char *fmt, ...) {
     va_list ap;
-#ifdef G_THREADS_ENABLED
-    g_rw_lock_reader_lock(&rw_lock);
-#endif
+    thread_lock_read(&rw_lock);
     va_start(ap, fmt);
     debug_vprintf(level, module, mlen, function, flen, prefix, fmt, ap);
     va_end(ap);
-#ifdef G_THREADS_ENABLED
-    g_rw_lock_reader_unlock(&rw_lock);
-#endif
+    thread_unlock_read(&rw_lock);
 }
 
 void debug_assert_fail(const char *module, const int mlen,const char *function, const int flen, const char *file,
