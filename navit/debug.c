@@ -417,11 +417,11 @@ void debug_vprintf(dbg_level level, const char *module, const int mlen, const ch
 void debug_printf(dbg_level level, const char *module, const int mlen,const char *function, const int flen,
                   int prefix, const char *fmt, ...) {
     va_list ap;
-    thread_lock_read(rw_lock);
+    thread_lock_acquire_read(rw_lock);
     va_start(ap, fmt);
     debug_vprintf(level, module, mlen, function, flen, prefix, fmt, ap);
     va_end(ap);
-    thread_unlock_read(rw_lock);
+    thread_lock_release_read(rw_lock);
 }
 
 void debug_assert_fail(const char *module, const int mlen,const char *function, const int flen, const char *file,
