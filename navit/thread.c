@@ -69,7 +69,7 @@ thread *thread_new(int (*main)(void *), void * data, char * name) {
         g_free(ret);
         return NULL;
     }
-#ifdef __USE_GNU
+#if 0 //ifdef __USE_GNU // FIXME find a reliable way to determine if this is available
     if (name) {
         err = pthread_setname_np(*ret, name);
         if (err)
