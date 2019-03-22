@@ -23,7 +23,7 @@
  */
 
 #include "thread.h"
-#include <glib/gmem.h>
+#include <glib.h>
 #ifndef HAVE_API_WIN32_BASE
 #include <errno.h>
 #include <time.h>
@@ -119,7 +119,7 @@ int thread_join(thread * thread) {
 #endif
 }
 
-thread_lock *thread_lock_new() {
+thread_lock *thread_lock_new(void) {
 #if HAVE_POSIX_THREADS
     thread_lock *ret = g_new0(thread_lock, 1);
     int err = pthread_rwlock_init(ret, NULL);

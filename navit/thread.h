@@ -139,7 +139,7 @@ int thread_join(thread * thread);
  *
  * If Navit was built without thread support, this is a no-op and NULL will be returned.
  */
-thread_lock *thread_lock_new();
+thread_lock *thread_lock_new(void);
 
 /**
  * @brief Frees all resources associated with the lock.
