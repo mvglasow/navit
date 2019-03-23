@@ -60,6 +60,8 @@
 extern "C" {
 #endif
 
+#include "config.h"
+
 #ifdef HAVE_API_WIN32_BASE
 #undef HAVE_NAVIT_THREADS
 #warning "threads are not supported on this platform, building a single-threaded version"
