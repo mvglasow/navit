@@ -56,6 +56,8 @@ static void *thread_main_wrapper(void * data) {
 }
 #endif
 
+#if HAVE_NAVIT_THREADS
+/* If thread_new() is called on a single-threaded platform, the build will fail. */
 thread *thread_new(int (*main)(void *), void * data, char * name) {
 #if HAVE_POSIX_THREADS
     int err;
@@ -82,6 +84,7 @@ thread *thread_new(int (*main)(void *), void * data, char * name) {
     return NULL;
 #endif
 }
+#endif
 
 void thread_destroy(thread* this_) {
 #if HAVE_POSIX_THREADS
