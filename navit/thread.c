@@ -78,7 +78,8 @@ thread *thread_new(int (*main)(void *), void * data, char * name) {
 #endif
     return ret;
 #else
-#error "call to thread_new() on a platform without thread support"
+    dbg(lvl_error, "call to thread_new() on a platform without thread support");
+    return NULL;
 #endif
 }
 
