@@ -29,6 +29,7 @@
 #else
 #include <errno.h>
 #include <time.h>
+#define _GNU_SOURCE
 #endif
 #include "debug.h"
 
@@ -71,7 +72,7 @@ thread *thread_new(int (*main)(void *), void * data, char * name) {
         g_free(ret);
         return NULL;
     }
-#if 0 //ifdef __USE_GNU // FIXME find a reliable way to determine if this is available
+#ifdef HAVE_PTHREAD_SETNAME_NP
     if (name) {
         err = pthread_setname_np(*ret, name);
         if (err)
