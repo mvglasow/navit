@@ -2211,15 +2211,28 @@ static void route_graph_compute_shortest_path(struct route_graph * graph, struct
 /**
  * @brief Sets or clears a traffic distortion for a segment.
  *
- * This sets a delay (setting speed is not supported) or clears an existing traffic distortion.
- * Note that, although setting a speed is not supported, calling this function with a delay of 0
- * will also clear an existing speed constraint.
+ * This method is intended for internal use by the routing module only. It sets a delay or clears an existing traffic
+ * distortion. Setting speed is not supported, but calling this method with a delay of 0 will also clear an existing
+ * speed constraint. Note that, in order to change a previously set traffic distortion, this method must be called
+ * twice: first set the delay to zero, then set the new delay (otherwise two different traffic distortions will be
+ * created).
+ *
+ * Setting or clearing a traffic distortion also updates the cost of the affected segment’s start and end point.
+ *
+ * `segment` can be any segment whose start/end points match the traffic distortion and which has the same
+ * access/oneway flags. Setting a delay will create a distortion segment, clearing it will remove all matching
+ * distortion segments.
+ *
+ * To add, change or remove traffic distortions based on a map item, use `route_graph_add_traffic_distortion()`,
+ * `route_graph_change_traffic_distortion()` or `route_graph_remove_traffic_distortion()`.
  *
  * @param this The route graph
+ * @param profile The vehicle profile to use for cost calculations
  * @param seg The segment to which the traffic distortion applies
  * @param delay Delay in tenths of a second, or 0 to clear an existing traffic distortion
  */
-static void route_graph_set_traffic_distortion(struct route_graph *this, struct route_graph_segment *seg, int delay) {
+static void route_graph_set_traffic_distortion(struct route_graph *this, struct vehicleprofile *profile,
+        struct route_graph_segment *seg, int delay) {
     struct route_graph_point *start=NULL;
     struct route_graph_segment *s;
 
@@ -2242,6 +2255,10 @@ static void route_graph_set_traffic_distortion(struct route_graph *this, struct 
                 } else if (s->data.item.type == type_traffic_distortion && !delay) {
                     s->data.item.type = type_none;
                 }
+                if (!(seg->data.flags & AF_ONEWAYREV))
+                    route_graph_point_update(profile, s->start, this->heap);
+                if (!(seg->data.flags & AF_ONEWAY))
+                    route_graph_point_update(profile, s->end, this->heap);
             }
             s=s->start_next;
         }
@@ -2857,11 +2874,9 @@ static struct route_path *route_path_new(struct route_graph *this, struct route_
         if (!route_graph_segment_match(this->avoid_seg,s)) {
             dbg(lvl_debug,"avoid current segment");
             if (this->avoid_seg)
-                route_graph_set_traffic_distortion(this, this->avoid_seg, 0);
+                route_graph_set_traffic_distortion(this, profile, this->avoid_seg, 0);
             this->avoid_seg=s;
-            route_graph_set_traffic_distortion(this, this->avoid_seg, profile->turn_around_penalty);
-            route_graph_reset(this);
-            route_graph_init(this, dst, profile);
+            route_graph_set_traffic_distortion(this, profile, this->avoid_seg, profile->turn_around_penalty);
             route_graph_compute_shortest_path(this, profile, NULL);
             return route_path_new(this, oldpath, pos, dst, profile);
         }
