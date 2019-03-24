@@ -146,6 +146,8 @@ struct traffic_message_priv {
 struct map_priv {
     GList * items;              /**< The map items */
     // TODO items by start/end coordinates? In a later phase…
+    thread_lock * rw_lock;      /**< Lock for insertions, deletions or iterations over items in the map
+                                 *   (also if performed in a map rectangle of the map) */
 };
 
 /**
@@ -154,7 +156,8 @@ struct map_priv {
 struct map_rect_priv {
     struct map_priv *mpriv;     /**< The map to which this map rect refers */
     struct item *item;          /**< The current item, i.e. the last item returned by the `map_rect_get_item` method */
-    GList * next_item;          /**< `GList` entry for the next item to be returned by `map_rect_get_item` */
+    GList * next_item;          /**< `GList` entry for the next item to be returned by `map_rect_get_item`,
+                                 *   acquire `mpriv->rw_lock` before accessing */
 };
 
 /**
@@ -864,6 +867,7 @@ static struct item * tm_add_item(struct map *map, enum item_type type, int id_hi
  * @param priv The private data for the traffic map instance
  */
 static void tm_destroy(struct map_priv *priv) {
+    thread_lock_destroy(priv->rw_lock);
     g_free(priv);
 }
 
@@ -881,7 +885,9 @@ static struct map_rect_priv * tm_rect_new(struct map_priv *priv, struct map_sele
     dbg(lvl_debug,"enter");
     mr=g_new0(struct map_rect_priv, 1);
     mr->mpriv = priv;
+    thread_lock_acquire_read(priv->rw_lock);
     mr->next_item = priv->items;
+    thread_lock_release_read(priv->rw_lock);
     /* all other pointers are initially NULL */
     return mr;
 }
@@ -909,6 +915,7 @@ static struct item * tm_get_item(struct map_rect_priv *mr) {
         ip = (struct item_priv *) mr->item->priv_data;
         ip->mr = NULL;
     }
+    thread_lock_acquire_read(mr->mpriv->rw_lock);
     if (mr->next_item) {
         ret = (struct item *) mr->next_item->data;
         ip = (struct item_priv *) ret->priv_data;
@@ -919,6 +926,7 @@ static struct item * tm_get_item(struct map_rect_priv *mr) {
     }
 
     mr->item = ret;
+    thread_lock_release_read(mr->mpriv->rw_lock);
     return ret;
 }
 
@@ -934,9 +942,11 @@ static struct item * tm_get_item(struct map_rect_priv *mr) {
  */
 static struct item * tm_get_item_byid(struct map_rect_priv *mr, int id_hi, int id_lo) {
     struct item *ret = NULL;
+    thread_lock_acquire_read(mr->mpriv->rw_lock);
     do {
         ret = tm_get_item(mr);
     } while (ret && (ret->id_lo != id_lo || ret->id_hi != id_hi));
+    thread_lock_release_read(mr->mpriv->rw_lock);
     return ret;
 }
 
@@ -959,7 +969,9 @@ static struct item * tm_rect_create_item(struct map_rect_priv *mr, enum item_typ
     ret = g_new0(struct item, 1);
     ret->type = type;
     ret->priv_data = priv_data;
+    thread_lock_acquire_write(map_priv->rw_lock);
     map_priv->items = g_list_append(map_priv->items, ret);
+    thread_lock_release_write(map_priv->rw_lock);
 
     return ret;
 }
@@ -1058,12 +1070,14 @@ static int tm_type_set(void *priv_data, enum item_type type) {
 
     if (type == type_none) {
         /* if we have multiple occurrences of this item in the list, move forward beyond the last one */
+        thread_lock_acquire_write(ip->mr->mpriv->rw_lock);
         while (ip->mr->next_item && (ip->mr->next_item->data == ip->mr->item))
             ip->mr->next_item = g_list_next(ip->mr->next_item);
 
         /* remove the item from the map and set last retrieved item to NULL */
         ip->mr->mpriv->items = g_list_remove_all(ip->mr->mpriv->items, ip->mr->item);
         ip->mr->item = NULL;
+        thread_lock_release_write(ip->mr->mpriv->rw_lock);
     } else {
         ip->mr->item->type = type;
     }
@@ -5286,6 +5300,7 @@ static struct map_priv * traffic_map_new(struct map_methods *meth, struct attr *
     struct map_priv *ret;
 
     ret = g_new0(struct map_priv, 1);
+    ret->rw_lock = thread_lock_new();
     *meth = traffic_map_meth;
 
     return ret;
