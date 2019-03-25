@@ -23,6 +23,7 @@
 #include <string.h>
 #include <math.h>
 #include "config.h"
+#include "thread.h"
 #include "debug.h"
 #include "plugin.h"
 #include "projection.h"
@@ -51,6 +52,7 @@ struct filter {
 struct map_priv {
     struct map *parent;
     GList *filters;
+    thread_lock * rw_lock;       //!< Lock for insertions into, deletions from or iterations over `filters`
 };
 
 struct map_rect_priv {
@@ -65,8 +67,10 @@ struct map_search_priv {
 };
 
 static enum item_type filter_type(struct map_priv *m, struct item *item) {
-    GList *filters=m->filters;
+    GList *filters;
     struct filter_entry *entry;
+    thread_lock_acquire_read(m->rw_lock);
+    filters = m->filters;
     while (filters) {
         struct filter *filter=filters->data;
         int pos=0,count=0;
@@ -121,6 +125,7 @@ static enum item_type filter_type(struct map_priv *m, struct item *item) {
         }
         filters=g_list_next(filters);
     }
+    thread_lock_release_read(m->filters);
     return item->type;
 }
 
@@ -139,9 +144,11 @@ static void free_filter(struct filter *filter) {
 }
 
 static void free_filters(struct map_priv *m) {
+    thread_lock_acquire_write(m->rw_lock);
     g_list_foreach(m->filters, (GFunc)free_filter, NULL);
     g_list_free(m->filters);
     m->filters=NULL;
+    thread_lock_release_write(m->rw_lock);
 }
 
 static GList *parse_filter(char *filter) {
@@ -225,7 +232,9 @@ static void parse_filters(struct map_priv *m, char *filter) {
         filter->old=parse_filter(str);
         if (eq)
             filter->new=parse_filter(eq);
+        thread_lock_acquire_write(m->rw_lock);
         m->filters=g_list_append(m->filters,filter);
+        thread_lock_release_write(m->rw_lock);
         if (!next)
             break;
         str=next;
@@ -318,6 +327,7 @@ static void map_filter_search_destroy(struct map_search_priv *ms) {
 
 static void map_filter_destroy(struct map_priv *m) {
     map_destroy(m->parent);
+    thread_lock_destroy(m->rw_lock);
     g_free(m);
 }
 
@@ -385,6 +395,7 @@ static struct map_priv *map_filter_new(struct map_methods *meth, struct attr **a
         parse_filters(m,filter->u.str);
     }
     g_free(parent_attrs);
+    m->rw_lock = thread_lock_new();
     return m;
 }
 
