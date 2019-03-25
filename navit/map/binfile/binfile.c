@@ -23,6 +23,7 @@
 #include <string.h>
 #include <math.h>
 #include "config.h"
+#include "thread.h"
 #include "debug.h"
 #include "plugin.h"
 #include "projection.h"
@@ -120,7 +121,8 @@ struct map_priv {
     int version;
     int check_version;
     int map_version;
-    GHashTable *changes;
+    GHashTable *changes;         //!< Items which have been changed from their stored version
+    thread_lock * rw_lock;       //!< Lock for insertions into, deletions from or iterations over `changes`
     char *map_release;
     int flags;
     char *url;
@@ -614,9 +616,9 @@ static int *binfile_item_dup(struct map_priv *m, struct item *item, struct tile 
     dbg(lvl_debug,"id 0x%x,0x%x",entry->id.id_hi,entry->id.id_lo);
 
     memcpy(ret, t->pos, (size+1)*sizeof(int));
-    if (!m->changes)
-        m->changes=g_hash_table_new_full(binfile_hash_entry_hash, binfile_hash_entry_equal, g_free, NULL);
+    thread_lock_acquire_write(m->rw_lock);
     g_hash_table_replace(m->changes, entry, entry);
+    thread_lock_release_write(m->rw_lock);
     dbg(lvl_debug,"ret %p",ret);
     return ret;
 }
@@ -1498,11 +1500,11 @@ static void write_changes_do(gpointer key, gpointer value, gpointer user_data) {
 static void write_changes(struct map_priv *m) {
     FILE *changes;
     char *changes_file;
-    if (!m->changes)
-        return;
     changes_file=g_strdup_printf("%s.log",m->filename);
     changes=fopen(changes_file,"ab");
+    thread_lock_acquire_read(m->rw_lock);
     g_hash_table_foreach(m->changes, write_changes_do, changes);
+    thread_lock_release_read(m->rw_lock);
     fclose(changes);
     g_free(changes_file);
 }
@@ -1518,6 +1520,7 @@ static void load_changes(struct map_priv *m) {
         g_free(changes_file);
         return;
     }
+    /* no need to obtain a lock as long as we are never called after m is returned */
     m->changes=g_hash_table_new_full(binfile_hash_entry_hash, binfile_hash_entry_equal, g_free, NULL);
     while (fread(&entry, sizeof(entry), 1, changes) == 1) {
         if (fread(&size, sizeof(size), 1, changes) != 1)
@@ -1649,7 +1652,9 @@ static int push_modified_item(struct map_rect_priv *mr) {
     struct binfile_hash_entry *entry;
     id.id_hi=mr->item.id_hi;
     id.id_lo=mr->item.id_lo;
+    thread_lock_acquire_read(mr->m->rw_lock);
     entry=g_hash_table_lookup(mr->m->changes, &id);
+    thread_lock_release_read(mr->m->rw_lock);
     if (entry) {
         struct tile tn;
         tn.pos_next=tn.pos=tn.start=entry->data;
@@ -1695,7 +1700,7 @@ static struct item *map_rect_get_item_binfile(struct map_rect_priv *mr) {
         if (t->mode != 2) {
             mr->item.id_hi=t->zipfile_num;
             mr->item.id_lo=t->pos-t->start;
-            if (mr->m->changes && push_modified_item(mr))
+            if (push_modified_item(mr))
                 continue;
         }
         if (mr->country_id) {
@@ -1722,8 +1727,7 @@ static struct item *map_rect_get_item_byid_binfile(struct map_rect_priv *mr, int
     t->pos=t->start+id_lo;
     mr->item.id_hi=id_hi;
     mr->item.id_lo=id_lo;
-    if (mr->m->changes)
-        push_modified_item(mr);
+    push_modified_item(mr);
     setup_pos(mr);
     binfile_coord_rewind(mr);
     binfile_attr_rewind(mr);
@@ -2666,11 +2670,20 @@ static struct map_priv *map_new_binfile(struct map_methods *meth, struct attr **
     if (download_enabled)
         m->download_enabled=download_enabled->u.num;
 
+    m->rw_lock = thread_lock_new();
     if (!map_binfile_open(m) && !m->check_version && !m->url) {
         map_binfile_destroy(m);
         m=NULL;
     } else {
         load_changes(m);
+#if 0
+        /*
+         * Moved here from binfile_item_dup() to ensure changes is never NULL, but that never seems to happen anyway.
+         */
+        /* no need to obtain a lock as long as we have not returned m */
+        if (!m->changes)
+            m->changes=g_hash_table_new_full(binfile_hash_entry_hash, binfile_hash_entry_equal, g_free, NULL);
+#endif
     }
     return m;
 }
