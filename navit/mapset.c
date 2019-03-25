@@ -294,7 +294,8 @@ mapset_get_map_by_name(struct mapset *ms, const char*map_name) {
  * @param msh Mapset handle to be closed
  */
 void mapset_close(struct mapset_handle *msh) {
-    thread_lock_release_read(msh->ms_rw_lock);
+    if (msh)
+        thread_lock_release_read(msh->ms_rw_lock);
     g_free(msh);
 }
 
