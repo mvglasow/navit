@@ -1806,9 +1806,9 @@ static void traffic_location_populate_route_graph(struct traffic_location * this
     rg->h = mapset_open(ms);
 
     while ((rg->m = mapset_next(rg->h, 2))) {
-        // FIXME check thread safety from here onwards
         if (!traffic_location_open_map_rect(this_, rg))
             continue;
+        // FIXME check thread safety from here onwards
         while ((item = map_rect_get_item(rg->mr))) {
             if (item->type == type_street_turn_restriction_no || item->type == type_street_turn_restriction_only)
                 route_graph_add_turn_restriction(rg, item);
@@ -2462,7 +2462,7 @@ static int traffic_location_get_point_match(struct traffic_location * this_, str
  *
  * @return The matched points as a `GList`. The `data` member of each item points to a `struct point_data` for the point.
  */
-// FIXME check thread safety for this method (everything except mapset is still thread-private at this time)
+// (everything except mapset is still thread-private at this time)
 static GList * traffic_location_get_matching_points(struct traffic_location * this_, int point,
         struct route_graph * rg, struct route_graph_point * start, int match_start, struct mapset * ms) {
     GList * ret = NULL;
@@ -2497,6 +2497,7 @@ static GList * traffic_location_get_matching_points(struct traffic_location * th
     while ((rg->m = mapset_next(rg->h, 2))) {
         if (!traffic_location_open_map_rect(this_, rg))
             continue;
+        // FIXME check thread safety from here onwards
         while ((item = map_rect_get_item(rg->mr))) {
             /* exclude non-point items */
             if ((item->type < type_town_label) || (item->type >= type_line))
@@ -3565,7 +3566,7 @@ static struct seg_data * traffic_message_parse_events(struct traffic_message * t
  * @param new If non-NULL, items referenced by this message will be skipped, see description
  * @param route The route affected by the changes
  */
-// FIXME check thread safety for this method
+// FIXME check thread safety for this method (access to old needs to be synchronized, new is still thread-private)
 static void traffic_message_remove_item_data(struct traffic_message * old, struct traffic_message * new,
         struct route * route) {
     int i, j;
@@ -3941,9 +3942,6 @@ static int traffic_process_messages_int(struct traffic * this_, int flags) {
                     /* else find matching segments from scratch */
                     traffic_message_add_segments(message, this_->ms, data, this_->map, this_->rt);
                     ret |= MESSAGE_UPDATE_SEGMENTS;
-#if HAVE_NAVIT_THREADS
-                    // TODO trigger redraw and route recalculation
-#endif
                 }
 
                 g_free(data);
@@ -3951,28 +3949,27 @@ static int traffic_process_messages_int(struct traffic * this_, int flags) {
                 /* store message */
                 thread_lock_acquire_write(this_->shared->messages_rw_lock);
                 this_->shared->messages = g_list_append(this_->shared->messages, message);
-                thread_lock_release_write(this_->shared->messages_rw_lock);
+                /* keep the lock if we have messages to remove */
+                if (!msgs_to_remove)
+                    thread_lock_release_write(this_->shared->messages_rw_lock);
                 dbg(lvl_debug, "*****checkpoint PROCESS-5");
             }
 
-            // FIXME do not release lock between these two operations
             /* delete replaced messages */
             if (msgs_to_remove) {
                 dbg(lvl_debug, "*****checkpoint PROCESS (messages to remove, start)");
+                /* if the message is not a cancellation, we are already holding the lock */
+                if (message->is_cancellation)
+                    thread_lock_acquire_write(this_->shared->messages_rw_lock);
                 for (msg_iter = msgs_to_remove; msg_iter; msg_iter = g_list_next(msg_iter)) {
                     stored_msg = (struct traffic_message *) msg_iter->data;
-                    if (stored_msg->priv->items) {
+                    if (stored_msg->priv->items)
                         ret |= MESSAGE_UPDATE_SEGMENTS;
-#if HAVE_NAVIT_THREADS
-                        // TODO trigger redraw and route recalculation
-#endif
-                    }
-                    thread_lock_acquire_write(this_->shared->messages_rw_lock);
                     this_->shared->messages = g_list_remove_all(this_->shared->messages, stored_msg);
-                    thread_lock_release_write(this_->shared->messages_rw_lock);
                     traffic_message_remove_item_data(stored_msg, message, this_->rt);
                     traffic_message_destroy(stored_msg);
                 }
+                thread_lock_release_write(this_->shared->messages_rw_lock);
 
                 g_list_free(msgs_to_remove);
                 msgs_to_remove = NULL;
@@ -3986,7 +3983,12 @@ static int traffic_process_messages_int(struct traffic * this_, int flags) {
 
             dbg(lvl_debug, "*****checkpoint PROCESS-6");
         }
-#if !HAVE_NAVIT_THREADS
+#if HAVE_NAVIT_THREADS
+        if (ret & MESSAGE_UPDATE_SEGMENTS) {
+            // TODO trigger redraw and route recalculation
+            ret &= ~MESSAGE_UPDATE_SEGMENTS;
+        }
+#else
         gettimeofday(&now, NULL);
         msec = (now.tv_usec - start.tv_usec) / ((double)1000) + (now.tv_sec - start.tv_sec) * 1000;
 #endif
@@ -4024,12 +4026,8 @@ static int traffic_process_messages_int(struct traffic * this_, int flags) {
         if (msgs_to_remove) {
             for (msg_iter = msgs_to_remove; msg_iter; msg_iter = g_list_next(msg_iter)) {
                 stored_msg = (struct traffic_message *) msg_iter->data;
-                if (stored_msg->priv->items) {
+                if (stored_msg->priv->items)
                     ret |= MESSAGE_UPDATE_SEGMENTS;
-#if HAVE_NAVIT_THREADS
-                    // TODO trigger redraw and route recalculation
-#endif
-                }
                 this_->shared->messages = g_list_remove_all(this_->shared->messages, stored_msg);
                 traffic_message_remove_item_data(stored_msg, NULL, this_->rt);
                 traffic_message_destroy(stored_msg);
@@ -4040,6 +4038,12 @@ static int traffic_process_messages_int(struct traffic * this_, int flags) {
             g_list_free(msgs_to_remove);
         }
         thread_lock_release_write(this_->shared->messages_rw_lock);
+#if HAVE_NAVIT_THREADS
+        if (ret & MESSAGE_UPDATE_SEGMENTS) {
+            // TODO trigger redraw and route recalculation
+            ret &= ~MESSAGE_UPDATE_SEGMENTS;
+        }
+#endif
     }
 
     // TODO make sure this runs periodically even if the queue is never empty
@@ -5456,7 +5460,7 @@ struct traffic_message ** traffic_get_stored_messages(struct traffic *this_) {
         out++;
     }
     thread_lock_release_read(this_->shared->messages_rw_lock);
-    // FIXME returned messages can be freed by the worker thread any time
+    // FIXME returned messages can be freed by the worker thread any time (needed only for request_navit_traffic_export_gpx)
 
     return ret;
 }

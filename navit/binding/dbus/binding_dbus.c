@@ -1208,6 +1208,7 @@ static DBusHandlerResult request_navit_quit(DBusConnection *connection, DBusMess
  * @param message The DBusMessage including the `filename` parameter
  * @returns An empty reply if everything went right, otherwise `DBUS_HANDLER_RESULT_NOT_YET_HANDLED`
  */
+// FIXME gut this and move message processing into traffic so we can obtain a lock
 static DBusHandlerResult request_navit_traffic_export_gpx(DBusConnection *connection, DBusMessage *message) {
     char * filename;
     struct navit * navit;
