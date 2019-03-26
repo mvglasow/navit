@@ -25,6 +25,7 @@
 #include "attr.h"
 #include "track.h"
 #include "xmlconfig.h"
+#include "thread.h"
 #include "debug.h"
 #include "transform.h"
 #include "coord.h"
@@ -90,7 +91,7 @@ struct tracking {
     struct vehicle *vehicle;
     struct vehicleprofile *vehicleprofile;
     struct coord last_updated;
-    struct tracking_line *lines;
+    struct tracking_line *lines;             /**< Segments traveled in reverse order, prepend-only */
     struct tracking_line *curr_line;
     int pos;
     struct coord curr[2], curr_in, curr_out;
@@ -116,6 +117,11 @@ struct tracking {
     int overspeed_pref;
     int overspeed_percent_pref;
     int tunnel_extrapolation;
+    thread_lock * rw_lock;                   /**< Lock for read/write access to anything accessible through map_rect
+                                              *   operations: `vehicleprofile`, `lines`, `curr_in`, `curr_out`,
+                                              *   `curr_angle`, `last`, `last_out`, `speed`, `no_gps`, `angle_pref`,
+                                              *   `connected_pref`, `nostop_pref`, `route_pref`, `overspeed_pref`,
+                                              *   `overspeed_percent_pref` */
 };
 
 
@@ -297,11 +303,17 @@ static void tracking_process_cdf(struct cdf_data *cdf, struct pcoord *pin, struc
 #endif
 
 int tracking_get_angle(struct tracking *tr) {
+    /* No lock is needed here as long as this function runs on the only thread that ever writes to curr_out.
+     * If this ever changes, we need to redesign this anyway (return a copy, not a pointer, and require the caller to
+     * clean it up; or copy data to a buffer supplied by the caller) */
     return tr->curr_angle;
 }
 
 struct coord *
 tracking_get_pos(struct tracking *tr) {
+    /* No lock is needed here as long as this function runs on the only thread that ever writes to curr_out.
+     * If this ever changes, we need to redesign this anyway (return a copy, not a pointer, and require the caller to
+     * clean it up; or copy data to a buffer supplied by the caller) */
     return &tr->curr_out;
 }
 
@@ -343,7 +355,9 @@ int tracking_get_attr(struct tracking *_this, enum attr_type type, struct attr *
         attr->u.numd=&_this->direction_matched;
         return 1;
     case attr_position_speed:
+        thread_lock_acquire_read(_this->rw_lock);
         attr->u.numd=&_this->speed;
+        thread_lock_release_read(_this->rw_lock);
         return 1;
     case attr_directed:
         attr->u.num=_this->street_direction;
@@ -351,8 +365,10 @@ int tracking_get_attr(struct tracking *_this, enum attr_type type, struct attr *
     case attr_position_coord_geo:
         if (!_this->coord_geo_valid) {
             struct coord c;
+            thread_lock_acquire_read(_this->rw_lock);
             c.x=_this->curr_out.x;
             c.y=_this->curr_out.y;
+            thread_lock_release_read(_this->rw_lock);
             transform_to_geo(_this->pro, &c, &_this->coord_geo);
             _this->coord_geo_valid=1;
         }
@@ -365,7 +381,9 @@ int tracking_get_attr(struct tracking *_this, enum attr_type type, struct attr *
         return 1;
     case attr_street_count:
         attr->u.num=0;
+        thread_lock_acquire_read(_this->rw_lock);
         tl=_this->lines;
+        thread_lock_release_read(_this->rw_lock);
         while (tl) {
             attr->u.num++;
             tl=tl->next;
@@ -453,6 +471,9 @@ static void tracking_doupdate_lines(struct tracking *tr, struct coord *pc, enum 
     dbg(lvl_debug,"enter");
     h=mapset_open(tr->ms);
     while ((m=mapset_next(h,2))) {
+        /* do not read our own data (risk of deadlock) */
+        if (m = tr->map)
+            continue;
         cc.x = pc->x;
         cc.y = pc->y;
         if (map_projection(m) != pro) {
@@ -484,6 +505,11 @@ static void tracking_doupdate_lines(struct tracking *tr, struct coord *pc, enum 
 }
 
 
+/**
+ * @brief FIXME
+ *
+ * The caller must obtain `tr->rw_lock` for writing before calling this function.
+ */
 void tracking_flush(struct tracking *tr) {
     struct tracking_line *tl=tr->lines,*next;
     dbg(lvl_debug,"enter(tr=%p)", tr);
@@ -516,7 +542,7 @@ static int tracking_angle_abs_diff(int a1, int a2, int full) {
 
 static int tracking_angle_delta(struct tracking *tr, int vehicle_angle, int street_angle, int flags) {
     int full=180,ret=360,fwd=0,rev=0;
-    struct vehicleprofile *profile=tr->vehicleprofile;
+    struct vehicleprofile *profile;
 
     if (profile) {
         fwd=((flags & profile->flags_forward_mask) == profile->flags);
@@ -533,7 +559,13 @@ static int tracking_angle_delta(struct tracking *tr, int vehicle_angle, int stre
     return ret*ret;
 }
 
+/**
+ * @brief Whether we are connected to a location source.
+ *
+ * The caller must obtain `tr->rw_lock` for reading or writing before calling this function.
+ */
 static int tracking_is_connected(struct tracking *tr, struct coord *c1, struct coord *c2) {
+    int ret;
     if (c1[0].x == c2[0].x && c1[0].y == c2[0].y)
         return 0;
     if (c1[0].x == c2[1].x && c1[0].y == c2[1].y)
@@ -545,12 +577,22 @@ static int tracking_is_connected(struct tracking *tr, struct coord *c1, struct c
     return tr->connected_pref;
 }
 
+/**
+ * @brief FIXME
+ *
+ * The caller must obtain `tr->rw_lock` for reading or writing before calling this function.
+ */
 static int tracking_is_no_stop(struct tracking *tr, struct coord *c1, struct coord *c2) {
     if (c1->x == c2->x && c1->y == c2->y)
         return tr->nostop_pref;
     return 0;
 }
 
+/**
+ * @brief FIXME
+ *
+ * The caller must obtain `tr->rw_lock` for reading or writing before calling this function.
+ */
 static int tracking_is_on_route(struct tracking *tr, struct route *rt, struct item *item) {
 #ifdef USE_ROUTING
     if (! rt)
@@ -563,6 +605,11 @@ static int tracking_is_on_route(struct tracking *tr, struct route *rt, struct it
 #endif
 }
 
+/**
+ * @brief FIXME
+ *
+ * The caller must obtain `tr->rw_lock` for reading or writing before calling this function.
+ */
 static int tracking_value(struct tracking *tr, struct tracking_line *t, int offset, struct coord *lpnt, int min,
                           int flags) {
     int value=0;
@@ -607,6 +654,8 @@ static int tracking_value(struct tracking *tr, struct tracking_line *t, int offs
 /**
  * @brief Processes a position update.
  *
+ * This function will block until it can obtain `tr->rw_lock` for writing.
+ *
  * @param tr The {@code struct tracking} which will receive the position update
  * @param v The vehicle whose position has changed
  * @param vehicleprofile The vehicle profile to use
@@ -620,17 +669,21 @@ void tracking_update(struct tracking *tr, struct vehicle *v, struct vehicleprofi
     struct coord cin;
     struct attr valid,speed_attr,direction_attr,coord_geo,lag,time_attr,static_speed,static_distance;
     double speed, direction;
+    thread_lock_acquire_write(tr->rw_lock);
     if (v)
         tr->vehicle=v;
     if (vehicleprofile)
         tr->vehicleprofile=vehicleprofile;
 
-    if (! tr->vehicle)
+    if (! tr->vehicle) {
+        thread_lock_release_write(tr->rw_lock);
         return;
+    }
     if (!vehicle_get_attr(tr->vehicle, attr_position_valid, &valid, NULL))
         valid.u.num=attr_position_valid_valid;
     if (valid.u.num == attr_position_valid_invalid) {
         tr->valid=valid.u.num;
+        thread_lock_release_write(tr->rw_lock);
         return;
     }
     if (!vehicle_get_attr(tr->vehicle, attr_position_speed, &speed_attr, NULL) ||
@@ -640,6 +693,7 @@ void tracking_update(struct tracking *tr, struct vehicle *v, struct vehicleprofi
             vehicle_get_attr(tr->vehicle, attr_position_speed, &speed_attr, NULL),
             vehicle_get_attr(tr->vehicle, attr_position_direction, &direction_attr, NULL),
             vehicle_get_attr(tr->vehicle, attr_position_coord_geo, &coord_geo, NULL));
+        thread_lock_release_write(tr->rw_lock);
         return;
     }
     if (tr->tunnel_extrapolation) {
@@ -668,6 +722,7 @@ void tracking_update(struct tracking *tr, struct vehicle *v, struct vehicleprofi
             tr->curr_in.y);
         tr->valid=attr_position_valid_static;
         tr->speed=0;
+        thread_lock_release_write(tr->rw_lock);
         return;
     }
     if (tr->tunnel) {
@@ -763,32 +818,54 @@ void tracking_update(struct tracking *tr, struct vehicle *v, struct vehicleprofi
     } else if (tr->tunnel) {
         tr->speed=0;
     }
+    thread_lock_release_write(tr->rw_lock);
     dbg(lvl_debug,"found 0x%x,0x%x", tr->curr_out.x, tr->curr_out.y);
     callback_list_call_attr_0(tr->callback_list, attr_position_coord_geo);
 }
 
+/**
+ * @brief Sets tracking attributes.
+ *
+ * This function may block until it can obtain `tr->rw_lock` for writing, depending on the attribute being set.
+ *
+ * @param tracking The tracking object
+ * @param attr The new attribute
+ * @param initial Not used
+ */
 static int tracking_set_attr_do(struct tracking *tr, struct attr *attr, int initial) {
     switch (attr->type) {
     case attr_angle_pref:
+        thread_lock_acquire_write(tr->rw_lock);
         tr->angle_pref=attr->u.num;
+        thread_lock_release_write(tr->rw_lock);
         return 1;
     case attr_connected_pref:
+        thread_lock_acquire_write(tr->rw_lock);
         tr->connected_pref=attr->u.num;
+        thread_lock_release_write(tr->rw_lock);
         return 1;
     case attr_nostop_pref:
+        thread_lock_acquire_write(tr->rw_lock);
         tr->nostop_pref=attr->u.num;
+        thread_lock_release_write(tr->rw_lock);
         return 1;
     case attr_offroad_limit_pref:
         tr->offroad_limit_pref=attr->u.num;
         return 1;
     case attr_route_pref:
+        thread_lock_acquire_write(tr->rw_lock);
         tr->route_pref=attr->u.num;
+        thread_lock_release_write(tr->rw_lock);
         return 1;
     case attr_overspeed_pref:
+        thread_lock_acquire_write(tr->rw_lock);
         tr->overspeed_pref=attr->u.num;
+        thread_lock_release_write(tr->rw_lock);
         return 1;
     case attr_overspeed_percent_pref:
+        thread_lock_acquire_write(tr->rw_lock);
         tr->overspeed_percent_pref=attr->u.num;
+        thread_lock_release_write(tr->rw_lock);
         return 1;
     case attr_tunnel_extrapolation:
         tr->tunnel_extrapolation=attr->u.num;
@@ -851,7 +928,7 @@ tracking_new(struct attr *parent, struct attr **attrs) {
     this->offroad_limit_pref=5000;
     this->route_pref=300;
     this->callback_list=callback_list_new();
-
+    this->rw_lock = thread_lock_new();
 
     if (! attr_generic_get_attr(attrs, NULL, attr_cdf_histsize, &hist_size, NULL)) {
         hist_size.u.num = 0;
@@ -875,10 +952,13 @@ void tracking_set_route(struct tracking *this, struct route *rt) {
 }
 
 void tracking_destroy(struct tracking *tr) {
+    thread_lock_acquire_write(tr->rw_lock);
     if (tr->attr)
         attr_free(tr->attr);
     tracking_flush(tr);
     callback_list_destroy(tr->callback_list);
+    thread_lock_release_write(tr->rw_lock);
+    thread_lock_destroy(tr->rw_lock);
     g_free(tr);
 }
 
@@ -970,11 +1050,14 @@ static int tracking_map_item_attr_get(void *priv_data, enum attr_type attr_type,
     case attr_debug:
         switch(this_->debug_idx) {
         case 0:
+            thread_lock_acquire_read(tr->rw_lock);
             this_->debug_idx++;
             this_->str=attr->u.str=g_strdup_printf("overall: %d (limit %d)",tracking_value(tr, this_->curr, this_->coord, &lpnt,
                                                    INT_MAX/2, -1), tr->offroad_limit_pref);
+            thread_lock_release_read(tr->rw_lock);
             return 1;
         case 1:
+            thread_lock_acquire_read(tr->rw_lock);
             this_->debug_idx++;
             c=&this_->curr->street->c[this_->coord];
             value=tracking_value(tr, this_->curr, this_->coord, &lpnt, INT_MAX/2, 1);
@@ -982,37 +1065,50 @@ static int tracking_map_item_attr_get(void *priv_data, enum attr_type attr_type,
                                                    tr->curr_in.x, tr->curr_in.y,
                                                    c[0].x, c[0].y, c[1].x, c[1].y,
                                                    lpnt.x, lpnt.y, value);
+            thread_lock_release_read(tr->rw_lock);
             return 1;
         case 2:
+            thread_lock_acquire_read(tr->rw_lock);
             this_->debug_idx++;
             this_->str=attr->u.str=g_strdup_printf("angle: %d to %d (flags %d) %d",
                                                    tr->curr_angle, this_->curr->angle[this_->coord], this_->curr->street->flags & 3,
                                                    tracking_value(tr, this_->curr, this_->coord, &lpnt, INT_MAX/2, 2));
+            thread_lock_release_read(tr->rw_lock);
             return 1;
         case 3:
+            thread_lock_acquire_read(tr->rw_lock);
             this_->debug_idx++;
             this_->str=attr->u.str=g_strdup_printf("connected: %d", tracking_value(tr, this_->curr, this_->coord, &lpnt, INT_MAX/2,
                                                    4));
+            thread_lock_release_read(tr->rw_lock);
             return 1;
         case 4:
+            thread_lock_acquire_read(tr->rw_lock);
             this_->debug_idx++;
             this_->str=attr->u.str=g_strdup_printf("no_stop: %d", tracking_value(tr, this_->curr, this_->coord, &lpnt, INT_MAX/2,
                                                    8));
+            thread_lock_release_read(tr->rw_lock);
             return 1;
         case 5:
+            thread_lock_acquire_read(tr->rw_lock);
             this_->debug_idx++;
             this_->str=attr->u.str=g_strdup_printf("route: %d", tracking_value(tr, this_->curr, this_->coord, &lpnt, INT_MAX/2,
                                                    16));
+            thread_lock_release_read(tr->rw_lock);
             return 1;
         case 6:
+            thread_lock_acquire_read(tr->rw_lock);
             this_->debug_idx++;
             this_->str=attr->u.str=g_strdup_printf("overspeed: %d", tracking_value(tr, this_->curr, this_->coord, &lpnt, INT_MAX/2,
                                                    32));
+            thread_lock_release_read(tr->rw_lock);
             return 1;
         case 7:
+            thread_lock_acquire_read(tr->rw_lock);
             this_->debug_idx++;
             this_->str=attr->u.str=g_strdup_printf("tunnel: %d", tracking_value(tr, this_->curr, this_->coord, &lpnt, INT_MAX/2,
                                                    64));
+            thread_lock_release_read(tr->rw_lock);
             return 1;
         case 8:
             this_->debug_idx++;
@@ -1047,7 +1143,9 @@ static void tracking_map_destroy(struct map_priv *priv) {
 }
 
 static void tracking_map_rect_init(struct map_rect_priv *priv) {
+    thread_lock_acquire_read(priv->tracking->rw_lock);
     priv->next=priv->tracking->lines;
+    thread_lock_release_read(priv->tracking->rw_lock);
     priv->curr=NULL;
     priv->coord=0;
     priv->item.id_lo=0;
@@ -1086,7 +1184,9 @@ static struct item *tracking_map_get_item(struct map_rect_priv *priv) {
         priv->coord++;
         priv->item.id_lo++;
     }
+    thread_lock_acquire_read(priv->tracking->rw_lock);
     value=tracking_value(priv->tracking, priv->curr, priv->coord, &lpnt, INT_MAX/2, -1);
+    thread_lock_release_read(priv->tracking->rw_lock);
     if (value < 64)
         priv->item.type=type_tracking_100;
     else if (value < 128)
