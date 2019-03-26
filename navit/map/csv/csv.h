@@ -40,6 +40,7 @@ struct map_priv {
 	/*list of quadtree items that have no coord set yet ()*/
 	GList* new_items;
 	char *charset;
+	thread_lock * rw_lock;           /**< Read/write lock for map content */
 };
 
 struct map_rect_priv {

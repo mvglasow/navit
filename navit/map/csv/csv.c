@@ -29,6 +29,7 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#include "thread.h"
 #include "debug.h"
 #include "plugin.h"
 #include "projection.h"
@@ -176,13 +177,16 @@ static const int zoom_max = 18;
 
 static void map_destroy_csv(struct map_priv *m) {
     dbg(lvl_debug,"map_destroy_csv");
+    thread_lock_acquire_write(m->rw_lock);
     /*save if changed */
     save_map_csv(m);
     g_hash_table_destroy(m->qitem_hash);
     quadtree_destroy(m->tree_root);
+    thread_lock_release_write(m->rw_lock);
     g_free(m->filename);
     g_free(m->charset);
     g_free(m->attr_types);
+    thread_lock_destroy(m->rw_lock);
     g_free(m);
 }
 
@@ -492,6 +496,18 @@ static struct map_rect_priv *map_rect_new_csv(struct map_priv *map, struct map_s
     struct coord_geo rl;
     struct quadtree_iter *res = NULL;
     dbg(lvl_debug,"map_rect_new_csv");
+    thread_lock_acquire_write(map->rw_lock);
+    /*
+     * TODO Proper synchronization is very tricky here:
+     * - Map rects access shared map data (i.e. list of items).
+     * - Each map rect has an associated iterator from creation to destruction.
+     * - Therefore map data needs to be locked as long as a map rect is open.
+     * - Maps are writable, but we don’t know in advance if they are going to be written to.
+     * - We therefore need a write lock on the map while a map rect is open.
+     * - That means no two map rects of the same CSV map can be open at the same time (an attempt to open a second map
+     *   rectangle will block until the first one is destroyed).
+     * Need to figure out if this creates a real issue here. If so, we need to revisit this.
+     */
     if(debug_level_get("map_csv")>2) {
         map_csv_debug_dump(map);
     }
@@ -528,6 +544,11 @@ static void map_rect_destroy_csv(struct map_rect_priv *mr) {
 
     if(mr->qiter)
         quadtree_query_free(mr->qiter);
+
+    /*
+     * TODO May need to make locks more granular, see comment in map_rect_new_csv()
+     */
+    thread_lock_release_write(mr->m->rw_lock);
 
     g_free(mr);
 }
@@ -657,6 +678,7 @@ static struct map_priv *map_new_csv(struct map_methods *meth, struct attr **attr
     enum attr_type* attr_type_list = NULL;
     struct quadtree_node* tree_root = quadtree_node_new(NULL,-180,180,-180,180);
     m = g_new0(struct map_priv, 1);
+    m->rw_lock = thread_lock_new();
     m->id = ++map_id;
     m->qitem_hash = g_hash_table_new_full(g_int_hash, g_int_equal, g_free, quadtree_item_free_do);
     m->tree_root = tree_root;
