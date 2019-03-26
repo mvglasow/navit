@@ -256,7 +256,7 @@ struct map;
 /**
  * @brief Implementation-specific map data.
  *
- * This struct is defined individually by each map driver and not ment to be accessed outside the map driver.
+ * This struct is defined individually by each map driver and not meant to be accessed outside the map driver.
  */
 struct map_priv;
 
@@ -271,10 +271,14 @@ struct map_priv;
  * Map rectangles are not guaranteed to be thread-safe, i.e. a map rectangle should never be accessed by more than one
  * thread without proper external synchronization. It is recommended that each thread obtain a separate map rectangle.
  *
- * Map implementations must ensure, however, that accesses to different map rectangles of the same map by different
- * threads are properly synchronized. Most importantly, they must ensure that threads reading from one map rectangle
- * receive consistent data while another thread is writing to another (which may also happen when reloading data from a
- * stored map).
+ * Map implementations must ensure, however, that concurrent access to data that is shared between map rectangles, or
+ * with other components, is properly synchronized. Most importantly, they must ensure that one thread reading from a
+ * map rectangle receives consistent data while another thread is modifying the underlying map data, e.g. writing to
+ * another map rectangle, by loading additional data from a storage-backed map or by otherwise modifying the underlying
+ * data structure of a map.
+ *
+ * Map rectangles should not be kept open for extended periods of time, as doing so may block other threads trying to
+ * update or even just read data from the same map (implications may differ between map implementations).
  */
 struct map_rect;
 
