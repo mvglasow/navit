@@ -944,20 +944,6 @@ struct traffic_message ** traffic_get_messages_from_xml_string(struct traffic * 
 struct map * traffic_get_map(struct traffic *this_);
 
 /**
- * @brief Returns currently active traffic messages.
- *
- * If multiple plugin instances are active, this will give the same result for any plugin, as traffic messages are
- * shared between instances.
- *
- * @param this_ The traffic plugin instance
- *
- * @return A null-terminated array of traffic messages. The caller is responsible for freeing the array (not its
- * elements) when it is no longer needed. This method will always return a valid pointer—if the message store is empty,
- * an empty array (with just one single NULL element) will be returned.
- */
-struct traffic_message ** traffic_get_stored_messages(struct traffic *this_);
-
-/**
  * @brief Processes new traffic messages.
  *
  * Calling this method delivers new messages in a “push” manner (as opposed to the “pull” fashion of
@@ -987,6 +973,19 @@ void traffic_set_mapset(struct traffic *this_, struct mapset *ms);
  * This sets the route which may get notified by the traffic plugin if traffic distortions change.
  */
 void traffic_set_route(struct traffic *this_, struct route *rt);
+
+/**
+ * @brief Exports currently active traffic distortions as a GPX file.
+ *
+ * If multiple plugin instances are active, this will give the same result for any plugin, as traffic messages and
+ * their segments are shared between instances.
+ *
+ * @param this_ The traffic plugin instance
+ * @param filename The path to the GPX file
+ *
+ * @return true on success, false on failure
+ */
+int traffic_dump_segments_to_gpx(struct traffic * this_, char * filename);
 
 /* end of prototypes */
 #ifdef __cplusplus

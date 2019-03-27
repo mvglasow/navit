@@ -3804,6 +3804,112 @@ static void traffic_dump_messages_to_xml(struct traffic * this_) {
     } /* if (traffic_filename) */
 }
 
+int traffic_dump_segments_to_gpx(struct traffic * this_, char * filename) {
+    FILE *fp;
+    GList * msg_iter;
+    struct traffic_message * message;
+    char * wpt_types[] = {"from", "at", "via", "not_via", "to"};
+    struct traffic_point * wpts[5];
+    int i;
+    struct item ** items;
+    struct item ** curr_itm;
+    struct attr attr;
+    int dir, lastdir = 0;
+    struct coord c, c_last;
+    struct coord_geo g;
+    char *header = "<?xml version='1.0' encoding='UTF-8'?>\n"
+                   "<gpx version='1.1' creator='Navit http://navit.sourceforge.net'\n"
+                   "     xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'\n"
+                   "     xmlns:navit='http://www.navit-project.org/schema/navit'\n"
+                   "     xmlns='http://www.topografix.com/GPX/1/1'\n"
+                   "     xsi:schemaLocation='http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd'>\n";
+    char *trailer = "</gpx>\n";
+
+    dbg(lvl_debug,"Dumping traffic distortions from dbus to %s", filename);
+
+    fp = fopen(filename, "w");
+    if (!fp) {
+        dbg(lvl_error,"could not open GPX file for writing");
+        return 0;
+    }
+
+    fprintf(fp, "%s", header);
+
+    thread_lock_acquire_read(this_->shared->messages_rw_lock);
+
+    for (msg_iter = this_->shared->messages; msg_iter; msg_iter = g_list_next(msg_iter)) {
+        message = (struct traffic_message *) msg_iter->data;
+        if (!message->location)
+            continue;
+        wpts[0] = message->location->from;
+        wpts[1] = message->location->at;
+        wpts[2] = message->location->via;
+        wpts[3] = message->location->not_via;
+        wpts[4] = message->location->to;
+        for (i = 0; i <= 4; i++) {
+            if (!wpts[i])
+                continue;
+            fprintf(fp, "<wpt lon='%4.16f' lat='%4.16f'><type>%s</type><name>%s</name></wpt>\n",
+                    wpts[i]->coord.lng, wpts[i]->coord.lat, wpt_types[i], message->id);
+        }
+    }
+
+    for (msg_iter = this_->shared->messages; msg_iter; msg_iter = g_list_next(msg_iter)) {
+        message = (struct traffic_message *) msg_iter->data;
+        items = traffic_message_get_items(message);
+        for (curr_itm = items; *curr_itm; curr_itm++) {
+            /*
+             * Don’t blindly copy this code unless you know what you are doing.
+             * It is based on various assumptions which hold true for traffic map items, but not necessarily for items
+             * obtained from other maps.
+             */
+            item_coord_rewind(*curr_itm);
+            item_coord_get(*curr_itm, &c, 1);
+            item_attr_rewind(*curr_itm);
+            if (item_attr_get(*curr_itm, attr_flags, &attr)) {
+                if (attr.u.num & AF_ONEWAY)
+                    dir = 1;
+                else if (attr.u.num & AF_ONEWAYREV)
+                    dir = -1;
+                else
+                    dir = 0;
+            } else
+                dir = 0;
+            if ((curr_itm == items) || (c.x != c_last.x) || (c.y != c_last.y) || lastdir != dir) {
+                /*
+                 * Start a new route for the first item, or if the last point of the previous item does not coincide
+                 * with the first point of the current one. This includes closing the previous route (if any) and
+                 * adding the first point.
+                 */
+                if (curr_itm != items)
+                    fprintf(fp, "</rte>\n");
+                fprintf(fp, "<rte><type>%s</type><name>%s</name>\n",
+                        dir ? (dir > 0 ? "forward" : "backward") : "bidirectional", message->id);
+                transform_to_geo(projection_mg, &c, &g);
+                fprintf(fp,"<rtept lon='%4.16f' lat='%4.16f'></rtept>\n", g.lng, g.lat);
+            }
+            while (item_coord_get(*curr_itm, &c, 1)) {
+                transform_to_geo(projection_mg, &c, &g);
+                fprintf(fp,"<rtept lon='%4.16f' lat='%4.16f'></rtept>\n", g.lng, g.lat);
+            }
+            c_last.x = c.x;
+            c_last.y = c.y;
+            lastdir = dir;
+        }
+        if (curr_itm != items)
+            fprintf(fp, "</rte>\n");
+        g_free(items);
+    }
+
+    thread_lock_release_read(this_->shared->messages_rw_lock);
+
+    fprintf(fp,"%s",trailer);
+
+    fclose(fp);
+
+    return 1;
+}
+
 /**
  * @brief Processes new traffic messages.
  *
@@ -5442,26 +5548,6 @@ struct traffic_message ** traffic_get_messages_from_xml_string(struct traffic * 
             dbg(lvl_error,"no data supplied");
         }
     } /* if (xml) */
-    return ret;
-}
-
-struct traffic_message ** traffic_get_stored_messages(struct traffic *this_) {
-    struct traffic_message ** ret;
-    struct traffic_message ** out;
-    GList * in;
-
-    thread_lock_acquire_read(this_->shared->messages_rw_lock);
-    ret = g_new0(struct traffic_message *, g_list_length(this_->shared->messages) + 1);
-    out = ret;
-    in = this_->shared->messages;
-    while (in) {
-        *out = (struct traffic_message *) in->data;
-        in = g_list_next(in);
-        out++;
-    }
-    thread_lock_release_read(this_->shared->messages_rw_lock);
-    // FIXME returned messages can be freed by the worker thread any time (needed only for request_navit_traffic_export_gpx)
-
     return ret;
 }
 

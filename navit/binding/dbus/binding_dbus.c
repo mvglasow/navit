@@ -1208,7 +1208,6 @@ static DBusHandlerResult request_navit_quit(DBusConnection *connection, DBusMess
  * @param message The DBusMessage including the `filename` parameter
  * @returns An empty reply if everything went right, otherwise `DBUS_HANDLER_RESULT_NOT_YET_HANDLED`
  */
-// FIXME gut this and move message processing into traffic so we can obtain a lock
 static DBusHandlerResult request_navit_traffic_export_gpx(DBusConnection *connection, DBusMessage *message) {
     char * filename;
     struct navit * navit;
@@ -1216,25 +1215,6 @@ static DBusHandlerResult request_navit_traffic_export_gpx(DBusConnection *connec
     struct attr attr;
     struct attr_iter * a_iter;
     struct traffic * traffic = NULL;
-    FILE *fp;
-    struct traffic_message ** messages;
-    struct traffic_message ** curr_msg;
-    char * wpt_types[] = {"from", "at", "via", "not_via", "to"};
-    struct traffic_point * wpts[5];
-    int i;
-    struct item ** items;
-    struct item ** curr_itm;
-    int dir, lastdir = 0;
-    struct coord c, c_last;
-    struct coord_geo g;
-
-    char *header = "<?xml version='1.0' encoding='UTF-8'?>\n"
-                   "<gpx version='1.1' creator='Navit http://navit.sourceforge.net'\n"
-                   "     xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'\n"
-                   "     xmlns:navit='http://www.navit-project.org/schema/navit'\n"
-                   "     xmlns='http://www.topografix.com/GPX/1/1'\n"
-                   "     xsi:schemaLocation='http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd'>\n";
-    char *trailer = "</gpx>\n";
 
     navit = object_get_from_message(message, "navit");
     if (! navit)
@@ -1252,87 +1232,10 @@ static DBusHandlerResult request_navit_traffic_export_gpx(DBusConnection *connec
     if (!traffic)
         return dbus_error_traffic_not_configured(connection, message);
 
-    dbg(lvl_debug,"Dumping traffic distortions from dbus to %s", filename);
-
-    fp = fopen(filename, "w");
-    if (!fp) {
-        return dbus_error(connection, message, DBUS_ERROR_FAILED,
-                          "could not open file for writing");
-    }
-
-    fprintf(fp, "%s", header);
-
-    messages = traffic_get_stored_messages(traffic);
-
-    for (curr_msg = messages; *curr_msg; curr_msg++) {
-        if (!(*curr_msg)->location)
-            continue;
-        wpts[0] = (*curr_msg)->location->from;
-        wpts[1] = (*curr_msg)->location->at;
-        wpts[2] = (*curr_msg)->location->via;
-        wpts[3] = (*curr_msg)->location->not_via;
-        wpts[4] = (*curr_msg)->location->to;
-        for (i = 0; i <= 4; i++) {
-            if (!wpts[i])
-                continue;
-            fprintf(fp, "<wpt lon='%4.16f' lat='%4.16f'><type>%s</type><name>%s</name></wpt>\n",
-                    wpts[i]->coord.lng, wpts[i]->coord.lat, wpt_types[i], (*curr_msg)->id);
-        }
-    }
-
-    for (curr_msg = messages; *curr_msg; curr_msg++) {
-        items = traffic_message_get_items(*curr_msg);
-        for (curr_itm = items; *curr_itm; curr_itm++) {
-            /*
-             * Don’t blindly copy this code unless you know what you are doing.
-             * It is based on various assumptions which hold true for traffic map items, but not necessarily for items
-             * obtained from other maps.
-             */
-            item_coord_rewind(*curr_itm);
-            item_coord_get(*curr_itm, &c, 1);
-            item_attr_rewind(*curr_itm);
-            if (item_attr_get(*curr_itm, attr_flags, &attr)) {
-                if (attr.u.num & AF_ONEWAY)
-                    dir = 1;
-                else if (attr.u.num & AF_ONEWAYREV)
-                    dir = -1;
-                else
-                    dir = 0;
-            } else
-                dir = 0;
-            if ((curr_itm == items) || (c.x != c_last.x) || (c.y != c_last.y) || lastdir != dir) {
-                /*
-                 * Start a new route for the first item, or if the last point of the previous item does not coincide
-                 * with the first point of the current one. This includes closing the previous route (if any) and
-                 * adding the first point.
-                 */
-                if (curr_itm != items)
-                    fprintf(fp, "</rte>\n");
-                fprintf(fp, "<rte><type>%s</type><name>%s</name>\n",
-                        dir ? (dir > 0 ? "forward" : "backward") : "bidirectional", (*curr_msg)->id);
-                transform_to_geo(projection_mg, &c, &g);
-                fprintf(fp,"<rtept lon='%4.16f' lat='%4.16f'></rtept>\n", g.lng, g.lat);
-            }
-            while (item_coord_get(*curr_itm, &c, 1)) {
-                transform_to_geo(projection_mg, &c, &g);
-                fprintf(fp,"<rtept lon='%4.16f' lat='%4.16f'></rtept>\n", g.lng, g.lat);
-            }
-            c_last.x = c.x;
-            c_last.y = c.y;
-            lastdir = dir;
-        }
-        if (curr_itm != items)
-            fprintf(fp, "</rte>\n");
-        g_free(items);
-    }
-
-    fprintf(fp,"%s",trailer);
-
-    fclose(fp);
-
-    g_free(messages);
-
-    return empty_reply(connection, message);
+    if (traffic_dump_segments_to_gpx(traffic, filename))
+        return empty_reply(connection, message);
+    else
+        return dbus_error(connection, message, DBUS_ERROR_FAILED, "export failed");
 }
 
 /**
