@@ -23,6 +23,7 @@
 #include <math.h>
 #include <ctype.h>
 #include <glib.h>
+#include "thread.h"
 #include "debug.h"
 #include "profile.h"
 #include "navigation.h"
@@ -189,6 +190,8 @@ struct navigation {
     struct callback *idle_cb;			/**< Idle callback to process the route map */
     struct event_idle *idle_ev;			/**< The pointer to the idle event */
     int nav_status;						/**< Status of the navigation engine */
+    thread_lock * rw_lock;              /**< Lock for adding, removing or iterating over items in `first`, `last`,
+                                         *   `cmd_first` or `cmd_last` */
 };
 
 /** @brief Set of simplified distance values that are easy to be pronounced.
@@ -786,6 +789,7 @@ navigation_new(struct attr *parent, struct attr **attrs) {
     ret->navit=parent->u.navit;
     ret->tell_street_name=1;
     ret->route_mr = NULL;
+    ret->rw_lock = thread_lock_new();
 
     for (j = 0 ; j <= route_item_last-route_item_first ; j++) {
         for (i = 0 ; i < 3 ; i++) {
@@ -3620,6 +3624,7 @@ static void navigation_update_done(struct navigation *this_, int cancel) {
         }
         navigation_set_attr(this_, &nav_status);
     }
+    thread_lock_release_write(this_->rw_lock);
     /*
      * In order to ensure that route_mr holds either NULL or a valid pointer at any given time,
      * always pass a copy of it to map_rect_destroy() and set route_mr to NULL prior to calling
@@ -3737,6 +3742,7 @@ static void navigation_update(struct navigation *this_, struct route *route, str
     }
     navigation_set_attr(this_, &nav_status);
 
+    thread_lock_acquire_write(this_->rw_lock);
     if (attr->u.num == route_status_no_destination || attr->u.num == route_status_not_found
             || attr->u.num == route_status_path_done_new)
         navigation_flush(this_);
@@ -3779,10 +3785,13 @@ static void navigation_flush(struct navigation *this_) {
 
 
 void navigation_destroy(struct navigation *this_) {
+    thread_lock_acquire_write(this_->rw_lock);
     navigation_flush(this_);
     item_hash_destroy(this_->hash);
+    thread_lock_release_write(this_->rw_lock);
     callback_list_destroy(this_->callback);
     callback_list_destroy(this_->callback_speech);
+    thread_lock_destroy(this_->rw_lock);
     g_free(this_);
 }
 
@@ -4144,6 +4153,7 @@ static void navigation_map_destroy(struct map_priv *priv) {
 }
 
 static void navigation_map_rect_init(struct map_rect_priv *priv) {
+    thread_lock_acquire_read(priv->nav->rw_lock);
     priv->cmd_next=priv->nav->cmd_first;
     priv->cmd_itm_next=priv->itm_next=priv->nav->first;
 }
@@ -4162,6 +4172,7 @@ static struct map_rect_priv *navigation_map_rect_new(struct map_priv *priv, stru
 }
 
 static void navigation_map_rect_destroy(struct map_rect_priv *priv) {
+    thread_lock_release_read(priv->nav->rw_lock);
     g_free(priv->str);
     g_free(priv);
 }
