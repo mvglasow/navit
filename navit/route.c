@@ -180,7 +180,9 @@ struct route_info {
  * destination) to the next destination.
  */
 struct route_path {
+    // FIXME make lock/unlock logic a better mirror of in_use
     int in_use;						/**< The path is in use and can not be updated */
+    // FIXME update_required never seems to get reset to 0 (false)
     int update_required;					/**< The path needs to be updated after it is no longer in use */
     int updated;						/**< The path has only been updated */
     int path_time;						/**< Time to pass the path */
