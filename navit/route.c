@@ -191,6 +191,8 @@ struct route_path {
     /* XXX: path_hash is not necessery now */
     struct item_hash *path_hash;				/**< A hashtable of all the items represented by this route's segements */
     struct route_path *next;				/**< Next route path in case of intermediate destinations */
+    thread_lock * rw_lock;                      /**< Lock for insertion, removal or iteration over items in the path.
+                                                 *   This lock is shared between all paths of the same route. */
 };
 
 /**
@@ -220,6 +222,7 @@ struct route {
     int link_path;			/**< Link paths over multiple waypoints together */
     struct pcoord pc;
     struct vehicle *v;
+    thread_lock * rm_rw_lock;   /**< Lock for the route map (path), shared with every path in `path2` */
 };
 
 #define HASHCOORD(c) ((((c)->x +(c)->y) * 2654435761UL) & (HASH_SIZE-1))
@@ -246,7 +249,7 @@ static struct route_info * route_find_nearest_street(struct vehicleprofile *vehi
         struct pcoord *c);
 static void route_graph_update(struct route *this, struct callback *cb, int async);
 static struct route_path *route_path_new(struct route_graph *this, struct route_path *oldpath, struct route_info *pos,
-        struct route_info *dst, struct vehicleprofile *profile);
+        struct route_info *dst, struct vehicleprofile *profile, thread_lock * rw_lock);
 static void route_graph_add_street(struct route_graph *this, struct item *item, struct vehicleprofile *profile);
 static void route_graph_destroy(struct route_graph *this);
 static void route_path_update(struct route *this, int cancel, int async);
@@ -382,6 +385,11 @@ void route_get_distances(struct route *this, struct coord *c, int count, int *di
 static void route_path_destroy(struct route_path *this, int recurse) {
     struct route_path_segment *c,*n;
     struct route_path *next;
+    thread_lock * rw_lock = NULL;
+    if (this) {
+        rw_lock = this->rw_lock;
+        thread_lock_acquire_write(rw_lock);
+    }
     while (this) {
         next=this->next;
         if (this->path_hash) {
@@ -401,6 +409,8 @@ static void route_path_destroy(struct route_path *this, int recurse) {
             break;
         this=next;
     }
+    if (rw_lock)
+        thread_lock_release_write(rw_lock);
 }
 
 /**
@@ -423,6 +433,7 @@ route_new(struct attr *parent, struct attr **attrs) {
         this->destination_distance = 50; // Default value
     }
     this->cbl2=callback_list_new();
+    this->rm_rw_lock = thread_lock_new();
 
     return this;
 }
@@ -712,17 +723,18 @@ static void route_path_update_done(struct route *this, int new_graph) {
         this->path2->update_required=1+new_graph;
         return;
     }
+    thread_lock_acquire_write(this->rm_rw_lock);
     route_status.u.num=route_status_building_path;
     route_set_attr(this, &route_status);
     prev_dst=route_previous_destination(this);
     if (this->link_path) {
-        this->path2=route_path_new(this->graph, NULL, prev_dst, this->current_dst, this->vehicleprofile);
+        this->path2=route_path_new(this->graph, NULL, prev_dst, this->current_dst, this->vehicleprofile, this->rm_rw_lock);
         if (this->path2)
             this->path2->next=oldpath;
         else
             route_path_destroy(oldpath,0);
     } else {
-        this->path2=route_path_new(this->graph, oldpath, prev_dst, this->current_dst, this->vehicleprofile);
+        this->path2=route_path_new(this->graph, oldpath, prev_dst, this->current_dst, this->vehicleprofile, this->rm_rw_lock);
         if (oldpath && this->path2) {
             this->path2->next=oldpath->next;
             route_path_destroy(oldpath,0);
@@ -759,6 +771,7 @@ static void route_path_update_done(struct route *this, int new_graph) {
         route_status.u.num=route_status_not_found;
     this->link_path=0;
     route_set_attr(this, &route_status);
+    thread_lock_release_write(this->rm_rw_lock);
 }
 
 /**
@@ -2805,11 +2818,11 @@ route_get_coord_dist(struct route *this_, int dist) {
  * @param pos The starting position of the route
  * @param dst The destination of the route
  * @param preferences The routing preferences
+ * @param rw_lock The read/write lock to shared between all route path instances
  * @return The new route path
  */
 static struct route_path *route_path_new(struct route_graph *this, struct route_path *oldpath, struct route_info *pos,
-        struct route_info *dst,
-        struct vehicleprofile *profile) {
+        struct route_info *dst, struct vehicleprofile *profile, thread_lock * rw_lock) {
     struct route_graph_segment *s=NULL,*s1=NULL,*s2=NULL; /* candidate segments for cheapest path */
     struct route_graph_point *start; /* point at which the next segment starts, i.e. up to which the path is complete */
     struct route_info *posinfo, *dstinfo; /* same as pos and dst, but NULL if not part of current segment */
@@ -2881,10 +2894,11 @@ static struct route_path *route_path_new(struct route_graph *this, struct route_
             this->avoid_seg=s;
             route_graph_set_traffic_distortion(this, profile, this->avoid_seg, profile->turn_around_penalty);
             route_graph_compute_shortest_path(this, profile, NULL);
-            return route_path_new(this, oldpath, pos, dst, profile);
+            return route_path_new(this, oldpath, pos, dst, profile, rw_lock);
         }
     }
     ret=g_new0(struct route_path, 1);
+    ret->rw_lock = rw_lock;
     ret->in_use=1;
     ret->updated=1;
     if (pos->lenextra)
@@ -3811,6 +3825,7 @@ static struct map_rect_priv *rm_rect_new(struct map_priv *priv, struct map_selec
         mr->path->in_use++;
     } else
         mr->seg_next=NULL;
+    thread_lock_acquire_read(priv->route->rm_rw_lock);
     return mr;
 }
 
@@ -3850,6 +3865,7 @@ static struct map_rect_priv *rp_rect_new(struct map_priv *priv, struct map_selec
 }
 
 static void rm_rect_destroy(struct map_rect_priv *mr) {
+    thread_lock_release_read(mr->mpriv->route->rm_rw_lock);
     if (mr->str)
         g_free(mr->str);
     if (mr->coord_sel) {
@@ -4363,11 +4379,14 @@ void route_init(void) {
 
 void route_destroy(struct route *this_) {
     this_->refcount++; /* avoid recursion */
+    thread_lock_acquire_write(this_->rm_rw_lock);
     route_path_destroy(this_->path2,1);
     route_graph_destroy(this_->graph);
     route_clear_destinations(this_);
     route_info_free(this_->pos);
     map_destroy(this_->map);
+    thread_lock_release_write(this_->rm_rw_lock);
+    thread_lock_destroy(this_->rm_rw_lock);
     map_destroy(this_->graph_map);
     g_free(this_);
 }
