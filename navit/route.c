@@ -1839,10 +1839,13 @@ void route_graph_free_segments(struct route_graph *this) {
  */
 static void route_graph_destroy(struct route_graph *this) {
     if (this) {
+        thread_lock_acquire_write(this->rw_lock);
         route_graph_build_done(this, 1);
         route_graph_free_points(this);
         route_graph_free_segments(this);
         fh_deleteheap(this->heap);
+        thread_lock_release_write(this->rw_lock);
+        thread_lock_destroy(this->rw_lock);
         g_free(this);
     }
 }
@@ -2103,13 +2106,13 @@ static int route_value_add(int val1, int val2) {
  *
  * This is part of a modified LPA* implementation.
  *
+ * @param this The route graph
  * @param profile The vehicle profile to use for routing. This determines which ways are passable and how their costs
  * are calculated.
  * @param p The point to evaluate
- * @param heap The heap
  */
-static void route_graph_point_update(struct vehicleprofile *profile, struct route_graph_point * p,
-                                     struct fibheap * heap) {
+static void route_graph_point_update(struct route_graph *this, struct vehicleprofile *profile,
+                                     struct route_graph_point * p) {
     struct route_graph_segment *s = NULL;
     int new, val;
 
@@ -2154,13 +2157,13 @@ static void route_graph_point_update(struct vehicleprofile *profile, struct rout
         /* Due to a limitation of the Fibonacci heap implementation, which causes fh_replacekey() to fail if the new
          * key is greater than the current one, we always remove the point from the heap (and, if locally inconsistent,
          * re-add it afterwards). */
-        fh_delete(heap, p->el);
+        fh_delete(this->heap, p->el);
         p->el = NULL;
     }
 
     if (p->rhs != p->value)
         /* The point is locally inconsistent, add (or re-add) it to the heap */
-        p->el = fh_insertkey(heap, MIN(p->rhs, p->value), p);
+        p->el = fh_insertkey(this->heap, MIN(p->rhs, p->value), p);
 }
 
 /**
@@ -2189,7 +2192,7 @@ static void route_graph_compute_shortest_path(struct route_graph * graph, struct
         else {
             /* cost has increased, re-evaluate */
             p_min->value = INT_MAX;
-            route_graph_point_update(profile, p_min, graph->heap);
+            route_graph_point_update(graph, profile, p_min);
         }
 
         /* in any case, update rhs of predecessors (nodes from which we can reach p_min via a single segment) */
@@ -2197,12 +2200,12 @@ static void route_graph_compute_shortest_path(struct route_graph * graph, struct
             if ((s->start == s->end) || (s->data.item.type < route_item_first) || (s->data.item.type > route_item_last))
                 continue;
             else if (route_value_seg(profile, NULL, s, -2) != INT_MAX)
-                route_graph_point_update(profile, s->end, graph->heap);
+                route_graph_point_update(graph, profile, s->end);
         for (s = p_min->end; s; s = s->end_next)
             if ((s->start == s->end) || (s->data.item.type < route_item_first) || (s->data.item.type > route_item_last))
                 continue;
             else if (route_value_seg(profile, NULL, s, 2) != INT_MAX)
-                route_graph_point_update(profile, s->start, graph->heap);
+                route_graph_point_update(graph, profile, s->start);
     }
     if (cb)
         callback_call_0(cb);
@@ -2256,9 +2259,9 @@ static void route_graph_set_traffic_distortion(struct route_graph *this, struct 
                     s->data.item.type = type_none;
                 }
                 if (!(seg->data.flags & AF_ONEWAYREV))
-                    route_graph_point_update(profile, s->start, this->heap);
+                    route_graph_point_update(this, profile, s->start);
                 if (!(seg->data.flags & AF_ONEWAY))
-                    route_graph_point_update(profile, s->end, this->heap);
+                    route_graph_point_update(this, profile, s->end);
             }
             s=s->start_next;
         }
@@ -2309,9 +2312,9 @@ static void route_graph_add_traffic_distortion(struct route_graph *this, struct 
         route_graph_add_segment(this, s_pnt, e_pnt, &data);
         if (update) {
             if (!(data.flags & AF_ONEWAYREV))
-                route_graph_point_update(profile, s_pnt, this->heap);
+                route_graph_point_update(this, profile, s_pnt);
             if (!(data.flags & AF_ONEWAY))
-                route_graph_point_update(profile, e_pnt, this->heap);
+                route_graph_point_update(this, profile, e_pnt);
         }
     }
 }
@@ -2417,8 +2420,8 @@ static void route_graph_remove_traffic_distortion(struct route_graph *this, stru
 #endif
 
         /* TODO figure out if we need to update both points */
-        route_graph_point_update(profile, s_pnt, this->heap);
-        route_graph_point_update(profile, e_pnt, this->heap);
+        route_graph_point_update(this, profile, s_pnt);
+        route_graph_point_update(this, profile, e_pnt);
     }
 }
 
@@ -3116,6 +3119,7 @@ void route_graph_build_done(struct route_graph *rg, int cancel) {
             callback_call_0(rg->done_cb);
     }
     rg->busy=0;
+    thread_lock_release_write(rg->rw_lock);
 }
 
 static void route_graph_build_idle(struct route_graph *rg, struct vehicleprofile *profile) {
@@ -3170,6 +3174,8 @@ static struct route_graph *route_graph_build(struct mapset *ms, struct coord *c,
     ret->sel=route_calc_selection(c, count, profile);
     ret->h=mapset_open(ms);
     ret->done_cb=done_cb;
+    ret->rw_lock = thread_lock_new();
+    thread_lock_acquire_write(ret->rw_lock);
     ret->busy=1;
     ret->heap = fh_makekeyheap();
     if (route_graph_build_next_map(ret)) {
@@ -3183,6 +3189,15 @@ static struct route_graph *route_graph_build(struct mapset *ms, struct coord *c,
     return ret;
 }
 
+/**
+ * @brief Callback function called when the route graph is completely built.
+ *
+ * This is called after building the route graph has completed. It identifies and initializes potential destination
+ * nodes, then starts computing the shortest path.
+ *
+ * @param this The route
+ * @param cb The callback function to call when route calculation is complete.
+ */
 static void route_graph_update_done(struct route *this, struct callback *cb) {
     route_graph_init(this->graph, this->current_dst, this->vehicleprofile);
     route_graph_compute_shortest_path(this->graph, this->vehicleprofile, cb);
@@ -3830,10 +3845,31 @@ static struct map_rect_priv *rp_rect_new(struct map_priv *priv, struct map_selec
             *(mr->coord_sel) = sel->u.c_rect.lu;
         }
     }
+    thread_lock_acquire_read(priv->route->graph->rw_lock);
     return mr;
 }
 
 static void rm_rect_destroy(struct map_rect_priv *mr) {
+    if (mr->str)
+        g_free(mr->str);
+    if (mr->coord_sel) {
+        g_free(mr->coord_sel);
+    }
+    if (mr->path) {
+        mr->path->in_use--;
+        if (mr->path->update_required && (mr->path->in_use==1)
+                && (mr->mpriv->route->route_status & ~route_status_destination_set))
+            route_path_update_done(mr->mpriv->route, mr->path->update_required-1);
+        else if (!mr->path->in_use)
+            g_free(mr->path);
+    }
+
+    g_free(mr);
+}
+
+static void rp_rect_destroy(struct map_rect_priv *mr) {
+    if (mr->mpriv->route->graph)
+        thread_lock_release_read(mr->mpriv->route->graph->rw_lock);
     if (mr->str)
         g_free(mr->str);
     if (mr->coord_sel) {
@@ -3899,9 +3935,9 @@ static struct item *rp_get_item(struct map_rect_priv *mr) {
         }
         seg = rp_iterator_next(&(mr->it));
     } else {
-        if (!seg)
+        if (!seg) {
             seg=r->graph->route_segments;
-        else
+        } else
             seg=seg->next;
     }
 
@@ -4017,7 +4053,7 @@ static struct map_methods route_graph_meth = {
     "utf-8",
     rp_destroy,
     rp_rect_new,
-    rm_rect_destroy,
+    rp_rect_destroy,
     rp_get_item,
     rp_get_item_byid,
     NULL,

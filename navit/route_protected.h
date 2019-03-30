@@ -30,6 +30,8 @@
 #ifndef NAVIT_ROUTE_PROTECTED_H
 #define NAVIT_ROUTE_PROTECTED_H
 
+#include "thread.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -154,6 +156,8 @@ struct route_graph {
 	struct fibheap *heap;                       /**< Priority queue for points to be expanded */
 #define HASH_SIZE 8192
 	struct route_graph_point *hash[HASH_SIZE];  /**< A hashtable containing all route_graph_points in this graph */
+	thread_lock * rw_lock;                      /**< Lock for insertion, removal or iteration over points and segments
+	                                             *   in the graph */
 };
 
 
