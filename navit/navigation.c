@@ -3638,6 +3638,53 @@ static void navigation_update_done(struct navigation *this_, int cancel) {
 }
 
 /**
+ * @brief Retrieves an item from the route map and generating a navigation item, if needed.
+ *
+ * This corresponds to a single pass of building the navigation map and called by `navigation_update_idle()` in a loop.
+ *
+ * @return True if processing is complete with this pass, false if not
+ */
+static int navigation_update_pass(struct navigation *this_) {
+    struct item *ritem;         /* Holds an item from the route map */
+    struct item *sitem;         /* Holds the item from the actual map which corresponds to ritem */
+    struct attr street_item, street_direction;
+    struct navigation_itm *itm;
+
+    if (!(ritem = map_rect_get_item(this_->route_mr))) {
+        this_->status_int &= ~(status_has_ritem);
+        return 1;
+    }
+    this_->status_int |= status_has_ritem;
+    if ((ritem)->type == type_route_start && this_->turn_around > -this_->turn_around_limit+1)
+        this_->turn_around--;
+    if ((ritem)->type == type_route_start_reverse && this_->turn_around < this_->turn_around_limit)
+        this_->turn_around++;
+    if ((ritem)->type != type_street_route)
+        return 0;
+    if ((!(this_->status_int & status_has_sitem)) && item_attr_get(ritem, attr_street_item, &street_item)) {
+        this_->status_int |= status_has_sitem;
+        if (!item_attr_get(ritem, attr_direction, &street_direction))
+            street_direction.u.num = 0;
+        sitem = street_item.u.item;
+        dbg(lvl_debug,"sitem=%p", sitem);
+        itm = item_hash_lookup(this_->hash, sitem);
+        dbg(lvl_info,"itm for item with id (0x%x,0x%x) is %p", sitem->id_hi, sitem->id_lo, itm);
+        if (itm && itm->way.dir != street_direction.u.num) {
+            dbg(lvl_info,"wrong direction");
+            itm = NULL;
+        }
+        navigation_destroy_itms_cmds(this_, itm);
+        if (itm) {
+            navigation_itm_update(itm, ritem);
+            return 1;
+        }
+        dbg(lvl_debug,"not on track");
+    }
+    navigation_itm_new(this_, ritem);
+    return 0;
+}
+
+/**
  * @brief Idle callback function to retrieve items from the route map.
  *
  * @param this_ Points to the navigation object. The caller is responsible for initializing its
@@ -3648,10 +3695,7 @@ static void navigation_update_idle(struct navigation *this_) {
     int count = 100;            /* Maximum number of items retrieved in one run of this function.
 	                             * This should be set low enough for each pass to complete in less
 	                             * than a second even on low-performance devices. */
-    struct item *ritem;			/* Holds an item from the route map */
-    struct item *sitem;			/* Holds the item from the actual map which corresponds to ritem */
-    struct attr street_item, street_direction;
-    struct navigation_itm *itm;
+    int done = 0;
 
     /* Do not use the route_path_flag_cancel flag here because it is also used whenever
      * destinations or waypoints change, not just when the user stops navigation altogether
@@ -3661,45 +3705,12 @@ static void navigation_update_idle(struct navigation *this_) {
         return;
     }
 
-    while (count > 0) {
-        if (!(ritem = map_rect_get_item(this_->route_mr))) {
-            this_->status_int &= ~(status_has_ritem);
-            break;
-        }
-        this_->status_int |= status_has_ritem;
-        if ((ritem)->type == type_route_start && this_->turn_around > -this_->turn_around_limit+1)
-            this_->turn_around--;
-        if ((ritem)->type == type_route_start_reverse && this_->turn_around < this_->turn_around_limit)
-            this_->turn_around++;
-        if ((ritem)->type != type_street_route)
-            continue;
-        if ((!(this_->status_int & status_has_sitem)) && item_attr_get(ritem, attr_street_item, &street_item)) {
-            this_->status_int |= status_has_sitem;
-            if (!item_attr_get(ritem, attr_direction, &street_direction))
-                street_direction.u.num = 0;
-            sitem = street_item.u.item;
-            dbg(lvl_debug,"sitem=%p", sitem);
-            itm = item_hash_lookup(this_->hash, sitem);
-            dbg(lvl_info,"itm for item with id (0x%x,0x%x) is %p", sitem->id_hi, sitem->id_lo, itm);
-            if (itm && itm->way.dir != street_direction.u.num) {
-                dbg(lvl_info,"wrong direction");
-                itm = NULL;
-            }
-            navigation_destroy_itms_cmds(this_, itm);
-            if (itm) {
-                navigation_itm_update(itm, ritem);
-                break;
-            }
-            dbg(lvl_debug,"not on track");
-        }
-        navigation_itm_new(this_, ritem);
+    while (!done && (count > 0)) {
+        done = navigation_update_pass(this_);
         count--;
     }
-    if (count > 0) {
-        /* if count > 0, one of the break conditions in the loop was true and we're done */
+    if (done)
         navigation_update_done(this_, 0);
-        return;
-    }
 }
 
 /**
