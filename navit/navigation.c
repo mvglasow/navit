@@ -3760,18 +3760,25 @@ static void navigation_update(struct navigation *this_, struct route *route, str
     if (attr->u.num != route_status_path_done_new && attr->u.num != route_status_path_done_incremental) {
         if (this_->status_int & status_busy) {
             navigation_update_done(this_, 1);
-        }
+        } else
+            thread_lock_release_write(this_->rw_lock);
         return;
     }
 
-    if (! this_->route)
+    if (!this_->route) {
+        thread_lock_release_write(this_->rw_lock);
         return;
+    }
     map=route_get_map(this_->route);
-    if (! map)
+    if (!map) {
+        thread_lock_release_write(this_->rw_lock);
         return;
+    }
     this_->route_mr = map_rect_new(map, NULL);
-    if (! this_->route_mr)
+    if (!this_->route_mr) {
+        thread_lock_release_write(this_->rw_lock);
         return;
+    }
     if (route_get_attr(route, attr_vehicleprofile, &vehicleprofile, NULL))
         this_->vehicleprofile=vehicleprofile.u.vehicleprofile;
     else
