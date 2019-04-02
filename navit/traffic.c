@@ -981,6 +981,10 @@ static struct item * tm_get_item(struct map_rect_priv *mr) {
 /**
  * @brief Returns the next item with the supplied ID from the traffic map
  *
+ * Unlike other map implementations, this does not call through to `tm_get_item()` as this would lock every item as we
+ * iterate over it, thus preventing concurrent iterations from “overtaking” each other. The only limitation here is
+ * that no two iterations can have the same item as the current one—the second iteration to try so will block.
+ *
  * @param mr The map rect to search for items
  * @param id_hi The high-order portion of the ID
  * @param id_lo The low-order portion of the ID
@@ -990,10 +994,32 @@ static struct item * tm_get_item(struct map_rect_priv *mr) {
  */
 static struct item * tm_get_item_byid(struct map_rect_priv *mr, int id_hi, int id_lo) {
     struct item *ret = NULL;
+    GList * next_item;
+    struct item_priv * ip;
+
     thread_lock_acquire_read(mr->mpriv->rw_lock);
+    if (mr->item) {
+        ip = (struct item_priv *) mr->item->priv_data;
+        thread_lock_release_write(ip->rw_lock);
+        ip->mr = NULL;
+    }
+    next_item = mr->next_item;
     do {
-        ret = tm_get_item(mr);
+        if (next_item)
+            ret = (struct item *) next_item->data;
+        else
+            ret = NULL;
+        next_item = g_list_next(next_item);
     } while (ret && (ret->id_lo != id_lo || ret->id_hi != id_hi));
+    if (ret) {
+        ip = (struct item_priv *) ret->priv_data;
+        thread_lock_acquire_write(ip->rw_lock);
+        ip->mr = mr;
+        tm_attr_rewind(ret->priv_data);
+        tm_coord_rewind(ret->priv_data);
+        mr->item = ret;
+        mr->next_item = next_item;
+    }
     thread_lock_release_read(mr->mpriv->rw_lock);
     return ret;
 }
