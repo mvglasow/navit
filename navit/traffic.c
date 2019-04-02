@@ -87,6 +87,9 @@
 /** The buffer zone around the enclosing rectangle used in route calculations, relative to rect size */
 #define ROUTE_RECT_DIST_REL 0
 
+/** Read/write lock for a traffic map item */
+#define RWLOCK(x) ((struct item_priv *)((x)->priv_data))->rw_lock
+
 /** Time slice for idle loops, in milliseconds */
 #define TIME_SLICE 40
 
@@ -177,6 +180,16 @@ struct item_msg_priv {
 
 /**
  * @brief Implementation-specific item data for traffic map items
+ *
+ * `rw_lock` must be acquired for any read or write operations of item data exposed via the map interface or accessed
+ * by map methods. This includes all members of `struct item` as well as `mr`, `attrs`, `coords`, `coord_count`,
+ * `next_attr` and `next_coord`.
+ *
+ * Note that a write lock is required to return the item from a map rectangle (as doing so changes `mr`) or to retrieve
+ * attributes or coordinates (as these operations change `next_attr` or `next_coord` respectively). The map rectangle
+ * methods will ensure that every item is locked before it is returned from a map rectangle, and unlocked when moving
+ * on to the next item or when the map rectangle is closed. However, when calling item methods on a map item which has
+ * been retrieved from a private data structure, the caller must take care of locking and unlocking the item.
  */
 struct item_priv {
     struct map_rect_priv * mr;  /**< The private data for the map rect from which the item was obtained */
@@ -189,6 +202,7 @@ struct item_priv {
     unsigned int
     next_coord;    /**< The index of the next coordinate of `item` to be returned by the `item_coord_get` method */
     struct route *rt;           /**< The route to which the item has been added */
+    thread_lock * rw_lock;      /**< Lock for any read or write operation to item data */
 };
 
 /**
@@ -279,12 +293,12 @@ static void tm_attr_rewind(void *priv_data);
 static int tm_attr_get(void *priv_data, enum attr_type attr_type, struct attr *attr);
 static int tm_type_set(void *priv_data, enum item_type type);
 static struct route_graph * traffic_location_get_route_graph(struct traffic_location * this_,
-        struct mapset * ms);
+        struct mapset * ms, struct map *map);
 static int traffic_location_match_attributes(struct traffic_location * this_, struct item *item);
 static int traffic_message_add_segments(struct traffic_message * this_, struct mapset * ms, struct seg_data * data,
                                         struct map *map, struct route * route);
 static void traffic_location_populate_route_graph(struct traffic_location * this_, struct route_graph * rg,
-        struct mapset * ms);
+        struct mapset * ms, struct map *map);
 static void traffic_dump_messages_to_xml(struct traffic * this_);
 static void traffic_loop(struct traffic * this_);
 static struct traffic * traffic_new(struct attr *parent, struct attr **attrs);
@@ -473,6 +487,7 @@ static void tm_item_destroy(struct item * item) {
     GList * msglist;
     struct item_msg_priv * msgdata;
 
+    thread_lock_acquire_write(priv_data->rw_lock);
     attr_list_free(priv_data->attrs);
     g_free(priv_data->coords);
 
@@ -483,6 +498,8 @@ static void tm_item_destroy(struct item * item) {
         g_free(msgdata);
     }
 
+    thread_lock_release_write(priv_data->rw_lock);
+    thread_lock_destroy(priv_data->rw_lock);
     g_free(item->priv_data);
     g_free(item);
 }
@@ -549,9 +566,16 @@ static struct item * tm_item_unref(struct item * item) {
     priv_data = (struct item_priv *) item->priv_data;
     priv_data->refcount--;
     if (priv_data->refcount <= 0) {
+        thread_lock_acquire_write(priv_data->rw_lock);
         if (priv_data->rt)
             route_remove_traffic_distortion(priv_data->rt, item);
         mr = map_rect_new(item->map, NULL);
+        /*
+         * Release the lock so we don’t deadlock as we iterate over map items.
+         * Yes, this is a race condition. At the worst, someone else may still see a traffic distortion which no longer
+         * has an influence on routing.
+         */
+        thread_lock_release_write(priv_data->rw_lock);
         do {
             mapitem = map_rect_get_item(mr);
         } while (mapitem && (mapitem != item));
@@ -680,6 +704,9 @@ static void tm_item_update_attrs(struct item * item, struct route * route) {
  * delay wins)
  * \li If multiple reports exist and access flags differ, one item is created for each set of flags;
  * items are deduplicated in `route_get_traffic_distortion()`
+ *
+ * The item returned will be locked for writing by the calling thread. The caller is responsible for releasing the lock
+ * when it is no longer needed.
  *
  * @param mr A map rectangle in the traffic map
  * @param type Type of the item
@@ -814,6 +841,9 @@ static void tm_dump_to_textfile(struct map * map) {
  * All data passed to this method is safe to free after the method returns, and doing so is the
  * responsibility of the caller.
  *
+ * The item returned will be locked for writing by the calling thread. The caller is responsible for releasing the lock
+ * when it is no longer needed.
+ *
  * @param map The traffic map
  * @param type Type of the item
  * @param id_hi First part of the ID of the item (item IDs have two parts)
@@ -852,11 +882,18 @@ static struct item * tm_add_item(struct map *map, enum item_type type, int id_hi
         priv_data->coord_count = count;
         priv_data->next_attr = int_attrs;
         priv_data->next_coord = 0;
+        priv_data->rw_lock = thread_lock_new();
     } else if (int_attrs) {
         /* free up our copy of the attribute list if we’re not attaching it to a new item */
         attr_list_free(int_attrs);
     }
     map_rect_destroy(mr);
+    /*
+     * Since destroying the map rect releases the write lock on the item obtained from it, we have to reacquire it.
+     * This theoretically creates a race condition, but the other threads will at most mess with mr, next_attr or
+     * next_coord. This is uncritical as long as we do not rely on these values after we acquire the lock.
+     */
+    thread_lock_acquire_write(RWLOCK(ret));
     //tm_dump_item(ret);
     return ret;
 }
@@ -896,6 +933,15 @@ static struct map_rect_priv * tm_rect_new(struct map_priv *priv, struct map_sele
  * @brief Destroys a map rectangle on the traffic map.
  */
 static void tm_rect_destroy(struct map_rect_priv *mr) {
+    struct item_priv * ip;
+
+    if (mr->item) {
+        ip = (struct item_priv *) mr->item->priv_data;
+        if (ip->mr == mr) {
+            ip->mr = NULL;
+        }
+        thread_lock_release_read(ip->rw_lock);
+    }
     /* just free the map_rect_priv, all its members are pointers to data "owned" by others */
     g_free(mr);
 }
@@ -913,12 +959,14 @@ static struct item * tm_get_item(struct map_rect_priv *mr) {
 
     if (mr->item) {
         ip = (struct item_priv *) mr->item->priv_data;
+        thread_lock_release_write(ip->rw_lock);
         ip->mr = NULL;
     }
     thread_lock_acquire_read(mr->mpriv->rw_lock);
     if (mr->next_item) {
         ret = (struct item *) mr->next_item->data;
         ip = (struct item_priv *) ret->priv_data;
+        thread_lock_acquire_write(ip->rw_lock);
         ip->mr = mr;
         tm_attr_rewind(ret->priv_data);
         tm_coord_rewind(ret->priv_data);
@@ -1077,6 +1125,7 @@ static int tm_type_set(void *priv_data, enum item_type type) {
         /* remove the item from the map and set last retrieved item to NULL */
         ip->mr->mpriv->items = g_list_remove_all(ip->mr->mpriv->items, ip->mr->item);
         ip->mr->item = NULL;
+        thread_lock_release_write(ip->rw_lock);
         thread_lock_release_write(ip->mr->mpriv->rw_lock);
     } else {
         ip->mr->item->type = type;
@@ -1766,10 +1815,11 @@ static struct map_rect * traffic_location_open_map_rect(struct traffic_location 
  *
  * @param rg The route graph
  * @param ms The mapset to read the ramps from
+ * @param map The traffic map
  */
 // (location is still thread-private at this time, so is the route graph)
 static void traffic_location_populate_route_graph(struct traffic_location * this_, struct route_graph * rg,
-        struct mapset * ms) {
+        struct mapset * ms, struct map *map) {
     /* The item being processed */
     struct item *item;
 
@@ -1806,6 +1856,9 @@ static void traffic_location_populate_route_graph(struct traffic_location * this
     rg->h = mapset_open(ms);
 
     while ((rg->m = mapset_next(rg->h, 2))) {
+        /* prevent reading from the traffic map */
+        if (rg->m == map)
+            continue;
         if (!traffic_location_open_map_rect(this_, rg))
             continue;
         // FIXME check thread safety from here onwards
@@ -1898,12 +1951,13 @@ static void traffic_location_populate_route_graph(struct traffic_location * this
  *
  * @param this_ The location to match to the map
  * @param ms The mapset to use for the route graph
+ * @param map The traffic map
  *
  * @return A route graph. The caller is responsible for destroying the route graph and all related data
  * when it is no longer needed.
  */
 static struct route_graph * traffic_location_get_route_graph(struct traffic_location * this_,
-        struct mapset * ms) {
+        struct mapset * ms, struct map *map) {
     struct route_graph *rg;
 
     traffic_location_set_enclosing_rect(this_, NULL);
@@ -1914,7 +1968,7 @@ static struct route_graph * traffic_location_get_route_graph(struct traffic_loca
     rg->busy = 1;
 
     /* build the route graph */
-    traffic_location_populate_route_graph(this_, rg, ms);
+    traffic_location_populate_route_graph(this_, rg, ms, map);
 
     return rg;
 }
@@ -2459,12 +2513,14 @@ static int traffic_location_get_point_match(struct traffic_location * this_, str
  * @param start The first point of the path
  * @param match_start True to evaluate for the start point of a route, false for the end point
  * @param ms The mapset to read the items from
+ * @param map The traffic map
  *
  * @return The matched points as a `GList`. The `data` member of each item points to a `struct point_data` for the point.
  */
 // (everything except mapset is still thread-private at this time)
 static GList * traffic_location_get_matching_points(struct traffic_location * this_, int point,
-        struct route_graph * rg, struct route_graph_point * start, int match_start, struct mapset * ms) {
+        struct route_graph * rg, struct route_graph_point * start, int match_start, struct mapset * ms,
+        struct map *map) {
     GList * ret = NULL;
 
     /* The point from the location to match */
@@ -2495,6 +2551,9 @@ static GList * traffic_location_get_matching_points(struct traffic_location * th
     rg->h = mapset_open(ms);
 
     while ((rg->m = mapset_next(rg->h, 2))) {
+        /* prevent reading from the traffic map */
+        if (rg->m == map)
+            continue;
         if (!traffic_location_open_map_rect(this_, rg))
             continue;
         // FIXME check thread safety from here onwards
@@ -2735,7 +2794,7 @@ static int traffic_message_add_segments(struct traffic_message * this_, struct m
         return 0;
 
     dbg(lvl_debug, "*****checkpoint ADD-3");
-    rg = traffic_location_get_route_graph(this_->location, ms);
+    rg = traffic_location_get_route_graph(this_->location, ms, map);
 
     /* transform coordinates */
     c_from = (endpoints & 4) ? pcoords[0] : pcoords[1];
@@ -2805,11 +2864,11 @@ static int traffic_message_add_segments(struct traffic_message * this_, struct m
             dbg(lvl_debug, "*****checkpoint ADD-4.2.1");
             /* tweak end point */
             if (this_->location->at)
-                points = traffic_location_get_matching_points(this_->location, 1, rg, p_start, 0, ms);
+                points = traffic_location_get_matching_points(this_->location, 1, rg, p_start, 0, ms, map);
             else if (dir > 0)
-                points = traffic_location_get_matching_points(this_->location, 2, rg, p_start, 0, ms);
+                points = traffic_location_get_matching_points(this_->location, 2, rg, p_start, 0, ms, map);
             else
-                points = traffic_location_get_matching_points(this_->location, 0, rg, p_start, 0, ms);
+                points = traffic_location_get_matching_points(this_->location, 0, rg, p_start, 0, ms, map);
             if (!p_start) {
                 dbg(lvl_error, "end point not found on map");
                 for (points_iter = points; points_iter; points_iter = g_list_next(points_iter))
@@ -2886,11 +2945,11 @@ static int traffic_message_add_segments(struct traffic_message * this_, struct m
             dbg(lvl_debug, "*****checkpoint ADD-4.2.5");
             /* tweak start point */
             if (this_->location->at)
-                points = traffic_location_get_matching_points(this_->location, 1, rg, p_start, 1, ms);
+                points = traffic_location_get_matching_points(this_->location, 1, rg, p_start, 1, ms, map);
             else if (dir > 0)
-                points = traffic_location_get_matching_points(this_->location, 0, rg, p_start, 1, ms);
+                points = traffic_location_get_matching_points(this_->location, 0, rg, p_start, 1, ms, map);
             else
-                points = traffic_location_get_matching_points(this_->location, 2, rg, p_start, 1, ms);
+                points = traffic_location_get_matching_points(this_->location, 2, rg, p_start, 1, ms, map);
             s_prev = NULL;
             minval = INT_MAX;
             p_from = NULL;
@@ -3150,12 +3209,13 @@ static int traffic_message_add_segments(struct traffic_message * this_, struct m
             }
 
 
-            // FIXME check thread safety from here onwards
             item = tm_add_item(map, type_traffic_distortion, s->data.item.id_hi, s->data.item.id_lo, flags, data->attrs, cs, ccnt,
                                this_->id);
 
             tm_item_add_message_data(item, this_->id, speed, delay, data->attrs, route);
+            thread_lock_release_write(RWLOCK(item));
 
+            // FIXME check thread safety from here onwards
             g_free(cs);
 
             *next_item = tm_item_ref(item);
@@ -3594,7 +3654,9 @@ static void traffic_message_remove_item_data(struct traffic_message * old, struc
                     g_free(msgdata);
                 }
             }
+            thread_lock_acquire_write(RWLOCK(old->priv->items[i]));
             tm_item_update_attrs(old->priv->items[i], route);
+            thread_lock_release_write(RWLOCK(old->priv->items[i]));
         }
     }
 }
@@ -3863,6 +3925,7 @@ int traffic_dump_segments_to_gpx(struct traffic * this_, char * filename) {
              * It is based on various assumptions which hold true for traffic map items, but not necessarily for items
              * obtained from other maps.
              */
+            thread_lock_acquire_write(RWLOCK(*curr_itm));
             item_coord_rewind(*curr_itm);
             item_coord_get(*curr_itm, &c, 1);
             item_attr_rewind(*curr_itm);
@@ -3895,6 +3958,7 @@ int traffic_dump_segments_to_gpx(struct traffic * this_, char * filename) {
             c_last.x = c.x;
             c_last.y = c.y;
             lastdir = dir;
+            thread_lock_release_write(RWLOCK(*curr_itm));
         }
         if (curr_itm != items)
             fprintf(fp, "</rte>\n");
