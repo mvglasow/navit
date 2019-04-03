@@ -1843,9 +1843,10 @@ static struct map_rect * traffic_location_open_map_rect(struct traffic_location 
  * @param ms The mapset to read the ramps from
  * @param map The traffic map
  */
-// (location is still thread-private at this time, so is the route graph)
 static void traffic_location_populate_route_graph(struct traffic_location * this_, struct route_graph * rg,
         struct mapset * ms, struct map *map) {
+    /* this_ and rg are still thread-private at this point, no need to lock them */
+
     /* The item being processed */
     struct item *item;
 
@@ -1887,7 +1888,6 @@ static void traffic_location_populate_route_graph(struct traffic_location * this
             continue;
         if (!traffic_location_open_map_rect(this_, rg))
             continue;
-        // FIXME check thread safety from here onwards
         while ((item = map_rect_get_item(rg->mr))) {
             if (item->type == type_street_turn_restriction_no || item->type == type_street_turn_restriction_only)
                 route_graph_add_turn_restriction(rg, item);
@@ -2543,10 +2543,11 @@ static int traffic_location_get_point_match(struct traffic_location * this_, str
  *
  * @return The matched points as a `GList`. The `data` member of each item points to a `struct point_data` for the point.
  */
-// (everything except mapset is still thread-private at this time)
 static GList * traffic_location_get_matching_points(struct traffic_location * this_, int point,
         struct route_graph * rg, struct route_graph_point * start, int match_start, struct mapset * ms,
         struct map *map) {
+    /* everything except ms is still thread-private at this time */
+
     GList * ret = NULL;
 
     /* The point from the location to match */
@@ -2582,7 +2583,6 @@ static GList * traffic_location_get_matching_points(struct traffic_location * th
             continue;
         if (!traffic_location_open_map_rect(this_, rg))
             continue;
-        // FIXME check thread safety from here onwards
         while ((item = map_rect_get_item(rg->mr))) {
             /* exclude non-point items */
             if ((item->type < type_town_label) || (item->type >= type_line))
@@ -2698,9 +2698,10 @@ static int route_graph_point_is_endpoint_candidate(struct route_graph_point *thi
  *
  * @return `true` if the locations were matched successfully, `false` if there was a failure.
  */
-// (message is still thread-private at this time)
 static int traffic_message_add_segments(struct traffic_message * this_, struct mapset * ms, struct seg_data * data,
                                         struct map *map, struct route * route) {
+    /* message is still thread-private at this time */
+
     int i;
 
     struct coord_geo * coords[] = {NULL, NULL, NULL};
@@ -3135,7 +3136,7 @@ static int traffic_message_add_segments(struct traffic_message * this_, struct m
 
         dbg(lvl_debug, "*****checkpoint ADD-4.6 (loop start)");
         while (s) {
-            // FIXME check thread safety for item_coord_get_within_range()
+            // FIXME check thread safety for access to &s->data.item, especially item_coord_get_within_range()
             ccnt = item_coord_get_within_range(&s->data.item, ca, 2047, &s->start->c, &s->end->c);
             c = ca;
             cs = g_new0(struct coord, ccnt);
@@ -3241,7 +3242,6 @@ static int traffic_message_add_segments(struct traffic_message * this_, struct m
             tm_item_add_message_data(item, this_->id, speed, delay, data->attrs, route);
             thread_lock_release_write(RWLOCK(item));
 
-            // FIXME check thread safety from here onwards
             g_free(cs);
 
             *next_item = tm_item_ref(item);
