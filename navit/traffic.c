@@ -3652,9 +3652,10 @@ static struct seg_data * traffic_message_parse_events(struct traffic_message * t
  * @param new If non-NULL, items referenced by this message will be skipped, see description
  * @param route The route affected by the changes
  */
-// FIXME check thread safety for this method (access to old needs to be synchronized, new is still thread-private)
 static void traffic_message_remove_item_data(struct traffic_message * old, struct traffic_message * new,
         struct route * route) {
+    /* new is still thread-private, caller holds messages_rw_lock */
+
     int i, j;
     int skip;
     struct item_priv * ip;
