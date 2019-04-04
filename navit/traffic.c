@@ -73,10 +73,10 @@
 #define PENALTY_POINT_MATCH 24
 
 /** Flag to indicate expired messages should be purged */
-#define PROCESS_MESSAGES_PURGE_EXPIRED 1 << 0
+#define PROCESS_MESSAGES_PURGE_EXPIRED (1 << 0)
 
 /** Flag to indicate the message store should not be exported */
-#define PROCESS_MESSAGES_NO_DUMP_STORE 1 << 1
+#define PROCESS_MESSAGES_NO_DUMP_STORE (1 << 1)
 
 /** The lowest order of items to consider */
 #define ROUTE_ORDER 18
