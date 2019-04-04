@@ -309,6 +309,11 @@ static struct seg_data * traffic_message_parse_events(struct traffic_message * t
 static struct route_graph_point * traffic_route_flood_graph(struct route_graph * rg, struct seg_data * data,
         struct coord * c_start, struct coord * c_dst, struct route_graph_point * start_existing);
 
+/**
+ * @brief Marks the end of messages restored from the cache.
+ */
+struct traffic_message message_cache_end;
+
 static struct item_methods methods_traffic_item = {
     tm_coord_rewind,
     tm_coord_get,
@@ -3714,10 +3719,7 @@ static int traffic_worker_thread_main(void * data) {
          * for long periods of time.
          */
         if (run) {
-            // TODO sort out flags for traffic_process_messages_int:
-            // PROCESS_MESSAGES_NO_DUMP_STORE for the initial cache read
-            // PROCESS_MESSAGES_PURGE_EXPIRED once every second
-            traffic_process_messages_int(this_, PROCESS_MESSAGES_PURGE_EXPIRED);
+            traffic_process_messages_int(this_, PROCESS_MESSAGES_PURGE_EXPIRED | PROCESS_MESSAGES_NO_DUMP_STORE);
         } else {
             thread_sleep(1000);
         }
@@ -4088,6 +4090,11 @@ static int traffic_process_messages_int(struct traffic * this_, int flags) {
         message = (struct traffic_message *) this_->shared->message_queue->data;
         this_->shared->message_queue = g_list_remove(this_->shared->message_queue, message);
         thread_lock_release_write(this_->shared->message_queue_rw_lock);
+        if (message == &message_cache_end) {
+            dbg(lvl_debug, "message cache restore complete");
+            flags &= ~PROCESS_MESSAGES_NO_DUMP_STORE;
+            continue;
+        }
         i++;
         if (message->expiration_time < time(NULL)) {
             dbg(lvl_debug, "message is no longer valid, ignoring");
@@ -5550,8 +5557,8 @@ struct map * traffic_get_map(struct traffic *this_) {
         messages = traffic_get_messages_from_xml_file(this_, filename);
         g_free(filename);
 
+        thread_lock_acquire_write(this_->shared->message_queue_rw_lock);
         if (messages) {
-            thread_lock_acquire_write(this_->shared->message_queue_rw_lock);
             for (cur_msg = messages; *cur_msg; cur_msg++)
                 this_->shared->message_queue = g_list_append(this_->shared->message_queue, *cur_msg);
             /*
@@ -5559,7 +5566,6 @@ struct map * traffic_get_map(struct traffic *this_) {
              * entire update process. This should not hurt, as the operation is a rather quick one, but will prevent
              * the traffic worker thread from locking up the UI as it processes the messages.
              */
-            thread_lock_release_write(this_->shared->message_queue_rw_lock);
             g_free(messages);
 #if !HAVE_NAVIT_THREADS
             if (this_->shared->message_queue) {
@@ -5571,6 +5577,10 @@ struct map * traffic_get_map(struct traffic *this_) {
             }
 #endif
         }
+#if HAVE_NAVIT_THREADS
+        this_->shared->message_queue = g_list_append(this_->shared->message_queue, &message_cache_end);
+#endif
+        thread_lock_release_write(this_->shared->message_queue_rw_lock);
     }
 
     return this_->map;
