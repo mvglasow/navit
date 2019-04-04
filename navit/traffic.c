@@ -4030,8 +4030,10 @@ int traffic_dump_segments_to_gpx(struct traffic * this_, char * filename) {
  */
 /* TODO what if the update for a still-valid message expires in the past? */
 static int traffic_process_messages_int(struct traffic * this_, int flags) {
+#if !HAVE_NAVIT_THREADS
     /* Start and current time */
     struct timeval start, now;
+#endif
 
     /* Current message */
     struct traffic_message * message;
@@ -4069,10 +4071,10 @@ static int traffic_process_messages_int(struct traffic * this_, int flags) {
     double msec = 0;
 
     gettimeofday(&start, NULL);
-#endif
 
     if (this_->shared->message_queue)
         dbg(lvl_debug, "*****enter, %d messages in queue", g_list_length(this_->shared->message_queue));
+#endif
 
     while (1) {
 #if HAVE_NAVIT_THREADS
