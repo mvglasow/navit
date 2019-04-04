@@ -58,10 +58,10 @@
 #undef TRAFFIC_DEBUG
 
 /** Flag to indicate new messages have been received */
-#define MESSAGE_UPDATE_MESSAGES 1 << 0
+#define MESSAGE_UPDATE_MESSAGES (1 << 0)
 
 /** Flag to indicate segments have changed */
-#define MESSAGE_UPDATE_SEGMENTS 1 << 1
+#define MESSAGE_UPDATE_SEGMENTS (1 << 1)
 
 /** The penalty applied to an off-road link */
 #define PENALTY_OFFROAD 8
