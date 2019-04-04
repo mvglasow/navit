@@ -4096,7 +4096,7 @@ static int traffic_process_messages_int(struct traffic * this_, int flags) {
             dbg(lvl_debug, "*****checkpoint PROCESS-1, id='%s'", message->id);
             ret |= MESSAGE_UPDATE_MESSAGES;
 
-            thread_lock_acquire_read(this_->shared->messages_rw_lock);
+            thread_lock_acquire_write(this_->shared->messages_rw_lock);
             for (msg_iter = this_->shared->messages; msg_iter; msg_iter = g_list_next(msg_iter)) {
                 stored_msg = (struct traffic_message *) msg_iter->data;
                 if (!strcmp(stored_msg->id, message->id))
@@ -4107,7 +4107,6 @@ static int traffic_process_messages_int(struct traffic * this_, int flags) {
                             msgs_to_remove = g_list_append(msgs_to_remove, stored_msg);
                 }
             }
-            thread_lock_release_read(this_->shared->messages_rw_lock);
 
             if (!message->is_cancellation) {
                 dbg(lvl_debug, "*****checkpoint PROCESS-2");
@@ -4124,7 +4123,6 @@ static int traffic_process_messages_int(struct traffic * this_, int flags) {
                         swap_candidate = stored_msg;
                 }
 
-                // FIXME swap_candidate is an active message, get a write lock before we mess with it (message_rw_lock?)
                 if (swap_candidate) {
                     dbg(lvl_debug, "*****checkpoint PROCESS-4, swap candidate found");
                     /* reuse location and segments if we are replacing a matching message */
@@ -4144,11 +4142,8 @@ static int traffic_process_messages_int(struct traffic * this_, int flags) {
                 g_free(data);
 
                 /* store message */
-                thread_lock_acquire_write(this_->shared->messages_rw_lock);
                 this_->shared->messages = g_list_append(this_->shared->messages, message);
                 /* keep the lock if we have messages to remove */
-                if (!msgs_to_remove)
-                    thread_lock_release_write(this_->shared->messages_rw_lock);
                 dbg(lvl_debug, "*****checkpoint PROCESS-5");
             }
 
@@ -4156,8 +4151,6 @@ static int traffic_process_messages_int(struct traffic * this_, int flags) {
             if (msgs_to_remove) {
                 dbg(lvl_debug, "*****checkpoint PROCESS (messages to remove, start)");
                 /* if the message is not a cancellation, we are already holding the lock */
-                if (message->is_cancellation)
-                    thread_lock_acquire_write(this_->shared->messages_rw_lock);
                 for (msg_iter = msgs_to_remove; msg_iter; msg_iter = g_list_next(msg_iter)) {
                     stored_msg = (struct traffic_message *) msg_iter->data;
                     if (stored_msg->priv->items)
@@ -4166,12 +4159,12 @@ static int traffic_process_messages_int(struct traffic * this_, int flags) {
                     traffic_message_remove_item_data(stored_msg, message, this_->rt);
                     traffic_message_destroy(stored_msg);
                 }
-                thread_lock_release_write(this_->shared->messages_rw_lock);
 
                 g_list_free(msgs_to_remove);
                 msgs_to_remove = NULL;
                 dbg(lvl_debug, "*****checkpoint PROCESS (messages to remove, end)");
             }
+            thread_lock_release_write(this_->shared->messages_rw_lock);
 
             traffic_message_dump_to_stderr(message);
 
