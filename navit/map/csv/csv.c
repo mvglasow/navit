@@ -507,6 +507,8 @@ static struct map_rect_priv *map_rect_new_csv(struct map_priv *map, struct map_s
      * - That means no two map rects of the same CSV map can be open at the same time (an attempt to open a second map
      *   rectangle will block until the first one is destroyed).
      * Need to figure out if this creates a real issue here. If so, we need to revisit this.
+     * Items may then need their own locks (as long as concurrent map rect access is not possible, concurrent item
+     * access is not an issue).
      */
     if(debug_level_get("map_csv")>2) {
         map_csv_debug_dump(map);
