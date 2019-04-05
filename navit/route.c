@@ -2221,6 +2221,10 @@ static void route_graph_compute_shortest_path(struct route_graph * graph, struct
                 continue;
             else if (route_value_seg(profile, NULL, s, 2) != INT_MAX)
                 route_graph_point_update(graph, profile, s->start);
+        /* briefly release lock to allow the traffic thread to add traffic distortions */
+        thread_lock_release_write(graph->rw_lock);
+        /* TODO do we need to yield or otherwise relinquish the CPU so the other thread gets a real chance to run? */
+        thread_lock_acquire_write(graph->rw_lock);
     }
     if (cb)
         callback_call_0(cb);
