@@ -4137,8 +4137,11 @@ static struct map *route_get_map_helper(struct route *this_, struct map **map, c
  * @param item The item to add, must be of {@code type_traffic_distortion}
  */
 void route_add_traffic_distortion(struct route *this_, struct item *item) {
-    if (route_has_graph(this_))
+    if (route_has_graph(this_)) {
+        thread_lock_acquire_write(this_->graph->rw_lock);
         route_graph_add_traffic_distortion(this_->graph, this_->vehicleprofile, item, 1);
+        thread_lock_release_write(this_->graph->rw_lock);
+    }
 }
 
 /**
@@ -4150,8 +4153,11 @@ void route_add_traffic_distortion(struct route *this_, struct item *item) {
  * @param item The item to change, must be of {@code type_traffic_distortion}
  */
 void route_change_traffic_distortion(struct route *this_, struct item *item) {
-    if (route_has_graph(this_))
+    if (route_has_graph(this_)) {
+        thread_lock_acquire_write(this_->graph->rw_lock);
         route_graph_change_traffic_distortion(this_->graph, this_->vehicleprofile, item);
+        thread_lock_release_write(this_->graph->rw_lock);
+    }
 }
 
 /**
@@ -4220,8 +4226,11 @@ int route_has_graph(struct route *this_) {
  * @param item The item to remove, must be of {@code type_traffic_distortion}
  */
 void route_remove_traffic_distortion(struct route *this_, struct item *item) {
-    if (route_has_graph(this_))
+    if (route_has_graph(this_)) {
+        thread_lock_acquire_write(this_->graph->rw_lock);
         route_graph_remove_traffic_distortion(this_->graph, this_->vehicleprofile, item);
+        thread_lock_release_write(this_->graph->rw_lock);
+    }
 }
 
 void route_set_projection(struct route *this_, enum projection pro) {
