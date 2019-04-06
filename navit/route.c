@@ -725,9 +725,9 @@ static void route_path_update_done(struct route *this, int new_graph) {
         this->path2->update_required=1+new_graph;
         return;
     }
-    thread_lock_acquire_write(this->rm_rw_lock);
     route_status.u.num=route_status_building_path;
     route_set_attr(this, &route_status);
+    thread_lock_acquire_write(this->rm_rw_lock);
     prev_dst=route_previous_destination(this);
     if (this->link_path) {
         this->path2=route_path_new(this->graph, NULL, prev_dst, this->current_dst, this->vehicleprofile, this->rm_rw_lock);
@@ -772,8 +772,8 @@ static void route_path_update_done(struct route *this, int new_graph) {
     } else
         route_status.u.num=route_status_not_found;
     this->link_path=0;
-    route_set_attr(this, &route_status);
     thread_lock_release_write(this->rm_rw_lock);
+    route_set_attr(this, &route_status);
 }
 
 /**
