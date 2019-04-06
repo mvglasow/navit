@@ -236,8 +236,10 @@ int item_coord_get_within_selection(struct item *it, struct coord *c, int count,
  * `start` are retrieved, ending with the last coordinate of `i` or after `max` coordinates have been
  * retrieved, whichever occurs first.
  *
- * This function is not safe to call after destroying the item's map rect, and doing so may cause errors
- * with some map implementations.
+ * This function internally opens a new map rectangle on `i->map` and closes it when it is done. This makes it safe to
+ * call even after closing the map rectangle from which `i` was originally obtained. It is also thread-safe with
+ * respect to map and item access. However, calling it from a thread that still has a map rectangle on `i->map` open
+ * may deadlock if `i->map` does not support concurrent map rectangles.
  *
  * @important Make sure that `c` points to a buffer large enough to hold `max` coordinates!
  *
