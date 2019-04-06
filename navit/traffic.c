@@ -4212,6 +4212,7 @@ static int traffic_process_messages_int(struct traffic * this_, int flags) {
     }
 #endif
 
+    // TODO make sure this runs periodically even if the queue is never empty
     if (flags & PROCESS_MESSAGES_PURGE_EXPIRED) {
         /* find and remove expired messages */
         thread_lock_acquire_write(this_->shared->messages_rw_lock);
