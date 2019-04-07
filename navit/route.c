@@ -2675,6 +2675,92 @@ static int route_graph_is_path_computed(struct route_graph *this_) {
         return 0;
 }
 
+#if HAVE_NAVIT_THREADS
+/**
+ * @brief Handles changes which may require the route to be recalculated.
+ * Triggers partial recalculation of the route, based on the existing route graph.
+ *
+ * This is currently used when traffic distortions have been added, changed or removed. Future versions may also use
+ * it if the current position has changed to a portion of the route graph which has not been flooded (which is
+ * currently not necessary because the route graph is always flooded completely). It determines if the route needs to
+ * be recalculated, and triggers it if necessary. After recalculation, the route path is updated.
+ *
+ * Recalculation is partial, i.e. it examines only those parts which are affected by changes. This tends to be faster
+ * than full recalculation, as only a subset of all points in the graph needs to be evaluated. The route graph will be
+ * evaluated as it is at the time the function is called, hence all modifications must have been made beforehand.
+ *
+ * This function is thread-safe.
+ *
+ * The function uses a modified LPA* algorithm for recalculations. Most modifications were made for compatibility with
+ * the old routing algorithm:
+ * \li The heuristic is always assumed to be zero (which would turn A* into Dijkstra, formerly the basis of the routing
+ * algorithm, and makes our keys one-dimensional)
+ * \li Currently, each pass evaluates all locally inconsistent points, leaving an empty heap at the end (though this
+ * may change in the future).
+ *
+ * @param this_ The route
+ */
+/* TODO rewrite this function so it can also be used instead of route_recalculate_partial() in single-threaded builds,
+ * then enable it on all builds and get rid of route_recalculate_partial(). */
+void route_on_change(struct route *this_) {
+    struct attr route_status;
+
+    /* do nothing if we don’t have a route graph */
+    if (!route_has_graph(this_))
+        return;
+
+    thread_lock_acquire_write(this_->graph->rw_lock);
+    switch (this_->route_status) {
+    case route_status_building_path:
+        /*
+         * TODO
+         * Cancel path building and trigger recalculation.
+         * At the moment this is unreachable code, as the lock held and never released while the route path is being
+         * built. We would be blocked until routing is complete, and by then one of the conditions below would hold.
+         * We might want to allow the traffic thread to cancel path calculation, but only if the route graph has
+         * actually changed (this could be tested with route_graph_is_computed(), but it would require us to hold at
+         * least a read lock).
+         */
+        thread_lock_release_write(this_->graph->rw_lock);
+        break;
+    case route_status_not_found:
+    case route_status_path_done_new:
+    case route_status_path_done_incremental:
+        /*
+         * We either have a fully calculated route, or the destination was previously found unreachable (which may have
+         * been due to closures which may just have been lifted). Trigger recalculation.
+         */
+        if (route_graph_is_path_computed(this_->graph)) {
+            /* exit if there is no need to recalculate */
+            thread_lock_release_write(this_->graph->rw_lock);
+            return;
+        }
+        route_status.type = attr_route_status;
+        route_status.u.num = route_status_building_graph;
+        route_set_attr(this_, &route_status);
+        route_graph_compute_shortest_path(this_->graph, this_->vehicleprofile, NULL);
+        route_path_update_done(this_, 0);
+        /* this also releases the lock */
+        break;
+    case route_status_no_destination:
+    case route_status_destination_set:
+    case route_status_building_graph:
+    default:
+        /*
+         * One of the following:
+         * - No destination, no route to recalculate.
+         * - The route graph has not been built yet. Once this happens, distortions will be taken into account
+         *   automatically.
+         * - The route graph is still being built or flooded, distortions will be taken into account automatically.
+         * - Invalid or unknown route status (should never happen, unless some logic has changed since this code was
+         *   written and the changes have not been reflected here).
+         * Either way, nothing to do here.
+         */
+        thread_lock_release_write(this_->graph->rw_lock);
+        break;
+    }
+}
+#else
 /**
  * @brief Triggers partial recalculation of the route, based on the existing route graph.
  *
@@ -2698,9 +2784,10 @@ static int route_graph_is_path_computed(struct route_graph *this_) {
  *
  * @param this_ The route
  */
-/* TODO This is absolutely not thread-safe and will wreak havoc if run concurrently with route_graph_flood(). This is
- * not an issue as long as the two never overlap: Currently both this function and route_graph_flood() run without
- * interruption until they finish, and are both on the main thread. If that changes, we need to revisit this. */
+/* TODO This is disabled in multithreaded builds, as it is absolutely not thread-safe. It is safe to use in
+ * single-threaded builds, as both this function and route_graph_flood() run without interruption until finished, and
+ * both are on the main thread. Multithreaded builds use route_on_change() instead. Ideally, these two functions should
+ * be merged into one, which covers both use cases. */
 void route_recalculate_partial(struct route *this_) {
     struct attr route_status;
 
@@ -2729,6 +2816,8 @@ void route_recalculate_partial(struct route *this_) {
 
     route_path_update_done(this_, 0);
 }
+#endif
+
 
 /**
  * @brief Starts an "offroad" path

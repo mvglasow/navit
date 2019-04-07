@@ -4183,7 +4183,8 @@ static int traffic_process_messages_int(struct traffic * this_, int flags) {
         }
 #if HAVE_NAVIT_THREADS
         if (ret & MESSAGE_UPDATE_SEGMENTS) {
-            // TODO trigger redraw and route recalculation
+            // TODO trigger redraw
+            route_on_change(this_->rt);
             ret &= ~MESSAGE_UPDATE_SEGMENTS;
         }
 #else
@@ -4239,7 +4240,8 @@ static int traffic_process_messages_int(struct traffic * this_, int flags) {
         thread_lock_release_write(this_->shared->messages_rw_lock);
 #if HAVE_NAVIT_THREADS
         if (ret & MESSAGE_UPDATE_SEGMENTS) {
-            // TODO trigger redraw and route recalculation
+            // TODO trigger redraw
+            route_on_change(this_->rt);
             ret &= ~MESSAGE_UPDATE_SEGMENTS;
         }
 #endif
