@@ -387,11 +387,6 @@ void route_get_distances(struct route *this, struct coord *c, int count, int *di
 static void route_path_destroy(struct route_path *this, int recurse) {
     struct route_path_segment *c,*n;
     struct route_path *next;
-    thread_lock * rw_lock = NULL;
-    if (this) {
-        rw_lock = this->rw_lock;
-        thread_lock_acquire_write(rw_lock);
-    }
     while (this) {
         next=this->next;
         if (this->path_hash) {
@@ -411,8 +406,6 @@ static void route_path_destroy(struct route_path *this, int recurse) {
             break;
         this=next;
     }
-    if (rw_lock)
-        thread_lock_release_write(rw_lock);
 }
 
 /**
@@ -802,8 +795,10 @@ static void route_path_update_flags(struct route *this, enum route_path_flags fl
     this->flags = flags;
     if (! this->pos || ! this->destinations) {
         dbg(lvl_debug,"destroy");
+        thread_lock_acquire_write(this->rm_rw_lock);
         route_path_destroy(this->path2,1);
         this->path2 = NULL;
+        thread_lock_release_write(this->rm_rw_lock);
         return;
     }
     if (flags & route_path_flag_cancel) {
@@ -1266,8 +1261,10 @@ void route_remove_waypoint(struct route *this) {
         struct route_info *ri = this->destinations->data;
         this->destinations = g_list_remove(this->destinations, ri);
         route_info_free(ri);
+        thread_lock_acquire_write(this->rm_rw_lock);
         this->path2 = this->path2->next;
         route_path_destroy(path, 0);
+        thread_lock_release_write(this->rm_rw_lock);
         if (!this->destinations) {
             this->route_status=route_status_no_destination;
             this->reached_destinations_count=0;
