@@ -1998,6 +1998,9 @@ static struct route_graph * traffic_location_get_route_graph(struct traffic_loca
     rg->done_cb = NULL;
     rg->busy = 1;
 
+    rg->rw_lock = thread_lock_new();
+    thread_lock_acquire_write(rg->rw_lock);
+
     /* build the route graph */
     traffic_location_populate_route_graph(this_, rg, ms, map);
 
