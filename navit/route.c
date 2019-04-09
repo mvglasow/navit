@@ -3196,12 +3196,18 @@ static void route_graph_process_restrictions(struct route_graph *this) {
 /**
  * @brief Releases all resources needed to build the route graph.
  *
- * If `cancel` is false, this function will start processing restrictions and ultimately call the route
- * graph's `done_cb` callback.
+ * If `cancel` is false, this function will start processing restrictions and ultimately call the route graph's
+ * `done_cb` callback if it is non-NULL. After that, it will release the write lock on the graph. This means the
+ * calling thread needs to hold `rg->rw_lock` for writing upon entering this function.
  *
- * The traffic module will always call this method with `cancel` set to true, as it does not process
- * restrictions and has no callback. Inside the routing module, `cancel` will be true if, and only if,
- * navigation has been aborted.
+ * If `cancel` is true, no restrictions are processed, no callback is called and the lock is not touched. The caller is
+ * responsible for obtaining and releasing the lock as necessary (this can be omitted if the route graph is
+ * thread-private, as is the case for internal route graphs used by the traffic module).
+ *
+ * The routing module will call this function with `cancel` set to true if, and only if, navigation has been aborted.
+ *
+ * The traffic module will call this method with `cancel` to indicate no restrictions should be processed (it sets no
+ * callback and does not require locking, as the route graph is thread-private).
  *
  * @param rg Points to the route graph
  * @param cancel True if the process was aborted before completing, false if it completed normally
@@ -3226,7 +3232,9 @@ void route_graph_build_done(struct route_graph *rg, int cancel) {
             callback_call_0(rg->done_cb);
     }
     rg->busy=0;
-    thread_lock_release_write(rg->rw_lock);
+    if (!cancel) {
+        thread_lock_release_write(rg->rw_lock);
+    }
 }
 
 static void route_graph_build_idle(struct route_graph *rg, struct vehicleprofile *profile) {
