@@ -1851,7 +1851,15 @@ void route_graph_free_segments(struct route_graph *this) {
  */
 static void route_graph_destroy(struct route_graph *this) {
     if (this) {
-        thread_lock_acquire_write(this->rw_lock);
+        if (!this->busy) {
+            /*
+             * As long as routing runs on the main thread (the only exception being rerouting on the traffic thread):
+             * If the route graph is busy, we are still holding a lock on it (we periodically release it, but this is
+             * OK to do on the main thread). Rerouting (which happens on the traffic thread) does not mark the graph as
+             * busy, so we will correctly wait for the lock.
+             */
+            thread_lock_acquire_write(this->rw_lock);
+        }
         route_graph_build_done(this, 1);
         route_graph_free_points(this);
         route_graph_free_segments(this);
@@ -2221,6 +2229,7 @@ static void route_graph_compute_shortest_path(struct route_graph * graph, struct
         /* briefly release lock to allow the traffic thread to add traffic distortions */
         thread_lock_release_write(graph->rw_lock);
         /* TODO do we need to yield or otherwise relinquish the CPU so the other thread gets a real chance to run? */
+        /* TODO the graph might have been destroyed by the time we get here */
         thread_lock_acquire_write(graph->rw_lock);
     }
     if (cb)
