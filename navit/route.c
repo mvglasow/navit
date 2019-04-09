@@ -2229,7 +2229,7 @@ static void route_graph_compute_shortest_path(struct route_graph * graph, struct
         /* briefly release lock to allow the traffic thread to add traffic distortions */
         thread_lock_release_write(graph->rw_lock);
         /* TODO do we need to yield or otherwise relinquish the CPU so the other thread gets a real chance to run? */
-        /* TODO the graph might have been destroyed by the time we get here */
+        /* FIXME the graph might have been destroyed by the time we get here */
         thread_lock_acquire_write(graph->rw_lock);
     }
     if (cb)
@@ -2730,7 +2730,6 @@ void route_on_change(struct route *this_) {
          * actually changed (this could be tested with route_graph_is_computed(), but it would require us to hold at
          * least a read lock).
          */
-        thread_lock_release_write(this_->graph->rw_lock);
         break;
     case route_status_not_found:
     case route_status_path_done_new:
@@ -2749,7 +2748,6 @@ void route_on_change(struct route *this_) {
         route_set_attr(this_, &route_status);
         route_graph_compute_shortest_path(this_->graph, this_->vehicleprofile, NULL);
         route_path_update_done(this_, 0);
-        /* this also releases the lock */
         break;
     case route_status_no_destination:
     case route_status_destination_set:
@@ -2765,9 +2763,9 @@ void route_on_change(struct route *this_) {
          *   written and the changes have not been reflected here).
          * Either way, nothing to do here.
          */
-        thread_lock_release_write(this_->graph->rw_lock);
         break;
     }
+    thread_lock_release_write(this_->graph->rw_lock);
 }
 #else
 /**
