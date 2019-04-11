@@ -2747,6 +2747,7 @@ void route_on_change(struct route *this_) {
         route_status.u.num = route_status_building_graph;
         route_set_attr(this_, &route_status);
         route_graph_compute_shortest_path(this_->graph, this_->vehicleprofile, NULL);
+        this_->flags &= ~route_path_flag_async;
         route_path_update_done(this_, 0);
         break;
     case route_status_no_destination:
