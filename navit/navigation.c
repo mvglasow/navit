@@ -3591,6 +3591,8 @@ static void navigation_call_callbacks(struct navigation *this_, int force_speech
  * reset the {@code busy} flag. Arguments correspond to those of
  * {@link navigation_update_idle(struct navigation *)}.
  *
+ * The caller must hold `this_->rw_lock` for writing, which will be released by this function.
+ *
  * @param this_ Points to the navigation object. After the function returns, its {@code map_rect}
  * member will no longer be valid.
  * @param cancel If true, only cleanup (deallocation of objects) will be done and no maneuvers will be generated.
@@ -3640,7 +3642,9 @@ static void navigation_update_done(struct navigation *this_, int cancel) {
 /**
  * @brief Retrieves an item from the route map and generating a navigation item, if needed.
  *
- * This corresponds to a single pass of building the navigation map and called by `navigation_update_idle()` in a loop.
+ * This corresponds to a single pass of building the navigation map and is called by `navigation_update_idle()` in a loop.
+ *
+ * The caller must hold `this_->rw:lock` for writing.
  *
  * @return True if processing is complete with this pass, false if not
  */
@@ -3705,12 +3709,16 @@ static void navigation_update_idle(struct navigation *this_) {
         return;
     }
 
+    thread_lock_acquire_write(this_->rw_lock);
     while (!done && (count > 0)) {
         done = navigation_update_pass(this_);
         count--;
     }
     if (done)
         navigation_update_done(this_, 0);
+    else {
+        thread_lock_release_write(this_->rw_lock);
+    }
 }
 
 /**
@@ -3789,11 +3797,17 @@ static void navigation_update(struct navigation *this_, struct route *route, str
     if (route_get_flags(this_->route) & route_path_flag_async) {
         this_->idle_cb = callback_new_1(callback_cast(navigation_update_idle), this_);
         this_->idle_ev = event_add_idle(50, this_->idle_cb);
+        thread_lock_release_write(this_->rw_lock);
     } else {
         this_->idle_ev = NULL;
         this_->idle_cb = NULL;
-        while (this_->status_int & status_busy)
-            navigation_update_idle(this_);
+        if (route_has_graph(this_->route)) {
+            while (this_->status_int & status_busy)
+                if (navigation_update_pass(this_))
+                    break;
+            navigation_update_done(this_, 0);
+        } else
+            navigation_update_done(this_, 1);
     }
 }
 
