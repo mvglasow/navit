@@ -791,6 +791,7 @@ static void route_path_update_done(struct route *this, int new_graph) {
  * @param flags Flags to control the behavior of this function, see description
  */
 static void route_path_update_flags(struct route *this, enum route_path_flags flags) {
+    struct route_graph * graph;
     dbg(lvl_debug,"enter %d", flags);
     this->flags = flags;
     if (! this->pos || ! this->destinations) {
@@ -802,8 +803,9 @@ static void route_path_update_flags(struct route *this, enum route_path_flags fl
         return;
     }
     if (flags & route_path_flag_cancel) {
-        route_graph_destroy(this->graph);
+        graph = this->graph;
         this->graph=NULL;
+        route_graph_destroy(graph);
     }
     /* the graph is destroyed when setting the destination */
     if (this->graph) {
@@ -1087,6 +1089,7 @@ void route_set_destinations(struct route *this, struct pcoord *dst, int count, i
     struct attr route_status;
     struct route_info *dsti;
     int i;
+    struct route_graph * graph;
     route_status.type=attr_route_status;
 
     profile(0,NULL);
@@ -1109,8 +1112,9 @@ void route_set_destinations(struct route *this, struct pcoord *dst, int count, i
     profile(1,"find_nearest_street");
 
     /* The graph has to be destroyed and set to NULL, otherwise route_path_update() doesn't work */
-    route_graph_destroy(this->graph);
+    graph = this->graph;
     this->graph=NULL;
+    route_graph_destroy(graph);
     this->current_dst=route_get_dst(this);
     route_path_update(this, 1, async);
     profile(0,"end");
@@ -1220,6 +1224,7 @@ void route_set_destination(struct route *this, struct pcoord *dst, int async) {
  * @param async: If set, do routing asynchronously
  */
 void route_append_destination(struct route *this, struct pcoord *dst, int async) {
+    struct route_graph * graph;
     if (dst) {
         struct route_info *dsti;
         dsti=route_find_nearest_street(this->vehicleprofile, this->ms, &dst[0]);
@@ -1228,8 +1233,9 @@ void route_append_destination(struct route *this, struct pcoord *dst, int async)
             this->destinations=g_list_append(this->destinations, dsti);
         }
         /* The graph has to be destroyed and set to NULL, otherwise route_path_update() doesn't work */
-        route_graph_destroy(this->graph);
+        graph = this->graph;
         this->graph=NULL;
+        route_graph_destroy(graph);
         this->current_dst=route_get_dst(this);
         route_path_update(this, 1, async);
     } else {
@@ -1246,11 +1252,13 @@ void route_append_destination(struct route *this, struct pcoord *dst, int async)
  */
 void route_remove_nth_waypoint(struct route *this, int n) {
     struct route_info *ri=g_list_nth_data(this->destinations, n);
+    struct route_graph * graph;
     this->destinations=g_list_remove(this->destinations,ri);
     route_info_free(ri);
     /* The graph has to be destroyed and set to NULL, otherwise route_path_update() doesn't work */
-    route_graph_destroy(this->graph);
+    graph = this->graph;
     this->graph=NULL;
+    route_graph_destroy(graph);
     this->current_dst=route_get_dst(this);
     route_path_update(this, 1, 1);
 }
@@ -3340,13 +3348,15 @@ static void route_graph_update_done(struct route *this, struct callback *cb) {
  */
 static void route_graph_update(struct route *this, struct callback *cb, int async) {
     struct attr route_status;
+    struct route_graph * graph;
     struct coord *c=g_alloca(sizeof(struct coord)*(1+g_list_length(this->destinations)));
     int i=0;
     GList *tmp;
 
     route_status.type=attr_route_status;
-    route_graph_destroy(this->graph);
+    graph = this->graph;
     this->graph=NULL;
+    route_graph_destroy(graph);
     callback_destroy(this->route_graph_done_cb);
     this->route_graph_done_cb=callback_new_2(callback_cast(route_graph_update_done), this, cb);
     route_status.u.num=route_status_building_graph;
@@ -4498,10 +4508,13 @@ void route_init(void) {
 }
 
 void route_destroy(struct route *this_) {
+    struct route_graph * graph;
     this_->refcount++; /* avoid recursion */
     thread_lock_acquire_write(this_->rm_rw_lock);
     route_path_destroy(this_->path2,1);
-    route_graph_destroy(this_->graph);
+    graph = this_->graph;
+    this_->graph=NULL;
+    route_graph_destroy(graph);
     route_clear_destinations(this_);
     route_info_free(this_->pos);
     map_destroy(this_->map);
