@@ -3144,7 +3144,9 @@ static int traffic_message_add_segments(struct traffic_message * this_, struct m
 
         dbg(lvl_debug, "*****checkpoint ADD-4.6 (loop start)");
         while (s) {
+            dbg(lvl_debug, "*****checkpoint ADD-4.6.1, s=%p", s);
             ccnt = item_coord_get_within_range(&s->data.item, ca, 2047, &s->start->c, &s->end->c);
+            dbg(lvl_debug, "*****checkpoint ADD-4.6.2, ccnt=%d", ccnt);
             c = ca;
             cs = g_new0(struct coord, ccnt);
             cd = cs;

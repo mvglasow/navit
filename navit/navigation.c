@@ -790,6 +790,7 @@ navigation_new(struct attr *parent, struct attr **attrs) {
     ret->tell_street_name=1;
     ret->route_mr = NULL;
     ret->rw_lock = thread_lock_new();
+    dbg(lvl_error, "#%lx:NEW lock %p", thread_get_id(), ret->rw_lock);
 
     for (j = 0 ; j <= route_item_last-route_item_first ; j++) {
         for (i = 0 ; i < 3 ; i++) {
@@ -3626,6 +3627,7 @@ static void navigation_update_done(struct navigation *this_, int cancel) {
         }
         navigation_set_attr(this_, &nav_status);
     }
+    dbg(lvl_error, "#%lx:RELEASE WRITE lock %p", thread_get_id(), this_->rw_lock);
     thread_lock_release_write(this_->rw_lock);
     /*
      * In order to ensure that route_mr holds either NULL or a valid pointer at any given time,
@@ -3709,6 +3711,7 @@ static void navigation_update_idle(struct navigation *this_) {
         return;
     }
 
+    dbg(lvl_error, "#%lx:ACQUIRE WRITE lock %p", thread_get_id(), this_->rw_lock);
     thread_lock_acquire_write(this_->rw_lock);
     while (!done && (count > 0)) {
         done = navigation_update_pass(this_);
@@ -3717,6 +3720,7 @@ static void navigation_update_idle(struct navigation *this_) {
     if (done)
         navigation_update_done(this_, 0);
     else {
+        dbg(lvl_error, "#%lx:RELEASE WRITE lock %p", thread_get_id(), this_->rw_lock);
         thread_lock_release_write(this_->rw_lock);
     }
 }
@@ -3761,6 +3765,7 @@ static void navigation_update(struct navigation *this_, struct route *route, str
     }
     navigation_set_attr(this_, &nav_status);
 
+    dbg(lvl_error, "#%lx:ACQUIRE WRITE lock %p", thread_get_id(), this_->rw_lock);
     thread_lock_acquire_write(this_->rw_lock);
     if (attr->u.num == route_status_no_destination || attr->u.num == route_status_not_found
             || attr->u.num == route_status_path_done_new)
@@ -3768,22 +3773,27 @@ static void navigation_update(struct navigation *this_, struct route *route, str
     if (attr->u.num != route_status_path_done_new && attr->u.num != route_status_path_done_incremental) {
         if (this_->status_int & status_busy) {
             navigation_update_done(this_, 1);
-        } else
+        } else {
+            dbg(lvl_error, "#%lx:RELEASE WRITE lock %p", thread_get_id(), this_->rw_lock);
             thread_lock_release_write(this_->rw_lock);
+        }
         return;
     }
 
     if (!this_->route) {
+        dbg(lvl_error, "#%lx:RELEASE WRITE lock %p", thread_get_id(), this_->rw_lock);
         thread_lock_release_write(this_->rw_lock);
         return;
     }
     map=route_get_map(this_->route);
     if (!map) {
+        dbg(lvl_error, "#%lx:RELEASE WRITE lock %p", thread_get_id(), this_->rw_lock);
         thread_lock_release_write(this_->rw_lock);
         return;
     }
     this_->route_mr = map_rect_new(map, NULL);
     if (!this_->route_mr) {
+        dbg(lvl_error, "#%lx:RELEASE WRITE lock %p", thread_get_id(), this_->rw_lock);
         thread_lock_release_write(this_->rw_lock);
         return;
     }
@@ -3797,6 +3807,7 @@ static void navigation_update(struct navigation *this_, struct route *route, str
     if (route_get_flags(this_->route) & route_path_flag_async) {
         this_->idle_cb = callback_new_1(callback_cast(navigation_update_idle), this_);
         this_->idle_ev = event_add_idle(50, this_->idle_cb);
+        dbg(lvl_error, "#%lx:RELEASE WRITE lock %p", thread_get_id(), this_->rw_lock);
         thread_lock_release_write(this_->rw_lock);
     } else {
         this_->idle_ev = NULL;
@@ -3817,12 +3828,15 @@ static void navigation_flush(struct navigation *this_) {
 
 
 void navigation_destroy(struct navigation *this_) {
+    dbg(lvl_error, "#%lx:ACQUIRE WRITE lock %p", thread_get_id(), this_->rw_lock);
     thread_lock_acquire_write(this_->rw_lock);
     navigation_flush(this_);
     item_hash_destroy(this_->hash);
+    dbg(lvl_error, "#%lx:RELEASE WRITE lock %p", thread_get_id(), this_->rw_lock);
     thread_lock_release_write(this_->rw_lock);
     callback_list_destroy(this_->callback);
     callback_list_destroy(this_->callback_speech);
+    dbg(lvl_error, "#%lx:DESTROY lock %p", thread_get_id(), this_->rw_lock);
     thread_lock_destroy(this_->rw_lock);
     g_free(this_);
 }
@@ -4185,6 +4199,7 @@ static void navigation_map_destroy(struct map_priv *priv) {
 }
 
 static void navigation_map_rect_init(struct map_rect_priv *priv) {
+    dbg(lvl_error, "#%lx:ACQUIRE READ lock %p", thread_get_id(), priv->nav->rw_lock);
     thread_lock_acquire_read(priv->nav->rw_lock);
     priv->cmd_next=priv->nav->cmd_first;
     priv->cmd_itm_next=priv->itm_next=priv->nav->first;
@@ -4204,6 +4219,7 @@ static struct map_rect_priv *navigation_map_rect_new(struct map_priv *priv, stru
 }
 
 static void navigation_map_rect_destroy(struct map_rect_priv *priv) {
+    dbg(lvl_error, "#%lx:RELEASE READ lock %p", thread_get_id(), priv->nav->rw_lock);
     thread_lock_release_read(priv->nav->rw_lock);
     g_free(priv->str);
     g_free(priv);

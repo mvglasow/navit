@@ -1866,13 +1866,16 @@ static void route_graph_destroy(struct route_graph *this) {
              * OK to do on the main thread). Rerouting (which happens on the traffic thread) does not mark the graph as
              * busy, so we will correctly wait for the lock.
              */
+            dbg(lvl_error, "#%lx:ACQUIRE WRITE lock %p (graph %p)", thread_get_id(), this->rw_lock, this);
             thread_lock_acquire_write(this->rw_lock);
         }
         route_graph_build_done(this, 1);
         route_graph_free_points(this);
         route_graph_free_segments(this);
         fh_deleteheap(this->heap);
+        dbg(lvl_error, "#%lx:RELEASE WRITE lock %p (graph %p)", thread_get_id(), this->rw_lock, this);
         thread_lock_release_write(this->rw_lock);
+        dbg(lvl_error, "#%lx:DESTROY lock %p (graph %p)", thread_get_id(), this->rw_lock, this);
         thread_lock_destroy(this->rw_lock);
         g_free(this);
     }
@@ -2235,9 +2238,11 @@ static void route_graph_compute_shortest_path(struct route_graph * graph, struct
             else if (route_value_seg(profile, NULL, s, 2) != INT_MAX)
                 route_graph_point_update(graph, profile, s->start);
         /* briefly release lock to allow the traffic thread to add traffic distortions */
+        dbg(lvl_error, "#%lx:RELEASE WRITE lock %p (graph %p)", thread_get_id(), graph->rw_lock, graph);
         thread_lock_release_write(graph->rw_lock);
         /* TODO do we need to yield or otherwise relinquish the CPU so the other thread gets a real chance to run? */
         /* FIXME the graph might have been destroyed by the time we get here */
+        dbg(lvl_error, "#%lx:ACQUIRE WRITE lock %p (graph %p)", thread_get_id(), graph->rw_lock, graph);
         thread_lock_acquire_write(graph->rw_lock);
     }
     if (cb)
@@ -2726,6 +2731,7 @@ void route_on_change(struct route *this_) {
     if (!route_has_graph(this_))
         return;
 
+    dbg(lvl_error, "#%lx:ACQUIRE WRITE lock %p (graph %p)", thread_get_id(), this_->graph->rw_lock, this_->graph);
     thread_lock_acquire_write(this_->graph->rw_lock);
     switch (this_->route_status) {
     case route_status_building_path:
@@ -2738,6 +2744,7 @@ void route_on_change(struct route *this_) {
          * actually changed (this could be tested with route_graph_is_computed(), but it would require us to hold at
          * least a read lock).
          */
+        dbg(lvl_error, "#%lx:RELEASE WRITE lock %p (graph %p)", thread_get_id(), this_->graph->rw_lock, this_->graph);
         thread_lock_release_write(this_->graph->rw_lock);
         break;
     case route_status_not_found:
@@ -2749,6 +2756,7 @@ void route_on_change(struct route *this_) {
          */
         if (route_graph_is_path_computed(this_->graph)) {
             /* exit if there is no need to recalculate */
+            dbg(lvl_error, "#%lx:RELEASE WRITE lock %p (graph %p)", thread_get_id(), this_->graph->rw_lock, this_->graph);
             thread_lock_release_write(this_->graph->rw_lock);
             return;
         }
@@ -2756,6 +2764,7 @@ void route_on_change(struct route *this_) {
         route_status.u.num = route_status_building_graph;
         route_set_attr(this_, &route_status);
         route_graph_compute_shortest_path(this_->graph, this_->vehicleprofile, NULL);
+        dbg(lvl_error, "#%lx:RELEASE WRITE lock %p (graph %p)", thread_get_id(), this_->graph->rw_lock, this_->graph);
         thread_lock_release_write(this_->graph->rw_lock);
         this_->flags &= ~route_path_flag_async;
         route_path_update_done(this_, 0);
@@ -2774,6 +2783,7 @@ void route_on_change(struct route *this_) {
          *   written and the changes have not been reflected here).
          * Either way, nothing to do here.
          */
+        dbg(lvl_error, "#%lx:RELEASE WRITE lock %p (graph %p)", thread_get_id(), this_->graph->rw_lock, this_->graph);
         thread_lock_release_write(this_->graph->rw_lock);
         break;
     }
@@ -3251,6 +3261,7 @@ void route_graph_build_done(struct route_graph *rg, int cancel) {
     }
     rg->busy=0;
     if (!cancel) {
+        dbg(lvl_error, "#%lx:RELEASE WRITE lock %p (graph %p)", thread_get_id(), rg->rw_lock, rg);
         thread_lock_release_write(rg->rw_lock);
     }
 }
@@ -3308,13 +3319,18 @@ static struct route_graph *route_graph_build(struct mapset *ms, struct coord *c,
     ret->h=mapset_open(ms);
     ret->done_cb=done_cb;
     ret->rw_lock = thread_lock_new();
+    dbg(lvl_error, "#%lx:NEW lock %p (graph %p)", thread_get_id(), ret->rw_lock, ret);
+    dbg(lvl_error, "#%lx:ACQUIRE WRITE lock %p (graph %p)", thread_get_id(), ret->rw_lock, ret);
     thread_lock_acquire_write(ret->rw_lock);
     ret->busy=1;
     ret->heap = fh_makekeyheap();
     if (route_graph_build_next_map(ret)) {
         if (async) {
+            dbg(lvl_debug, "route_graph_build_next_map() reported success, async=true, lock %p will be released when done (graph %p)", ret->rw_lock, ret);
             ret->idle_cb=callback_new_2(callback_cast(route_graph_build_idle), ret, profile);
             ret->idle_ev=event_add_idle(50, ret->idle_cb);
+        } else {
+            dbg(lvl_debug, "route_graph_build_next_map() reported success, async=false, lock %p NOT released (graph %p)", ret->rw_lock, ret);
         }
     } else
         route_graph_build_done(ret, 0);
@@ -3981,6 +3997,7 @@ static struct map_rect_priv *rp_rect_new(struct map_priv *priv, struct map_selec
             *(mr->coord_sel) = sel->u.c_rect.lu;
         }
     }
+    dbg(lvl_error, "#%lx:ACQUIRE READ lock %p (graph %p)", thread_get_id(), priv->route->graph->rw_lock, priv->route->graph);
     thread_lock_acquire_read(priv->route->graph->rw_lock);
     return mr;
 }
@@ -4005,8 +4022,10 @@ static void rm_rect_destroy(struct map_rect_priv *mr) {
 }
 
 static void rp_rect_destroy(struct map_rect_priv *mr) {
-    if (mr->mpriv->route->graph)
+    if (mr->mpriv->route->graph) {
+        dbg(lvl_error, "#%lx:RELEASE READ lock %p (graph %p)", thread_get_id(), mr->mpriv->route->graph->rw_lock, mr->mpriv->route->graph);
         thread_lock_release_read(mr->mpriv->route->graph->rw_lock);
+    }
     if (mr->str)
         g_free(mr->str);
     if (mr->coord_sel) {
@@ -4257,8 +4276,10 @@ static struct map *route_get_map_helper(struct route *this_, struct map **map, c
  */
 void route_add_traffic_distortion(struct route *this_, struct item *item) {
     if (route_has_graph(this_)) {
+        dbg(lvl_error, "#%lx:ACQUIRE WRITE lock %p (graph %p)", thread_get_id(), this_->graph->rw_lock, this_->graph);
         thread_lock_acquire_write(this_->graph->rw_lock);
         route_graph_add_traffic_distortion(this_->graph, this_->vehicleprofile, item, 1);
+        dbg(lvl_error, "#%lx:RELEASE WRITE lock %p (graph %p)", thread_get_id(), this_->graph->rw_lock, this_->graph);
         thread_lock_release_write(this_->graph->rw_lock);
     }
 }
@@ -4273,8 +4294,10 @@ void route_add_traffic_distortion(struct route *this_, struct item *item) {
  */
 void route_change_traffic_distortion(struct route *this_, struct item *item) {
     if (route_has_graph(this_)) {
+        dbg(lvl_error, "#%lx:ACQUIRE WRITE lock %p (graph %p)", thread_get_id(), this_->graph->rw_lock, this_->graph);
         thread_lock_acquire_write(this_->graph->rw_lock);
         route_graph_change_traffic_distortion(this_->graph, this_->vehicleprofile, item);
+        dbg(lvl_error, "#%lx:RELEASE WRITE lock %p (graph %p)", thread_get_id(), this_->graph->rw_lock, this_->graph);
         thread_lock_release_write(this_->graph->rw_lock);
     }
 }
@@ -4346,8 +4369,10 @@ int route_has_graph(struct route *this_) {
  */
 void route_remove_traffic_distortion(struct route *this_, struct item *item) {
     if (route_has_graph(this_)) {
+        dbg(lvl_error, "#%lx:ACQUIRE WRITE lock %p (graph %p)", thread_get_id(), this_->graph->rw_lock, this_->graph);
         thread_lock_acquire_write(this_->graph->rw_lock);
         route_graph_remove_traffic_distortion(this_->graph, this_->vehicleprofile, item);
+        dbg(lvl_error, "#%lx:RELEASE WRITE lock %p (graph %p)", thread_get_id(), this_->graph->rw_lock, this_->graph);
         thread_lock_release_write(this_->graph->rw_lock);
     }
 }
