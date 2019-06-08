@@ -224,6 +224,7 @@ struct route {
     int link_path;			/**< Link paths over multiple waypoints together */
     struct pcoord pc;
     struct vehicle *v;
+    thread_lock * graph_rw_lock; /**< Lock for `graph` (the pointer; for the data referenced use `graph->rw_lock`) */
     thread_lock * rm_rw_lock;   /**< Lock for the route map (path), shared with every path in `path2` */
 };
 
@@ -267,6 +268,7 @@ static int route_value_seg(struct vehicleprofile *profile, struct route_graph_po
                            int dir);
 static void route_graph_init(struct route_graph *this, struct route_info *dst, struct vehicleprofile *profile);
 static void route_graph_reset(struct route_graph *this);
+static int route_has_graph_int(struct route *this_);
 
 
 /**
@@ -428,6 +430,7 @@ route_new(struct attr *parent, struct attr **attrs) {
         this->destination_distance = 50; // Default value
     }
     this->cbl2=callback_list_new();
+    this->graph_rw_lock = thread_lock_new();
     this->rm_rw_lock = thread_lock_new();
 
     return this;
@@ -791,7 +794,6 @@ static void route_path_update_done(struct route *this, int new_graph) {
  * @param flags Flags to control the behavior of this function, see description
  */
 static void route_path_update_flags(struct route *this, enum route_path_flags flags) {
-    struct route_graph * graph;
     dbg(lvl_debug,"enter %d", flags);
     this->flags = flags;
     if (! this->pos || ! this->destinations) {
@@ -803,11 +805,13 @@ static void route_path_update_flags(struct route *this, enum route_path_flags fl
         return;
     }
     if (flags & route_path_flag_cancel) {
-        graph = this->graph;
+        thread_lock_acquire_write(this->graph_rw_lock);
+        route_graph_destroy(this->graph);
         this->graph=NULL;
-        route_graph_destroy(graph);
+        thread_lock_release_write(this->graph_rw_lock);
     }
     /* the graph is destroyed when setting the destination */
+    thread_lock_acquire_read(this->graph_rw_lock);
     if (this->graph) {
         if (this->graph->busy) {
             dbg(lvl_debug,"busy building graph");
@@ -820,6 +824,7 @@ static void route_path_update_flags(struct route *this, enum route_path_flags fl
         route_path_destroy(this->path2,1);
         this->path2 = NULL;
     }
+    thread_lock_release_read(this->graph_rw_lock);
     if (!this->graph || (!this->path2 && !(flags & route_path_flag_no_rebuild))) {
         dbg(lvl_debug,"rebuild graph %p %p",this->graph,this->path2);
         if (! this->route_graph_flood_done_cb)
@@ -1089,7 +1094,6 @@ void route_set_destinations(struct route *this, struct pcoord *dst, int count, i
     struct attr route_status;
     struct route_info *dsti;
     int i;
-    struct route_graph * graph;
     route_status.type=attr_route_status;
 
     profile(0,NULL);
@@ -1112,9 +1116,10 @@ void route_set_destinations(struct route *this, struct pcoord *dst, int count, i
     profile(1,"find_nearest_street");
 
     /* The graph has to be destroyed and set to NULL, otherwise route_path_update() doesn't work */
-    graph = this->graph;
+    thread_lock_acquire_write(this->graph_rw_lock);
+    route_graph_destroy(this->graph);
     this->graph=NULL;
-    route_graph_destroy(graph);
+    thread_lock_release_write(this->graph_rw_lock);
     this->current_dst=route_get_dst(this);
     route_path_update(this, 1, async);
     profile(0,"end");
@@ -1224,7 +1229,6 @@ void route_set_destination(struct route *this, struct pcoord *dst, int async) {
  * @param async: If set, do routing asynchronously
  */
 void route_append_destination(struct route *this, struct pcoord *dst, int async) {
-    struct route_graph * graph;
     if (dst) {
         struct route_info *dsti;
         dsti=route_find_nearest_street(this->vehicleprofile, this->ms, &dst[0]);
@@ -1233,9 +1237,10 @@ void route_append_destination(struct route *this, struct pcoord *dst, int async)
             this->destinations=g_list_append(this->destinations, dsti);
         }
         /* The graph has to be destroyed and set to NULL, otherwise route_path_update() doesn't work */
-        graph = this->graph;
+        thread_lock_acquire_write(this->graph_rw_lock);
+        route_graph_destroy(this->graph);
         this->graph=NULL;
-        route_graph_destroy(graph);
+        thread_lock_release_write(this->graph_rw_lock);
         this->current_dst=route_get_dst(this);
         route_path_update(this, 1, async);
     } else {
@@ -1252,13 +1257,13 @@ void route_append_destination(struct route *this, struct pcoord *dst, int async)
  */
 void route_remove_nth_waypoint(struct route *this, int n) {
     struct route_info *ri=g_list_nth_data(this->destinations, n);
-    struct route_graph * graph;
     this->destinations=g_list_remove(this->destinations,ri);
     route_info_free(ri);
     /* The graph has to be destroyed and set to NULL, otherwise route_path_update() doesn't work */
-    graph = this->graph;
+    thread_lock_acquire_write(this->graph_rw_lock);
+    route_graph_destroy(this->graph);
     this->graph=NULL;
-    route_graph_destroy(graph);
+    thread_lock_release_write(this->graph_rw_lock);
     this->current_dst=route_get_dst(this);
     route_path_update(this, 1, 1);
 }
@@ -2728,8 +2733,12 @@ void route_on_change(struct route *this_) {
     struct attr route_status;
 
     /* do nothing if we don’t have a route graph */
-    if (!route_has_graph(this_))
+    thread_lock_acquire_read(this_->graph_rw_lock);
+    // TODO does the newly-introduced graph lock change anything here?
+    if (!route_has_graph_int(this_)) {
+        thread_lock_release_read(this_->graph_rw_lock);
         return;
+    }
 
     dbg(lvl_error, "#%lx:ACQUIRE WRITE lock %p (graph %p)", thread_get_id(), this_->graph->rw_lock, this_->graph);
     thread_lock_acquire_write(this_->graph->rw_lock);
@@ -2758,6 +2767,7 @@ void route_on_change(struct route *this_) {
             /* exit if there is no need to recalculate */
             dbg(lvl_error, "#%lx:RELEASE WRITE lock %p (graph %p)", thread_get_id(), this_->graph->rw_lock, this_->graph);
             thread_lock_release_write(this_->graph->rw_lock);
+            thread_lock_release_read(this_->graph_rw_lock);
             return;
         }
         route_status.type = attr_route_status;
@@ -2787,6 +2797,7 @@ void route_on_change(struct route *this_) {
         thread_lock_release_write(this_->graph->rw_lock);
         break;
     }
+    thread_lock_release_read(this_->graph_rw_lock);
 }
 #else
 /**
@@ -2820,7 +2831,7 @@ void route_recalculate_partial(struct route *this_) {
     struct attr route_status;
 
     /* do nothing if we don’t have a route graph */
-    if (!route_has_graph(this_))
+    if (!route_has_graph_int(this_))
         return;
 
     /* if the route graph is still being built, it will be calculated from scratch after that, nothing to do here */
@@ -3348,8 +3359,10 @@ static struct route_graph *route_graph_build(struct mapset *ms, struct coord *c,
  * @param cb The callback function to call when route calculation is complete.
  */
 static void route_graph_update_done(struct route *this, struct callback *cb) {
+    thread_lock_acquire_read(this->graph_rw_lock);
     route_graph_init(this->graph, this->current_dst, this->vehicleprofile);
     route_graph_compute_shortest_path(this->graph, this->vehicleprofile, cb);
+    thread_lock_release_read(this->graph_rw_lock);
 }
 
 /**
@@ -3364,15 +3377,15 @@ static void route_graph_update_done(struct route *this, struct callback *cb) {
  */
 static void route_graph_update(struct route *this, struct callback *cb, int async) {
     struct attr route_status;
-    struct route_graph * graph;
     struct coord *c=g_alloca(sizeof(struct coord)*(1+g_list_length(this->destinations)));
     int i=0;
     GList *tmp;
 
     route_status.type=attr_route_status;
-    graph = this->graph;
+    thread_lock_acquire_write(this->graph_rw_lock);
+    route_graph_destroy(this->graph);
     this->graph=NULL;
-    route_graph_destroy(graph);
+    thread_lock_release_write(this->graph_rw_lock);
     callback_destroy(this->route_graph_done_cb);
     this->route_graph_done_cb=callback_new_2(callback_cast(route_graph_update_done), this, cb);
     route_status.u.num=route_status_building_graph;
@@ -4275,13 +4288,15 @@ static struct map *route_get_map_helper(struct route *this_, struct map **map, c
  * @param item The item to add, must be of {@code type_traffic_distortion}
  */
 void route_add_traffic_distortion(struct route *this_, struct item *item) {
-    if (route_has_graph(this_)) {
+    thread_lock_acquire_read(this_->graph_rw_lock);
+    if (route_has_graph_int(this_)) {
         dbg(lvl_error, "#%lx:ACQUIRE WRITE lock %p (graph %p)", thread_get_id(), this_->graph->rw_lock, this_->graph);
         thread_lock_acquire_write(this_->graph->rw_lock);
         route_graph_add_traffic_distortion(this_->graph, this_->vehicleprofile, item, 1);
         dbg(lvl_error, "#%lx:RELEASE WRITE lock %p (graph %p)", thread_get_id(), this_->graph->rw_lock, this_->graph);
         thread_lock_release_write(this_->graph->rw_lock);
     }
+    thread_lock_release_read(this_->graph_rw_lock);
 }
 
 /**
@@ -4293,13 +4308,15 @@ void route_add_traffic_distortion(struct route *this_, struct item *item) {
  * @param item The item to change, must be of {@code type_traffic_distortion}
  */
 void route_change_traffic_distortion(struct route *this_, struct item *item) {
-    if (route_has_graph(this_)) {
+    thread_lock_acquire_read(this_->graph_rw_lock);
+    if (route_has_graph_int(this_)) {
         dbg(lvl_error, "#%lx:ACQUIRE WRITE lock %p (graph %p)", thread_get_id(), this_->graph->rw_lock, this_->graph);
         thread_lock_acquire_write(this_->graph->rw_lock);
         route_graph_change_traffic_distortion(this_->graph, this_->vehicleprofile, item);
         dbg(lvl_error, "#%lx:RELEASE WRITE lock %p (graph %p)", thread_get_id(), this_->graph->rw_lock, this_->graph);
         thread_lock_release_write(this_->graph->rw_lock);
     }
+    thread_lock_release_read(this_->graph_rw_lock);
 }
 
 /**
@@ -4353,10 +4370,30 @@ struct route_graph * route_get_graph(struct route *this_) {
 /**
  * @brief Whether the route has a valid graph.
  *
+ * This is the internal version, which does not obtain any locks. The caller must hold `this_->graph_rw_lock`
+ * prior to calling this function and release it when it is no longer needed.
+ *
+ * @return True if the route has a graph, false if not.
+ */
+static int route_has_graph_int(struct route *this_) {
+    return (this_->graph != NULL);
+}
+
+/**
+ * @brief Whether the route has a valid graph.
+ *
+ * This function is thread-safe in that it does not overlap with graph creation or destruction: if any such
+ * operation is in course, it waits for it to finish, and prevents new ones from taking place until the
+ * result is returned.
+ *
  * @return True if the route has a graph, false if not.
  */
 int route_has_graph(struct route *this_) {
-    return (this_->graph != NULL);
+    int ret;
+    thread_lock_acquire_read(this_->graph_rw_lock);
+    ret = route_has_graph_int(this_);
+    thread_lock_release_read(this_->graph_rw_lock);
+    return ret;
 }
 
 /**
@@ -4368,13 +4405,15 @@ int route_has_graph(struct route *this_) {
  * @param item The item to remove, must be of {@code type_traffic_distortion}
  */
 void route_remove_traffic_distortion(struct route *this_, struct item *item) {
-    if (route_has_graph(this_)) {
+    thread_lock_acquire_read(this_->graph_rw_lock);
+    if (route_has_graph_int(this_)) {
         dbg(lvl_error, "#%lx:ACQUIRE WRITE lock %p (graph %p)", thread_get_id(), this_->graph->rw_lock, this_->graph);
         thread_lock_acquire_write(this_->graph->rw_lock);
         route_graph_remove_traffic_distortion(this_->graph, this_->vehicleprofile, item);
         dbg(lvl_error, "#%lx:RELEASE WRITE lock %p (graph %p)", thread_get_id(), this_->graph->rw_lock, this_->graph);
         thread_lock_release_write(this_->graph->rw_lock);
     }
+    thread_lock_release_read(this_->graph_rw_lock);
 }
 
 void route_set_projection(struct route *this_, enum projection pro) {
@@ -4533,18 +4572,19 @@ void route_init(void) {
 }
 
 void route_destroy(struct route *this_) {
-    struct route_graph * graph;
     this_->refcount++; /* avoid recursion */
     thread_lock_acquire_write(this_->rm_rw_lock);
     route_path_destroy(this_->path2,1);
-    graph = this_->graph;
+    thread_lock_release_write(this_->rm_rw_lock);
+    thread_lock_destroy(this_->rm_rw_lock);
+    thread_lock_acquire_write(this_->graph_rw_lock);
+    route_graph_destroy(this_->graph);
     this_->graph=NULL;
-    route_graph_destroy(graph);
+    thread_lock_release_write(this_->graph_rw_lock);
+    thread_lock_destroy(this_->graph_rw_lock);
     route_clear_destinations(this_);
     route_info_free(this_->pos);
     map_destroy(this_->map);
-    thread_lock_release_write(this_->rm_rw_lock);
-    thread_lock_destroy(this_->rm_rw_lock);
     map_destroy(this_->graph_map);
     g_free(this_);
 }
