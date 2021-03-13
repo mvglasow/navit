@@ -216,6 +216,16 @@ jobs:
       - checkout
       - run: if scripts/check_need_build.sh; then circleci step halt; fi
       - run:
+          name: Install libcurl
+          command: |
+            cd /tmp
+            wget -nv -c https://curl.se/download/curl-7.75.0.tar.gz
+            tar xzf curl-7.75.0.tar.gz
+            cd curl-7.75.0
+            ./configure --prefix=$PREFIX --host=$ARCH
+            make -j$JOBS
+            make install
+      - run:
           name: Prepare the tomtom build environment
           command: |
             bash scripts/setup_common_requirements.sh
@@ -237,6 +247,16 @@ jobs:
     steps:
       - checkout
       - run: if scripts/check_need_build.sh; then circleci step halt; fi
+      - run:
+          name: Install libcurl
+          command: |
+            cd /tmp
+            wget -nv -c https://curl.se/download/curl-7.75.0.tar.gz
+            tar xzf curl-7.75.0.tar.gz
+            cd curl-7.75.0
+            ./configure --prefix=$PREFIX --host=$ARCH
+            make -j$JOBS
+            make install
       - run:
           name: Prepare the tomtom build environment
           command: |

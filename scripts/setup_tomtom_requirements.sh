@@ -159,7 +159,7 @@ tar xzf SDL_image-1.2.12.tar.gz
 cd SDL_image-1.2.12
 ./configure --prefix=$PREFIX --host=$ARCH
 make -j$JOBS
-make install
+make instal
 
 
 # in the end we only want Navit locale
